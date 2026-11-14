@@ -168,6 +168,27 @@ draft → scheduled → preparing → sending → completed        (paused ↔ s
 
 Exploitation : `php artisan queue:work redis --queue=sms` (plusieurs workers possibles) + `php artisan schedule:work`. Vérifié avec Redis réel et 4 workers en parallèle (voir le journal de l'étape).
 
+## Rapports (étape 7)
+
+Page `/rapports` (`App\Livewire\Reports\Index`, tous rôles : agrégats) et export `/rapports/export` (`ReportExportController`, owner/admin). Code métier dans `app/Domain/Reports`.
+
+```
+ReportFilters       période (jours civils du fuseau de l'application, fin incluse), campagne facultative, mode real|simulated ; validation unique
+ReportService       agrégats GROUP BY (messages, grand livre), série journalière, requête d'export
+ReportSummary       totaux d'UN bloc (réel OU simulé) ; aucune méthode n'additionne deux blocs
+MessageCsvExporter  CSV streamé (lots par id), BOM UTF-8, séparateur configurable ; CsvCell = neutralisation des formules
+config/reports.php  période par défaut, période maximale, plafond de lignes, séparateur (variables REPORTS_*)
+```
+
+- **Sources uniques** : `sms_messages` et `credit_ledger_entries` de l'entreprise active. Les requêtes sont des `DB::table(...)` avec `company_id` **explicite** (l'appelant passe l'id de l'entreprise active) et `simulated` **toujours filtré** : un bloc ne contient jamais l'autre. La campagne d'un filtre doit appartenir à l'entreprise active (règle de validation `exists … where company_id`), sinon « Campagne introuvable » (page) ou 404 (export).
+- **Séparation stricte** : onglets « Envois réels » / « Simulation » ; bandeau « Simulation : aucun SMS réel n'a été envoyé » ; aucun total cumulé ; état vide « Aucune donnée sur cette période » (pas de zéros) ; taux jamais calculés sur un dénominateur nul. « Délivrés » dépend des accusés du fournisseur (le dit l'interface).
+- **Fuseaux** : Laravel stocke et relit `created_at` en heure locale de l'application (jamais UTC). Les bornes sont donc comparées telles quelles : `created_at >= « début 00:00:00 » AND created_at < « lendemain de la fin 00:00:00 »`, et `DATE(created_at)` regroupe par jour civil local. Aucune conversion de fuseau n'est faite (D20). Testé en UTC, Africa/Kinshasa et Pacific/Auckland.
+- **Campagne** : pas de colonne `campaign_id` sur `sms_messages` ; rattachement par le préfixe de clé d'idempotence `campaign:{id}:` (D21), ce qui inclut les tentatives bloquées rejouées. Lien « Voir le rapport détaillé » depuis la fiche campagne.
+- **Crédits** : consommés = −(débits + remboursements) du grand livre de l'onglet (`credit_ledger_entries.simulated`) ; cohérent avec `credits:verify` (solde = ajouts − consommation nette ± corrections), testé.
+- **Export** : lignes lues par lots (`lazyById`, `REPORTS_EXPORT_MAX_ROWS` max, refus au-delà), coût net par sous-requête sur le grand livre ; colonnes : date, numéro, campagne, statut, motif de blocage, segments, coût en crédits, simulé. **Injection de formules** : toute cellule (numéros compris) commençant par `= + - @ \t \r` est préfixée d'une apostrophe (D25). Rôle vérifié à chaque requête ; une entreprise ne voit jamais les données d'une autre ; le statut `is_platform_admin` n'ouvre rien.
+- **Index** (migration `2026_11_15_100001`) : `sms_messages(company_id, simulated, created_at)` et `credit_ledger_entries(company_id, simulated, created_at)`. Les requêtes filtrent toutes sur ces trois colonnes ; sans `simulated` dans l'index, un bloc devrait lire les lignes de l'autre pour les écarter. Les index existants `(company_id, created_at)` ne sont pas modifiés.
+- **Limites connues** : le filtre campagne utilise `LIKE 'campaign:{id}:%'` (pas de gain d'index sur ce motif, la plage de dates borne déjà la lecture) ; la lecture `COUNT` puis export n'est pas un instantané unique (des messages créés entre les deux peuvent dépasser légèrement le plafond) ; pas de journal d'audit des exports (étape 9).
+
 ## Cible (étapes suivantes)
 
 ```

@@ -112,6 +112,16 @@ Un utilisateur non administrateur reçoit une erreur 403 sur `/admin/*`.
 
 Sans worker, les campagnes restent en « Préparation » : c'est normal (les jobs attendent dans la file Redis `sms`).
 
+## Vérifier l'étape 7 manuellement
+
+1. Se connecter (propriétaire), menu **Rapports** : période par défaut = 30 derniers jours (fuseau `APP_TIMEZONE`), onglet « Envois réels » vide → « Aucune donnée sur cette période ».
+2. Faire un envoi de test (Messages) puis une campagne (fournisseur fictif) : onglet **Simulation** → bandeau « Simulation : aucun SMS réel n'a été envoyé », totaux, bloqués par motif, crédits consommés, série par jour ; l'onglet « Envois réels » reste vide (jamais de total cumulé).
+3. Fiche d'une campagne → « Voir le rapport détaillé de cette campagne » : mêmes chiffres que la fiche, filtrés sur cette campagne.
+4. Dates invalides, fin avant début ou période > 366 jours → message d'erreur, aucun chiffre. Campagne d'une autre entreprise (URL forgée `?campaign=…`) → « Campagne introuvable ».
+5. **Télécharger le CSV** (owner/admin) : ouvrir dans Excel (UTF-8 BOM, séparateur `;`). Créer une campagne nommée `=1+1` : la cellule apparaît préfixée d'une apostrophe. Un membre simple voit les agrégats mais pas le bouton, et `/rapports/export` lui répond 403.
+6. Abaisser le plafond : `REPORTS_EXPORT_MAX_ROWS=1` dans `.env` → export refusé avec un message clair (rien n'est tronqué).
+7. `php artisan credits:verify` reste « OK » ; « crédits consommés » = ajouts − solde actuel (hors corrections).
+
 ## Rôles
 
 | Rôle | Paramètres entreprise | Membres (lecture) |
