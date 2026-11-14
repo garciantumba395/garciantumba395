@@ -13,7 +13,10 @@ class Company extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'slug', 'is_active'];
+    protected $fillable = ['name', 'slug', 'country', 'is_active'];
+
+    // Même défaut que la migration, pour les instances non rechargées.
+    protected $attributes = ['country' => 'CD', 'is_active' => true];
 
     protected function casts(): array
     {

@@ -1,6 +1,6 @@
 # SMS Marketing SaaS (RDC) — socle
 
-Plateforme SaaS de marketing SMS multi-entreprises. **Étape 1 : authentification, entreprises, rôles, isolation des données.**
+Plateforme SaaS de marketing SMS multi-entreprises. **Étapes faites : 1 (authentification, entreprises, rôles, isolation) et 2 (contacts, groupes, import CSV).**
 Aucun SMS n'est envoyé par ce socle (aucun fournisseur SMS n'est encore intégré).
 
 - Architecture : [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
@@ -54,6 +54,20 @@ vendor/bin/pint --test            # style de code
 4. Créer un 2ᵉ compte avec une autre entreprise : il ne voit jamais les membres de la première (`/entreprise/membres`).
 5. Mot de passe oublié : avec `MAIL_MAILER=log`, le lien est écrit dans `storage/logs/laravel.log`.
 
+## Vérifier l'étape 2 manuellement
+
+1. `/entreprise/parametres` : vérifier « Pays et indicatif » (RDC +243 par défaut).
+2. `/groupes` : créer un groupe. `/contacts/nouveau` : saisir `0812345678` → enregistré `+243812345678`.
+3. `/contacts/importer` : importer un CSV (modèle ci-dessous), puis le réimporter : 0 créé, pas de doublon.
+4. Avec un 2ᵉ compte/entreprise : les contacts et groupes de la première restent invisibles, même avec une URL d'ID forgée (404).
+
+```csv
+telephone,nom,email
+0812345678,Marie Exemple,marie@example.test
++243 97 123 4567,Paul Exemple,
+```
+N'importez **aucune donnée réelle** dans un environnement de développement. Les numéros d'exemple ci-dessus sont fictifs.
+
 ## Rôles
 
 | Rôle | Paramètres entreprise | Membres (lecture) |
@@ -74,6 +88,7 @@ et la création est refusée (fail-closed). Les jobs en file devront fixer expli
 
 ## Limites connues de l'étape 1
 
+- Contacts sans consentement (étape 3) : ils ne sont pas encore ciblables ; l'import est synchrone.
 - Pas d'invitation de membres ni de changement de rôle (étape ultérieure).
 - Pas de vérification d'e-mail ni de 2FA (décision D10).
-- Inscription ouverte (décision D5).
+- Inscription ouverte (décision D5 tranchée ; anti-abus à reconsidérer à l'étape 9).

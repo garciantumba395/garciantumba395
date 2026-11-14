@@ -12,6 +12,8 @@
             <a href="{{ route('dashboard') }}" class="font-semibold">{{ config('app.name') }}</a>
             <nav class="flex flex-wrap items-center gap-4 text-sm">
                 <a href="{{ route('dashboard') }}" class="hover:underline">Tableau de bord</a>
+                <a href="{{ route('contacts.index') }}" class="hover:underline">Contacts</a>
+                <a href="{{ route('groups.index') }}" class="hover:underline">Groupes</a>
                 <a href="{{ route('companies.members') }}" class="hover:underline">Membres</a>
                 <a href="{{ route('companies.settings') }}" class="hover:underline">Paramètres</a>
                 <livewire:companies.switcher />

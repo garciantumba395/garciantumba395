@@ -7,7 +7,11 @@ use App\Livewire\Auth\ResetPassword;
 use App\Livewire\Companies\Create as CompanyCreate;
 use App\Livewire\Companies\Members;
 use App\Livewire\Companies\Settings as CompanySettings;
+use App\Livewire\Contacts\Form as ContactForm;
+use App\Livewire\Contacts\Import as ContactImport;
+use App\Livewire\Contacts\Index as ContactIndex;
 use App\Livewire\Dashboard;
+use App\Livewire\Groups\Index as GroupIndex;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -36,5 +40,10 @@ Route::middleware('auth')->group(function () {
         Route::get('/tableau-de-bord', Dashboard::class)->name('dashboard');
         Route::get('/entreprise/parametres', CompanySettings::class)->name('companies.settings');
         Route::get('/entreprise/membres', Members::class)->name('companies.members');
+        Route::get('/contacts', ContactIndex::class)->name('contacts.index');
+        Route::get('/contacts/nouveau', ContactForm::class)->name('contacts.create');
+        Route::get('/contacts/importer', ContactImport::class)->name('contacts.import');
+        Route::get('/contacts/{contact}/modifier', ContactForm::class)->whereNumber('contact')->name('contacts.edit');
+        Route::get('/groupes', GroupIndex::class)->name('groups.index');
     });
 });

@@ -45,10 +45,26 @@ companies(id, name, slug*, is_active, ...)
 company_user(company_id, user_id, role, PK(company_id,user_id))   -- adhésions + rôle
 ```
 
+## Modèle de données (étape 2)
+
+```
+companies.country (ISO alpha-2, défaut CD)
+contacts(id, company_id, name?, phone E.164, email?)        UNIQUE(company_id, phone), UNIQUE(id, company_id)
+contact_groups(id, company_id, name)                        UNIQUE(company_id, name), UNIQUE(id, company_id)
+contact_group_contact(company_id, contact_id, contact_group_id)
+    FK composites (contact_id, company_id) et (contact_group_id, company_id) : la base refuse tout lien inter-entreprises
+contact_imports(id, company_id, user_id?, group?, filename, compteurs, errors[{line, reason}])
+```
+
+- `PhoneNormalizer` (libphonenumber) : normalise en E.164 selon le pays de l'entreprise, n'accepte que les mobiles.
+- `ContactImporter` : CSV (UTF-8/Windows-1252, `,` `;` tab), 5 Mo / 10 000 lignes max, idempotent (clé = numéro),
+  fichier non conservé, rapport sans données personnelles. Synchrone pour l'instant (passage en file à l'étape 6 si les volumes l'exigent, D11).
+- Les contacts n'ont **aucun statut de consentement** avant l'étape 3 : ils ne sont pas ciblables.
+
 ## Cible (étapes suivantes)
 
 ```
-contacts, contact_groups, consents (preuve), suppressions (désinscriptions)
+consents (preuve), suppressions (désinscriptions)
 campaigns, campaign_messages (UNIQUE campaign_id+contact_id)
 credit_ledger_entries (append-only, UNIQUE idempotency_key), credit_balances (cache)
 sms_provider_events (accusés de réception)
