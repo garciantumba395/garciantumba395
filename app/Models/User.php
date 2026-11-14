@@ -35,6 +35,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_platform_admin' => 'boolean',
+            'disabled_at' => 'datetime', // jamais assignable en masse (AccountService uniquement)
         ];
     }
 }

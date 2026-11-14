@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Companies;
 
+use App\Domain\Audit\AuditLogger;
 use App\Domain\Contacts\PhoneNormalizer;
 use App\Support\Tenancy\CurrentCompany;
 use Livewire\Attributes\Layout;
@@ -23,7 +24,7 @@ class Settings extends Component
         $this->country = $current->company()->country;
     }
 
-    public function save(CurrentCompany $current): void
+    public function save(CurrentCompany $current, AuditLogger $audit): void
     {
         // Revérifié à chaque action : l'état Livewire vient du client.
         abort_unless($current->role()?->canManageCompany(), 403);
@@ -32,7 +33,18 @@ class Settings extends Component
             'country' => ['required', 'string', 'size:2', fn ($a, $v, $fail) => PhoneNormalizer::isSupportedCountry($v) || $fail('Pays non supporté.')],
         ]);
 
-        $current->company()->update(['name' => $this->name, 'country' => strtoupper($this->country)]);
+        $company = $current->company();
+        $before = ['name' => $company->name, 'country' => $company->country];
+        $company->update(['name' => $this->name, 'country' => strtoupper($this->country)]);
+        $changes = [];
+        foreach (['name', 'country'] as $field) {
+            if ($company->{$field} !== $before[$field]) {
+                $changes[$field] = ['from' => $before[$field], 'to' => $company->{$field}];
+            }
+        }
+        if ($changes !== []) {
+            $audit->record('company.updated', $company, $company, $changes);
+        }
         session()->flash('status', 'Entreprise mise à jour.');
     }
 

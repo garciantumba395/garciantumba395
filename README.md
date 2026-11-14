@@ -143,6 +143,15 @@ curl -i -X POST http://localhost:8000/webhooks/sms/fake \
    **réel** à ce numéro dans les 30 derniers jours ; avec le fournisseur fictif (messages simulés) la réponse est `{"status":"ignored"}` : c'est voulu.
 5. `php artisan sms:reconcile` : liste (numéros masqués) les messages réels bloqués en « en cours »/« résultat inconnu » ; `--include-simulated` pour voir aussi les simulés. Code de sortie 1 s'il y en a (`echo $?`).
 6. Tests : `php artisan test --filter=Sms` (contrats d'adaptateur, webhooks, désinscription, réconciliation).
+## Vérifier l'étape 8 manuellement
+
+1. Migrer (`php artisan migrate`), puis attribuer le statut d'administrateur **en console** (seule voie) :
+   `php artisan platform:grant-admin admin@exemple.test` (compte existant). Pour le retirer : `php artisan platform:revoke-admin …` (refusé pour le dernier administrateur actif).
+2. Connecté en administrateur : lien « Plateforme » dans la navigation → `/admin` : chiffres réels (entreprises, utilisateurs, messages réels et simulés **séparés**, crédits en circulation, campagnes actives, jobs en échec). Un propriétaire/membre d'entreprise reçoit **403** sur toutes les pages `/admin/*` ; un visiteur non connecté est renvoyé vers la connexion.
+3. `/admin/entreprises` : recherche par nom, filtre par statut d'envoi ; cliquer une entreprise → fiche (membres, solde, statut, activité récente). Désactiver l'entreprise **sans motif** → refusé ; avec motif → ses membres perdent l'accès, ses campagnes en cours se mettent en pause. Réactiver.
+4. `/admin/utilisateurs` : désactiver un compte (motif obligatoire) → il ne peut plus se connecter (« Identifiants incorrects, ou compte désactivé ») et, s'il était connecté, est déconnecté à sa prochaine action. Essayer de désactiver votre propre compte, ou le seul administrateur : refusé.
+5. Faire quelques actions (ajouter des crédits, changer le statut d'envoi, lever une désinscription, mettre une campagne en pause, modifier le nom de l'entreprise) puis ouvrir `/admin/audit` : une entrée par action, avec l'acteur (ou « Système » pour les transitions automatiques), sans numéro ni texte de message. Tester les filtres (action, entreprise, acteur, période). Le journal est en lecture seule.
+6. Confidentialité : aucune page `/admin/*` n'affiche de contact, numéro, texte de message ni consentement ; le statut d'administrateur ne donne accès à aucune page d'entreprise (`/contacts`, `/campagnes`… renvoient vers la création d'entreprise si l'administrateur n'en est pas membre).
 
 ## Rôles
 
@@ -154,7 +163,7 @@ curl -i -X POST http://localhost:8000/webhooks/sms/fake \
 
 `users.is_platform_admin` (administrateur de la plateforme) est **séparé** des rôles et n'est pas assignable en masse ;
 il ne donne aucun accès aux données d'une entreprise. Pour en définir un (console uniquement) :
-`php artisan tinker` puis `User::where('email','…')->first()->forceFill(['is_platform_admin'=>true])->save();`
+`php artisan platform:grant-admin {email}` (retrait : `php artisan platform:revoke-admin {email}`, refusé pour le dernier administrateur).
 
 ## Règle d'or de l'isolation
 

@@ -37,9 +37,10 @@ class Login extends Component
             ]);
         }
 
-        if (! Auth::attempt(['email' => $this->email, 'password' => $this->password], $this->remember)) {
+        // disabled_at = null : un compte désactivé ne peut pas se connecter (même message : pas d'énumération de comptes).
+        if (! Auth::attempt(['email' => $this->email, 'password' => $this->password, 'disabled_at' => null], $this->remember)) {
             RateLimiter::hit($key);
-            throw ValidationException::withMessages(['email' => 'Identifiants incorrects.']);
+            throw ValidationException::withMessages(['email' => 'Identifiants incorrects, ou compte désactivé.']);
         }
 
         RateLimiter::clear($key);

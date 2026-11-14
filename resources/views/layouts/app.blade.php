@@ -19,7 +19,7 @@
                 <a href="{{ route('messages.index') }}" class="hover:underline">Messages</a>
                 <a href="{{ route('credits.index') }}" class="hover:underline">Crédits</a>
                 <a href="{{ route('reports.index') }}" class="hover:underline">Rapports</a>
-                @if (auth()->user()?->is_platform_admin)<a href="{{ route('admin.companies') }}" class="font-medium text-amber-700 hover:underline">Administration</a>@endif
+                @if (auth()->user()?->is_platform_admin)<a href="{{ route('admin.companies') }}" class="font-medium text-amber-700 hover:underline">Administration</a><a href="{{ route('admin.dashboard') }}" class="font-medium text-amber-700 hover:underline">Plateforme</a>@endif
                 <a href="{{ route('companies.members') }}" class="hover:underline">Membres</a>
                 <a href="{{ route('companies.settings') }}" class="hover:underline">Paramètres</a>
                 <livewire:companies.switcher />

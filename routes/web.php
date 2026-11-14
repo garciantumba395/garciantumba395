@@ -2,8 +2,12 @@
 
 use App\Http\Controllers\ReportExportController;
 use App\Http\Controllers\Webhooks\SmsWebhookController;
+use App\Livewire\Admin\AuditLogs as AdminAuditLogs;
 use App\Livewire\Admin\Companies as AdminCompanies;
+use App\Livewire\Admin\CompanyShow as AdminCompanyShow;
+use App\Livewire\Admin\Dashboard as AdminDashboard;
 use App\Livewire\Admin\Rates as AdminRates;
+use App\Livewire\Admin\Users as AdminUsers;
 use App\Livewire\Auth\ForgotPassword;
 use App\Livewire\Auth\Login;
 use App\Livewire\Auth\Register;
@@ -57,6 +61,12 @@ Route::middleware('auth')->group(function () {
     Route::middleware('platform.admin')->prefix('admin')->group(function () {
         Route::get('/entreprises', AdminCompanies::class)->name('admin.companies');
         Route::get('/tarifs', AdminRates::class)->name('admin.rates');
+        // --- Étape 8 : administration et audit ---
+        Route::get('/', AdminDashboard::class)->name('admin.dashboard');
+        Route::get('/entreprises/{company}', AdminCompanyShow::class)->whereNumber('company')->name('admin.companies.show');
+        Route::get('/utilisateurs', AdminUsers::class)->name('admin.users');
+        Route::get('/audit', AdminAuditLogs::class)->name('admin.audit');
+        // --- fin étape 8 ---
     });
 
     Route::middleware('company')->group(function () {

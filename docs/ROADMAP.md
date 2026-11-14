@@ -9,7 +9,7 @@
 | **5 (faite)** | Grand livre de crédits (ajout manuel par admin, débit idempotent) | pas de solde négatif ; double débit impossible |
 | **6 (faite)** | Campagnes + envoi en file Redis (Horizon optionnel) | rejeu d'un job sans double envoi/débit |
 | **7 (faite)** | Rapports d'envoi (chiffres issus uniquement du journal et du grand livre ; simulé et réel jamais mélangés) | export CSV ; aucun chiffre fictif |
-| 8 | Administration plateforme (entreprises, crédits, audit) | journal d'audit |
+| **8 (faite)** | Administration plateforme (entreprises, crédits, audit) | journal d'audit en ajout seul ; pages admin ; commandes console |
 | 9 | Durcissement : 2FA, limitation de débit, sauvegardes, observabilité | revue sécurité |
 | 10 (préparée : adaptateur réel en attente de D1) | Intégration d'un fournisseur réel (après décisions D1–D3). **Prêt** : webhooks signés + déduplication, accusés, désinscription par mot-clé, `sms:reconcile`, contrats de test, `docs/PROVIDERS.md`. **Reste** : adaptateur réel, tarifs, D13 | recette en sandbox du fournisseur |
 

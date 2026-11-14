@@ -218,6 +218,38 @@ POST /webhooks/sms/{provider}      (hors session, hors CSRF, JSON, limité en d�
   numéros masqués (`+243*******01`), sans contenu ; simulés exclus sauf `--include-simulated` (section séparée, sans effet sur le code de sortie). Sortie : 0 = rien, 1 = au moins un
   message réel, 2 = option invalide. La résolution automatique/remboursement dépend de D13 : **non implémentée** (procédure manuelle dans `docs/PROVIDERS.md`).
 - **Contrats de test** réutilisables : `Tests\Contracts\SmsProviderContractTest` et `Tests\Contracts\SmsWebhookVerifierContractTest`.
+## Administration et audit (étape 8)
+
+**Journal d'audit** (`audit_logs`, modèle `AuditLog`, service `App\Domain\Audit\AuditLogger`)
+- **Ajout seul**, comme le grand livre : le modèle refuse toute modification et toute suppression (`LogicException`). Colonnes : acteur (`actor_id`, nul = **système**), entreprise (nulle), `action` (clé stable `domaine.verbe`, ex. `credits.added`),
+  sujet (`subject_type`/`subject_id`), `details` JSON, IP, user-agent tronqué à 255, date (fuseau de l'application).
+- **Jamais de secret, mot de passe, contenu de message ni numéro de téléphone** : `AuditLogger` *refuse* (exception) toute clé de détail suspecte (`password`, `token`, `secret`, `body`, `message`, `content`, `phone`, `email`, `number`…) et *masque* (`[masqué]`) les numéros et adresses e-mail qui apparaîtraient dans un texte libre (motifs saisis). On y met des identifiants et des valeurs techniques.
+- Pas de `BelongsToCompany` : c'est un journal de **plateforme** (entreprise facultative), lu uniquement par les administrateurs de plateforme ; aucune page d'entreprise ne l'expose.
+- Trois méthodes : `record()` (acteur = utilisateur connecté), `recordSystem()` (jobs, planificateur), `recordAs($id)` (console).
+
+**Actions instrumentées** (clés) : `credits.added`, `credits.removed` (une seule entrée même en cas de rejeu idempotent), `rates.created`, `rates.activated`, `rates.deactivated`,
+`sending.status_changed` (manuel, acteur = administrateur), `sending.status_auto_changed` (`SendingPolicy`, acteur = système, avec le motif), `sending.limit_changed`, `suppression.lifted` (identifiant seul : ni numéro ni motif),
+`campaign.launched|paused|resumed|cancelled` (actions des utilisateurs ; pause automatique et reprise du lendemain = système), `company.updated` (nom/pays : ancienne et nouvelle valeur),
+`company.disabled|enabled`, `user.disabled|enabled`, `platform_admin.granted|revoked` (console).
+Modifications des fichiers existants : un appel `AuditLogger` ciblé par action (dans `SendingPolicy::transition`, `CampaignService::pause/resumeDailyLimited`, `Campaigns\Show`, `Suppressions\Index`, `Companies\Settings`, `Admin\Companies`, `Admin\Rates`).
+
+**Pages d'administration** (middleware `platform.admin` + contrôle `is_platform_admin` revérifié au montage, dans **chaque action** et au rendu : trait `AuthorizesPlatformAdmin`)
+| Route | Composant | Contenu |
+|---|---|---|
+| `/admin` | `Admin\Dashboard` | entreprises, utilisateurs, messages **réels** et **simulés** (compteurs séparés), crédits en circulation (somme des soldes), campagnes actives (programmées, en préparation, en envoi), jobs en échec (`failed_jobs`) |
+| `/admin/entreprises` | `Admin\Companies` | liste avec recherche par nom et filtre par statut d'envoi ; crédits, statut, limite (existant) |
+| `/admin/entreprises/{id}` | `Admin\CompanyShow` | membres (compte, rôle), solde, statut, activité d'audit récente ; désactivation/réactivation avec **motif obligatoire** |
+| `/admin/utilisateurs` | `Admin\Users` | recherche, désactivation/réactivation d'un compte (motif obligatoire) |
+| `/admin/audit` | `Admin\AuditLogs` | lecture seule, paginée (25), filtres : action, entreprise, acteur (ou « système »), période (bornes de jour inclusives dans le fuseau de l'application) |
+
+**Désactivation d'un compte** : colonnes `users.disabled_at` / `disabled_reason` (jamais assignables en masse). Contrôles : (1) `Login` n'authentifie que `disabled_at IS NULL` (message identique à un mauvais mot de passe : pas d'énumération) ; (2) middleware `EnsureAccountActive` dans le groupe `web` (donc aussi sur les requêtes Livewire) : un compte désactivé est déconnecté, session invalidée, à sa **prochaine requête** ;
+(3) les lignes de la table `sessions` (pilote `database`) sont supprimées. Règles (`AccountService`) : on ne peut pas se désactiver soi-même ni désactiver le **dernier administrateur de plateforme actif** (compte désactivé = ne compte plus).
+
+**Désactivation d'une entreprise** (`companies.is_active`) : ses membres n'ont plus de contexte d'entreprise (existant) ; **en plus**, ses campagnes en préparation/en envoi passent en pause (`company_disabled`) et ses campagnes programmées ne démarrent plus. Rien n'est supprimé ; à la réactivation, les campagnes en pause se reprennent manuellement.
+
+**Statut d'administrateur de plateforme** : attribué **uniquement en console** — `php artisan platform:grant-admin {email}` / `platform:revoke-admin {email}` (refus de retirer le dernier administrateur actif ; compte désactivé refusé ; idempotent ; entrée d'audit sans l'e-mail). Aucune route web ne l'attribue.
+
+**Confidentialité** : l'administrateur de plateforme ne voit **aucun contact, numéro, texte de message, consentement ni nom de campagne**. Les pages n'affichent que des agrégats (comptages, somme des soldes) et des métadonnées (noms/e-mails des **comptes** membres, rôles, statuts, soldes). Le statut d'administrateur ne donne accès à aucune page d'entreprise : sans appartenance à l'entreprise, `CurrentCompany` est nul et les modèles métier renvoient « rien » (fail-closed). Testé : aucune page admin ne contient de données sensibles semées.
 
 ## Cible (étapes suivantes)
 
