@@ -271,6 +271,12 @@ Modifications des fichiers existants : un appel `AuditLogger` ciblé par action 
 
 Exploitation : `docs/OPERATIONS.md`.
 
+## Conformité légale RDC (D4)
+
+- `App\Domain\Legal\MessageComposer` ajoute au corps le pied de message `Publicité - {annonceur}. Désabonnement: {url}`, de la même façon pour l'estimation et l'envoi (coût cohérent).
+- `UnsubscribeLinks` : un code aléatoire stable par (entreprise, numéro) ; `UnsubscribeController` : `GET /d/{code}` affiche l'annonceur sans rien modifier, `POST` désinscrit via `ConsentService::optOut` dans l'entreprise du lien, avec limitation de débit et journal d'audit.
+- Identité légale de l'entreprise (`companies.legal_*`) : obligatoire pour un envoi réel ; sinon la campagne est mise en pause `legal_identity_incomplete`. `LEGAL_ENFORCE=false` en production est une erreur de `security:check`.
+
 ## Cible (étapes suivantes)
 
 ```

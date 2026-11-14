@@ -38,6 +38,12 @@ La vérification de l'adresse e-mail et la 2FA des rôles d'administration sont 
 4. `users:verify-email` est une voie de **secours** (boîte inaccessible, e-mail en panne) : console uniquement, entrée d'audit `user.email_verified`. Ne jamais l'automatiser.
 5. Démonstration ou développement local **uniquement** : `SECURITY_REQUIRE_EMAIL_VERIFICATION=false` et `SECURITY_REQUIRE_2FA_FOR_ADMINS=false`.
 
+## 1ter. Conformité légale avant tout envoi réel (D4)
+
+1. Chaque entreprise renseigne son identité légale (Entreprise > Identité légale) : sans nom, adresse et e-mail, aucun envoi réel.
+2. `APP_URL` doit être l'URL publique HTTPS : elle figure dans les liens de désinscription.
+3. Hors code, à faire avec un juriste : déclaration/autorisation auprès de l'autorité (art. 186/187-3, y compris pour les numéros), option de délégué à la protection des données (189-4). Le texte lu est une reproduction non officielle.
+
 ## 2. Variables d'environnement (noms uniquement)
 
 | Variable | Rôle | Remarque |

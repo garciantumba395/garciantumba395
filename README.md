@@ -182,6 +182,12 @@ curl -i -X POST http://localhost:8000/webhooks/sms/fake \
 7. `php artisan sending:review` : examine les entreprises « validées » (suspension automatique si dérive) ; `php artisan schedule:list` montre `sending:review` (03:00) et `credits:verify` (03:30).
 8. Exploitation (workers, sauvegardes, interrupteur d'urgence `SMS_SENDING_ENABLED=false`, incident, rotation) : voir `docs/OPERATIONS.md`.
 
+## Vérifier la conformité légale (D4)
+
+1. `php artisan migrate:fresh --seed`, puis envoyer un message de test : le texte se termine par `Publicité - Boutique Démo SARL. Désabonnement: <lien>`.
+2. Ouvrir le lien : la page affiche l'expéditeur mais ne désinscrit pas ; le bouton « Me désabonner » confirme.
+3. Vider l'identité légale de l'entreprise : un envoi réel est refusé (campagne en pause). Voir `docs/CADRE_LEGAL_RDC.md`.
+
 ## Rôles
 
 | Rôle | Paramètres entreprise | Membres (lecture) |
