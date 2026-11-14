@@ -4,7 +4,7 @@
         <p>Fichier CSV (UTF-8 ou Excel), 5 Mo et 10 000 lignes maximum, avec une ligne d'en-tête. Colonnes reconnues :
         <code>telephone</code> (obligatoire), <code>nom</code>, <code>email</code>. Séparateur « , » ou « ; ».</p>
         <p class="mt-2">Les numéros sont convertis au format international selon le pays de l'entreprise ({{ app(\App\Support\Tenancy\CurrentCompany::class)->company()->country }}).
-        Réimporter un fichier ne crée pas de doublons. <strong>L'import n'enregistre pas de consentement</strong> : il sera géré à l'étape suivante.</p>
+        Réimporter un fichier ne crée pas de doublons. <strong>Par défaut, l'import n'enregistre aucun consentement</strong> : les contacts importés ne sont pas ciblables tant qu'une preuve n'est pas associée.</p>
     </div>
     <form wire:submit="import" class="space-y-4 rounded bg-white p-4 shadow">
         <div>
@@ -19,6 +19,34 @@
                 @foreach ($groups as $g)<option value="{{ $g->id }}">{{ $g->name }}</option>@endforeach
             </select>
         </div>
+        <fieldset class="rounded border border-slate-200 p-3">
+            <label class="flex items-start gap-2 text-sm font-medium">
+                <input type="checkbox" wire:model.live="recordConsent" class="mt-1">
+                <span>Je certifie disposer d'une preuve de consentement pour les contacts de ce fichier, et je souhaite l'enregistrer.</span>
+            </label>
+            @if ($recordConsent)
+                <div class="mt-3 grid gap-3 sm:grid-cols-2">
+                    <div>
+                        <label for="consentSource" class="text-sm font-medium">Source du consentement</label>
+                        <select id="consentSource" wire:model="consentSource" class="mt-1 w-full rounded border border-slate-300 px-3 py-2">
+                            @foreach ($sources as $k => $label)<option value="{{ $k }}">{{ $label }}</option>@endforeach
+                        </select>
+                        @error('consentSource') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+                    </div>
+                    <div>
+                        <label for="consentDate" class="text-sm font-medium">Date d'obtention</label>
+                        <input id="consentDate" type="date" wire:model="consentDate" max="{{ now()->toDateString() }}" class="mt-1 w-full rounded border border-slate-300 px-3 py-2">
+                        @error('consentDate') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label for="consentEvidence" class="text-sm font-medium">Preuve (formulation présentée, référence du document…)</label>
+                        <textarea id="consentEvidence" wire:model="consentEvidence" rows="3" class="mt-1 w-full rounded border border-slate-300 px-3 py-2"></textarea>
+                        @error('consentEvidence') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+                    </div>
+                </div>
+                <p class="mt-2 text-xs text-slate-500">Les numéros désinscrits sont ignorés : un consentement ne peut pas les réactiver.</p>
+            @endif
+        </fieldset>
         <button type="submit" class="rounded bg-slate-900 px-4 py-2 font-medium text-white hover:bg-slate-700" wire:loading.attr="disabled">Importer</button>
     </form>
     @if ($result)
@@ -28,6 +56,7 @@
                 <li>{{ $result->total_rows }} lignes lues</li>
                 <li>{{ $result->created_count }} créés, {{ $result->updated_count }} mis à jour</li>
                 <li>{{ $result->invalid_count }} invalides, {{ $result->duplicate_count }} doublons dans le fichier</li>
+                <li>{{ $result->consent_count }} consentements enregistrés, {{ $result->suppressed_count }} numéros désinscrits ignorés</li>
             </ul>
             @if ($result->errors)
                 <details class="mt-2"><summary class="cursor-pointer">Lignes en erreur</summary>

@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Models\Contact;
 use App\Models\ContactGroup;
+use App\Models\Suppression;
 use App\Support\Tenancy\CurrentCompany;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -15,6 +16,6 @@ class Dashboard extends Component
 {
     public function render(CurrentCompany $current)
     {
-        return view('livewire.dashboard', ['company' => $current->company(), 'role' => $current->role(), 'contacts' => Contact::count(), 'groups' => ContactGroup::count()]);
+        return view('livewire.dashboard', ['company' => $current->company(), 'role' => $current->role(), 'contacts' => Contact::count(), 'groups' => ContactGroup::count(), 'sendable' => Contact::sendable()->count(), 'suppressed' => Suppression::active()->count()]);
     }
 }

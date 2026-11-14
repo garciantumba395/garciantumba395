@@ -41,7 +41,7 @@ class Index extends Component
 
     public function render()
     {
-        $query = Contact::query()->orderBy('name')->orderBy('id');
+        $query = Contact::query()->withConsentStatus()->orderBy('name')->orderBy('id');
 
         if ($this->search !== '') {
             $term = '%'.str_replace(['%', '_'], ['\%', '\_'], mb_strtolower($this->search)).'%';
@@ -57,6 +57,7 @@ class Index extends Component
             'contacts' => $query->paginate(25),
             'groups' => ContactGroup::orderBy('name')->get(),
             'total' => Contact::count(),
+            'sendable' => Contact::sendable()->count(),
         ]);
     }
 }

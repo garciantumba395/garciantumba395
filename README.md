@@ -1,6 +1,6 @@
 # SMS Marketing SaaS (RDC) — socle
 
-Plateforme SaaS de marketing SMS multi-entreprises. **Étapes faites : 1 (authentification, entreprises, rôles, isolation) et 2 (contacts, groupes, import CSV).**
+Plateforme SaaS de marketing SMS multi-entreprises. **Étapes faites : 1 (authentification, entreprises, rôles, isolation), 2 (contacts, groupes, import CSV) et 3 (consentement, désinscription).**
 Aucun SMS n'est envoyé par ce socle (aucun fournisseur SMS n'est encore intégré).
 
 - Architecture : [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
@@ -68,6 +68,17 @@ telephone,nom,email
 ```
 N'importez **aucune donnée réelle** dans un environnement de développement. Les numéros d'exemple ci-dessus sont fictifs.
 
+## Vérifier l'étape 3 manuellement
+
+1. `/contacts` : un contact importé sans déclaration affiche « Sans consentement ». Ouvrir sa fiche.
+2. Fiche contact : enregistrer un consentement (source, date passée, preuve) → statut « Consentement valide » ; compteur du tableau de bord mis à jour.
+3. Cliquer « Désinscrire » : statut « Désinscrit », le consentement est révoqué, le formulaire disparaît.
+4. `/desinscriptions` : ajouter des numéros ; seul un owner/admin peut lever (motif obligatoire) ; après levée, un **nouveau** consentement est requis.
+5. Import avec case « Je certifie… » : consentements créés ; les numéros désinscrits sont ignorés.
+6. Avec un 2ᵉ compte/entreprise : aucune fuite de consentements ni de désinscriptions.
+
+Paramètres (`config/consent.php`, variables `CONSENT_REQUIRE_EVIDENCE`, `CONSENT_MAX_AGE_DAYS`) : choix techniques, **pas des règles juridiques** — à valider (D4).
+
 ## Rôles
 
 | Rôle | Paramètres entreprise | Membres (lecture) |
@@ -88,7 +99,7 @@ et la création est refusée (fail-closed). Les jobs en file devront fixer expli
 
 ## Limites connues de l'étape 1
 
-- Contacts sans consentement (étape 3) : ils ne sont pas encore ciblables ; l'import est synchrone.
+- Aucun envoi n'existe encore (étape 6) ; la désinscription par réponse « STOP » nécessitera les SMS entrants (fournisseur, étape 10) ; l'import est synchrone.
 - Pas d'invitation de membres ni de changement de rôle (étape ultérieure).
 - Pas de vérification d'e-mail ni de 2FA (décision D10).
 - Inscription ouverte (décision D5 tranchée ; anti-abus à reconsidérer à l'étape 9).

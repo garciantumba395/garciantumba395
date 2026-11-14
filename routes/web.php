@@ -10,8 +10,10 @@ use App\Livewire\Companies\Settings as CompanySettings;
 use App\Livewire\Contacts\Form as ContactForm;
 use App\Livewire\Contacts\Import as ContactImport;
 use App\Livewire\Contacts\Index as ContactIndex;
+use App\Livewire\Contacts\Show as ContactShow;
 use App\Livewire\Dashboard;
 use App\Livewire\Groups\Index as GroupIndex;
+use App\Livewire\Suppressions\Index as SuppressionIndex;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -44,6 +46,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/contacts/nouveau', ContactForm::class)->name('contacts.create');
         Route::get('/contacts/importer', ContactImport::class)->name('contacts.import');
         Route::get('/contacts/{contact}/modifier', ContactForm::class)->whereNumber('contact')->name('contacts.edit');
+        Route::get('/contacts/{contact}', ContactShow::class)->whereNumber('contact')->name('contacts.show');
+        Route::get('/desinscriptions', SuppressionIndex::class)->name('suppressions.index');
         Route::get('/groupes', GroupIndex::class)->name('groups.index');
     });
 });

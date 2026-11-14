@@ -2,9 +2,12 @@
 
 namespace App\Domain\Contacts;
 
+use App\Domain\Consent\ConsentDeclaration;
+use App\Models\Consent;
 use App\Models\Contact;
 use App\Models\ContactGroup;
 use App\Models\ContactImport;
+use App\Models\Suppression;
 use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -14,7 +17,8 @@ use InvalidArgumentException;
  * Import CSV de contacts pour l'entreprise active.
  * - idempotent : réimporter le même fichier ne crée aucun doublon (clé = numéro E.164) ;
  * - le fichier n'est pas conservé, seul un rapport (compteurs + lignes en erreur sans données personnelles) l'est ;
- * - ne gère PAS le consentement (étape 3) : les contacts importés n'ont aucun droit d'envoi à ce stade.
+ * - par défaut aucun consentement n'est créé : un import seul ne rend pas un contact ciblable ;
+ *   un consentement n'est enregistré que si une déclaration (source, preuve, date) est fournie, et jamais pour un numéro désinscrit.
  */
 class ContactImporter
 {
@@ -34,8 +38,11 @@ class ContactImporter
 
     public function __construct(private PhoneNormalizer $phones, private CurrentCompany $current) {}
 
-    public function import(string $path, string $originalName, ?int $groupId = null, ?int $userId = null): ContactImport
+    public function import(string $path, string $originalName, ?int $groupId = null, ?int $userId = null, ?ConsentDeclaration $consent = null): ContactImport
     {
+        if ($consent) {
+            $this->validateDeclaration($consent);
+        }
         $company = $this->current->company() ?? throw new InvalidArgumentException('Aucune entreprise active.');
 
         if (! is_file($path) || filesize($path) > self::MAX_BYTES) {
@@ -64,7 +71,7 @@ class ContactImporter
             throw new InvalidArgumentException('Colonne du numéro de téléphone introuvable (attendu : telephone, phone, numero, tel, mobile…).');
         }
 
-        $stats = ['total' => 0, 'created' => 0, 'updated' => 0, 'invalid' => 0, 'duplicate' => 0];
+        $stats = ['total' => 0, 'created' => 0, 'updated' => 0, 'invalid' => 0, 'duplicate' => 0, 'consent' => 0, 'suppressed' => 0];
         $errors = [];
         $seen = [];
         $valid = [];
@@ -98,9 +105,9 @@ class ContactImporter
             $valid[] = ['phone' => $phone, 'name' => mb_substr($name, 0, 255) ?: null, 'email' => $email ?: null];
         }
 
-        return DB::transaction(function () use ($valid, $group, $originalName, $userId, $stats, $errors, $company) {
+        return DB::transaction(function () use ($valid, $group, $originalName, $userId, $stats, $errors, $company, $consent) {
             foreach (array_chunk($valid, self::BATCH) as $batch) {
-                $this->upsertBatch($batch, $company->id, $group, $stats);
+                $this->upsertBatch($batch, $company->id, $group, $stats, $consent);
             }
 
             return ContactImport::create([
@@ -112,12 +119,14 @@ class ContactImporter
                 'updated_count' => $stats['updated'],
                 'invalid_count' => $stats['invalid'],
                 'duplicate_count' => $stats['duplicate'],
+                'consent_count' => $stats['consent'],
+                'suppressed_count' => $stats['suppressed'],
                 'errors' => $errors ?: null,
             ]);
         });
     }
 
-    private function upsertBatch(array $batch, int $companyId, ?ContactGroup $group, array &$stats): void
+    private function upsertBatch(array $batch, int $companyId, ?ContactGroup $group, array &$stats, ?ConsentDeclaration $consent): void
     {
         $existing = Contact::whereIn('phone', array_column($batch, 'phone'))->get()->keyBy('phone');
 
@@ -139,8 +148,53 @@ class ContactImporter
         if ($new) {
             $stats['created'] += Contact::query()->insertOrIgnore($new);
         }
+        $contacts = Contact::whereIn('phone', array_column($batch, 'phone'))->get(['id', 'phone']);
         if ($group) {
-            $group->addContacts(Contact::whereIn('phone', array_column($batch, 'phone'))->pluck('id')->all());
+            $group->addContacts($contacts->pluck('id')->all());
+        }
+        if ($consent) {
+            $this->recordConsents($contacts, $companyId, $consent, $stats);
+        }
+    }
+
+    /** Crée un consentement pour les contacts du lot qui n'en ont pas de valide, sauf numéros désinscrits. */
+    private function recordConsents($contacts, int $companyId, ConsentDeclaration $consent, array &$stats): void
+    {
+        $suppressed = Suppression::active()->whereIn('phone', $contacts->pluck('phone'))->pluck('phone')->flip();
+        $already = Consent::active()->whereIn('contact_id', $contacts->pluck('id'))->pluck('contact_id')->flip();
+
+        $rows = [];
+        foreach ($contacts as $c) {
+            if ($suppressed->has($c->phone)) {
+                $stats['suppressed']++;
+
+                continue;
+            }
+            if ($already->has($c->id)) {
+                continue;
+            }
+            $rows[] = [
+                'company_id' => $companyId, 'contact_id' => $c->id, 'source' => $consent->source,
+                'evidence' => $consent->evidence, 'obtained_at' => $consent->obtainedAt, 'recorded_by' => $consent->userId,
+                'created_at' => now(), 'updated_at' => now(),
+            ];
+        }
+        if ($rows) {
+            DB::table('consents')->insert($rows);
+            $stats['consent'] += count($rows);
+        }
+    }
+
+    private function validateDeclaration(ConsentDeclaration $c): void
+    {
+        if (! array_key_exists($c->source, config('consent.sources'))) {
+            throw new InvalidArgumentException('Source de consentement inconnue.');
+        }
+        if (config('consent.require_evidence') && trim((string) $c->evidence) === '') {
+            throw new InvalidArgumentException('Une preuve de consentement est obligatoire.');
+        }
+        if ($c->obtainedAt->isFuture()) {
+            throw new InvalidArgumentException('La date de consentement ne peut pas être dans le futur.');
         }
     }
 

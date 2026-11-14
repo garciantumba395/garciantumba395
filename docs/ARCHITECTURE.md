@@ -59,12 +59,30 @@ contact_imports(id, company_id, user_id?, group?, filename, compteurs, errors[{l
 - `PhoneNormalizer` (libphonenumber) : normalise en E.164 selon le pays de l'entreprise, n'accepte que les mobiles.
 - `ContactImporter` : CSV (UTF-8/Windows-1252, `,` `;` tab), 5 Mo / 10 000 lignes max, idempotent (clé = numéro),
   fichier non conservé, rapport sans données personnelles. Synchrone pour l'instant (passage en file à l'étape 6 si les volumes l'exigent, D11).
-- Les contacts n'ont **aucun statut de consentement** avant l'étape 3 : ils ne sont pas ciblables.
+- Un import seul ne rend **jamais** un contact ciblable (voir étape 3).
+
+## Modèle de données (étape 3) — consentement et désinscription
+
+```
+consents(id, company_id, contact_id, source, evidence, obtained_at, recorded_by, revoked_at/by, revoke_reason)
+    FK composite (contact_id, company_id) ; ajout seul : une révocation renseigne revoked_at
+suppressions(id, company_id, phone E.164, source, reason, created_by, lifted_at/by, lift_reason)
+    UNIQUE partiel (company_id, phone) WHERE lifted_at IS NULL ; indexées par NUMÉRO
+```
+
+Règles :
+- **Ciblable = consentement valide (non révoqué, non expiré si configuré) ET numéro non désinscrit.** Définition unique :
+  `Contact::sendable()` (envois en masse) et `SendEligibility::for($contact)` (avant chaque envoi unitaire, lit toujours la base, sans cache).
+- La désinscription **prime** sur tout consentement, révoque les consentements existants et survit à la suppression/recréation du contact.
+- Lever une désinscription : owner/admin, motif obligatoire, historique conservé ; **les anciens consentements ne revivent pas** (nouveau consentement requis).
+- Enregistrer un consentement pour un numéro désinscrit est refusé tant que la désinscription n'est pas levée.
+- Import : consentement créé seulement si une déclaration (source, preuve, date) est fournie ; numéros désinscrits ignorés.
+- Suppression d'un contact : ses consentements sont supprimés avec lui (effacement) ; la désinscription (numéro seul) est conservée.
+- **L'étape 6 (envoi) DOIT appeler `SendEligibility::for()` juste avant chaque envoi** et ne jamais se fier à la liste figée à la création de la campagne.
 
 ## Cible (étapes suivantes)
 
 ```
-consents (preuve), suppressions (désinscriptions)
 campaigns, campaign_messages (UNIQUE campaign_id+contact_id)
 credit_ledger_entries (append-only, UNIQUE idempotency_key), credit_balances (cache)
 sms_provider_events (accusés de réception)
