@@ -17,6 +17,9 @@ return [
     // Limite technique de sécurité sur la longueur d'un message (pas une règle de tarification).
     'max_body_length' => 1600,
 
+    // File d'attente Redis dédiée aux envois (worker : php artisan queue:work --queue=sms).
+    'queue' => env('SMS_QUEUE', 'sms'),
+
     /*
      | Garde-fous anti-abus de l'envoi RÉEL (décision D12 : pas d'approbation manuelle, validation automatique après les envois).
      | Valeurs techniques par défaut, volontairement prudentes, À AJUSTER (volumes D11, fournisseur retenu). Ne s'appliquent

@@ -142,10 +142,35 @@ Les garde-fous ne s'appliquent **qu'aux envois réels** ; la simulation n'est ja
   les désinscriptions sont rapprochées des envois par numéro, à titre indicatif.
 - Le débit de crédits reste un second frein : l'administrateur ne crédite que les entreprises qu'il choisit.
 
+## Campagnes et file d'attente (étape 6)
+
+```
+campaigns(company_id, name, body, contact_group_id?, status, scheduled_at, recipient_count, excluded_count, pause_code/message, …)
+campaign_messages(company_id, campaign_id, contact_id, phone, sms_message_id?, attempt, processed_at, note)
+    UNIQUE(campaign_id, contact_id) ; FK composite (campaign_id, company_id)
+```
+
+```
+draft → scheduled → preparing → sending → completed        (paused ↔ sending ; tout état non terminal → cancelled)
+```
+
+- **Planification** : `campaigns:dispatch-due` toutes les minutes (planificateur : `php artisan schedule:work` ou cron) ; au lancement, démarrage immédiat si l'heure est atteinte.
+  Passage `scheduled → preparing` par compare-and-set : un seul acteur obtient la campagne.
+- **PrepareCampaign** (file `sms`, unique par campagne) : fige les destinataires **ciblables à cet instant** (`INSERT … ON CONFLICT DO NOTHING`), compte les exclus, met un job par destinataire en file.
+- **SendCampaignMessage** (un job par destinataire, 5 essais, délais croissants) : passe **toujours par `SmsDispatcher`** → consentement et désinscription revérifiés à l'envoi,
+  garde-fous D12, débit idempotent. Clé d'idempotence déterministe `campaign:{id}:contact:{id}` (+ `:r{n}` après un blocage temporaire).
+- **Blocages temporaires** (`insufficient_credits`, `daily_limit`, `suspended`, fournisseur non activé) : la campagne passe **en pause** (aucun destinataire perdu) ;
+  la reprise est manuelle, sauf `daily_limit` (reprise automatique le lendemain). Les tentatives bloquées restent au journal ; un seul débit par message réellement envoyé.
+- **Pause / annulation** : effet immédiat (les jobs en file ne font plus rien).
+- **Contexte d'entreprise dans les jobs** : fixé explicitement par `CurrentCompany::runAs()` puis **restauré** (file synchrone : un job imbriqué n'écrase pas le contexte de l'appelant).
+- **Chiffres des campagnes** : uniquement issus du journal des messages ; « délivré » dépend des accusés du fournisseur (aucun en simulation) ; badge « simulation » si des messages sont fictifs.
+- Rôles : tout membre crée/modifie un brouillon ; owner/admin lancent, pausent, reprennent, annulent.
+
+Exploitation : `php artisan queue:work redis --queue=sms` (plusieurs workers possibles) + `php artisan schedule:work`. Vérifié avec Redis réel et 4 workers en parallèle (voir le journal de l'étape).
+
 ## Cible (étapes suivantes)
 
 ```
-campaigns, campaign_messages (UNIQUE campaign_id+contact_id)
 ```
 
 ## Flux d'envoi cible

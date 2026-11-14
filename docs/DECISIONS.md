@@ -14,6 +14,7 @@ Rien ci-dessous n'est supposé : ces points conditionnent les étapes indiquées
 | D8 | ✅ **Pays et indicatif par entreprise** (défaut RDC `CD`, +243), numéros stockés en E.164 ; fuseau `Africa/Kinshasa` par défaut (`APP_TIMEZONE`). Devise d'affichage : en attente de D2 | formats | — |
 | D9 | Hébergement, sauvegardes, rétention des données | exploitation | Étape 9 |
 | D10 | Vérification e-mail obligatoire ? 2FA pour owners/admins ? | sécurité | Étape 9 |
+| D14 | Mention de désinscription dans les messages de campagne (ex. « STOP au … ») : dépend du cadre légal (D4) et des SMS entrants (D1) ; **non ajoutée automatiquement**. Ciblage par un seul groupe ou tous les contacts (plusieurs groupes : à voir) | conformité, UX | Étape 10 |
 | D11 | Volumes attendus (SMS/jour, contacts/entreprise) | dimensionnement | Étape 6 |
 | D12 | ✅ **Tranchée** : pas d'approbation manuelle avant l'envoi réel ; validation **automatique après les envois** (garde-fous choisis par moi, à ajuster : voir ARCHITECTURE « Garde-fous anti-abus »). Seuils par défaut (démarrage 100 envois réels/jour, échantillon 50, échecs ≤ 20 %, désinscriptions ≤ 5 %) : **valeurs techniques prudentes, à ajuster selon D11 et le fournisseur** | anti-abus | — |
 | D13 | Remboursement des crédits quand l'accusé de réception final est « échec » (après acceptation par le fournisseur) : non remboursé aujourd'hui | modèle économique | Étape 10 |

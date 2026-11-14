@@ -73,6 +73,23 @@ class CurrentCompany
         $this->forced = $company !== null;
     }
 
+    /**
+     * Exécute $fn dans le contexte d'une entreprise (jobs, console), puis RESTAURE exactement le contexte précédent.
+     * Indispensable : avec une file synchrone, un job imbriqué ne doit pas effacer le contexte de son appelant.
+     */
+    public function runAs(Company $company, callable $fn): mixed
+    {
+        $previous = get_object_vars($this);
+        $this->set($company);
+        try {
+            return $fn();
+        } finally {
+            foreach ($previous as $property => $value) {
+                $this->{$property} = $value;
+            }
+        }
+    }
+
     public function forget(): void
     {
         $this->company = null;

@@ -3,6 +3,7 @@
 namespace App\Domain\Credits;
 
 use App\Models\SmsRate;
+use Illuminate\Support\Collection;
 use libphonenumber\NumberParseException;
 use libphonenumber\PhoneNumberUtil;
 
@@ -15,16 +16,22 @@ class CostCalculator
 {
     public function __construct(private SegmentCalculator $segments) {}
 
-    public function forMessage(string $phoneE164, string $body): MessageCost
+    public function forMessage(string $phoneE164, string $body, ?Collection $activeRates = null): MessageCost
     {
         $a = $this->segments->analyze($body);
-        [$units, $label] = $this->rateFor($phoneE164);
+        [$units, $label] = $this->rateFor($phoneE164, $activeRates);
 
         return new MessageCost($a['encoding'], max(1, $a['segments']), $units, $label);
     }
 
+    /** Tarifs actifs, à précharger une fois pour une estimation en masse. */
+    public function loadRates(): Collection
+    {
+        return SmsRate::where('is_active', true)->get();
+    }
+
     /** @return array{0:int,1:?string} */
-    public function rateFor(string $phoneE164): array
+    public function rateFor(string $phoneE164, ?Collection $activeRates = null): array
     {
         $default = (int) config('credits.default_units_per_segment');
         $country = $this->countryOf($phoneE164);
@@ -33,7 +40,8 @@ class CostCalculator
         }
 
         $best = null;
-        foreach (SmsRate::where('country', $country)->where('is_active', true)->get() as $rate) {
+        $rates = $activeRates ? $activeRates->where('country', $country) : SmsRate::where('country', $country)->where('is_active', true)->get();
+        foreach ($rates as $rate) {
             if ($rate->prefix !== null && ! str_starts_with($phoneE164, $rate->prefix)) {
                 continue;
             }

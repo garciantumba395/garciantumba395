@@ -1,6 +1,6 @@
 # SMS Marketing SaaS (RDC) — socle
 
-Plateforme SaaS de marketing SMS multi-entreprises. **Étapes faites : 1 (authentification, entreprises, rôles, isolation), 2 (contacts, groupes, import CSV) et 3 (consentement, désinscription) 4 (fournisseur SMS fictif, journal des messages) et 5 (crédits, grand livre, tarifs).**
+Plateforme SaaS de marketing SMS multi-entreprises. **Étapes faites : 1 (authentification, entreprises, rôles, isolation), 2 (contacts, groupes, import CSV) et 3 (consentement, désinscription) 4 (fournisseur SMS fictif, journal des messages) 5 (crédits, grand livre, tarifs) et 6 (campagnes, envoi en file d'attente Redis).**
 Aucun SMS n'est envoyé par ce socle (aucun fournisseur SMS n'est encore intégré).
 
 - Architecture : [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
@@ -101,6 +101,17 @@ Paramètres (`config/consent.php`, variables `CONSENT_REQUIRE_EVIDENCE`, `CONSEN
 
 Un utilisateur non administrateur reçoit une erreur 403 sur `/admin/*`.
 
+## Vérifier l'étape 6 manuellement
+
+1. Démarrer les services : Redis et PostgreSQL, puis **deux processus** : `php artisan queue:work redis --queue=sms` (envois) et `php artisan schedule:work` (campagnes programmées).
+2. `/campagnes` → « Nouvelle campagne » : nom, message (compteur de segments en direct), groupe ou tous les contacts, date facultative → brouillon.
+3. Fiche campagne : estimation (destinataires ciblables, exclus, coût, solde). Owner/admin : « Lancer » → statut « Envoi en cours » puis « Terminée » (rafraîchissement automatique).
+4. Les contacts sans consentement ou désinscrits ne reçoivent rien ; une désinscription faite pendant la campagne bloque les messages restants.
+5. Solde insuffisant → campagne **en pause** avec message ; ajoutez des crédits (administration) puis « Reprendre » : seuls les destinataires restants sont envoyés, sans doublon.
+6. « Annuler » stoppe immédiatement. Résultats : chiffres réels du journal, marqués « simulation » tant que le fournisseur est fictif.
+
+Sans worker, les campagnes restent en « Préparation » : c'est normal (les jobs attendent dans la file Redis `sms`).
+
 ## Rôles
 
 | Rôle | Paramètres entreprise | Membres (lecture) |
@@ -121,7 +132,7 @@ et la création est refusée (fail-closed). Les jobs en file devront fixer expli
 
 ## Limites connues de l'étape 1
 
-- Pas de campagnes (étape 6), pas de rapports (étape 7), aucun fournisseur réel (étape 10) ; pas de paiement en ligne (les crédits sont ajoutés à la main) ; la désinscription par réponse « STOP » nécessitera les SMS entrants (fournisseur, étape 10) ; l'import est synchrone.
+- Pas encore de rapports exportables (étape 7), aucun fournisseur réel (étape 10) ; pas de paiement en ligne (les crédits sont ajoutés à la main) ; la désinscription par réponse « STOP » nécessitera les SMS entrants (fournisseur, étape 10) ; l'import est synchrone.
 - Pas d'invitation de membres ni de changement de rôle (étape ultérieure).
 - Pas de vérification d'e-mail ni de 2FA (décision D10).
 - Inscription ouverte (décision D5 tranchée ; anti-abus à reconsidérer à l'étape 9).
