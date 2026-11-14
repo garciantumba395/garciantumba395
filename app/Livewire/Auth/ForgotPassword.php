@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Auth;
 
+use App\Support\Security\Throttle;
 use Illuminate\Support\Facades\Password;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -18,6 +19,13 @@ class ForgotPassword extends Component
     public function sendLink(): void
     {
         $this->validate(['email' => ['required', 'email']]);
+
+        $key = request()->ip().'|'.strtolower($this->email);
+        if (! Throttle::attempt('password_forgot', $key)) {
+            $this->addError('email', Throttle::message('password_forgot', $key));
+
+            return;
+        }
 
         Password::sendResetLink(['email' => $this->email]);
 

@@ -138,7 +138,7 @@ Les garde-fous ne s'appliquent **qu'aux envois réels** ; la simulation n'est ja
   Indicateurs calculés sur les envois réels uniquement (envois bloqués et simulés exclus).
 - L'administrateur de la plateforme peut forcer un statut et une limite par entreprise (motif obligatoire) dans `/admin/entreprises`.
 - Messages bloqués (`daily_limit`, `suspended`) : aucun débit, aucun appel au fournisseur.
-- **Limites connues** : limite journalière « souple » (en concurrence, un léger dépassement est possible) ; une entreprise validée n'est pas réévaluée automatiquement (surveillance continue prévue à l'étape 9) ;
+- **Limites connues** : limite journalière « souple » (en concurrence, un léger dépassement est possible) ; une entreprise validée est réévaluée chaque jour par `sending:review` (étape 9, D43) ;
   les désinscriptions sont rapprochées des envois par numéro, à titre indicatif.
 - Le débit de crédits reste un second frein : l'administrateur ne crédite que les entreprises qu'il choisit.
 
@@ -167,6 +167,27 @@ draft → scheduled → preparing → sending → completed        (paused ↔ s
 - Rôles : tout membre crée/modifie un brouillon ; owner/admin lancent, pausent, reprennent, annulent.
 
 Exploitation : `php artisan queue:work redis --queue=sms` (plusieurs workers possibles) + `php artisan schedule:work`. Vérifié avec Redis réel et 4 workers en parallèle (voir le journal de l'étape).
+
+## Sécurité et exploitation (étape 9)
+
+**2FA TOTP** (`App\Support\Security\Totp`, `TwoFactor`). `Totp` implémente HOTP/TOTP (RFC 4226/6238, HMAC-SHA1, Base32) et est vérifié par les vecteurs officiels des RFC (SHA-1/256/512). Pas de bibliothèque ajoutée : ~100 lignes, entièrement testées, pas de dépendance supplémentaire à maintenir (D40).
+`users` reçoit `two_factor_secret` (cast `encrypted`), `two_factor_recovery_codes` (`encrypted:array` de HMAC-SHA256 ; jamais de code en clair en base), `two_factor_confirmed_at`, `two_factor_last_step`.
+- Activation : `beginSetup` crée un secret NON confirmé ; la 2FA n'est effective qu'après `confirm` avec un premier code valide (les codes de secours sont alors affichés une seule fois).
+- Anti-rejeu : un code n'est accepté que si son pas est strictement supérieur à `two_factor_last_step`, via `UPDATE … WHERE last_step < pas` (deux requêtes simultanées ne peuvent pas réussir toutes deux). Tolérance : ±1 pas (`SECURITY_TOTP_WINDOW`). Le code de confirmation est consommé.
+- Connexion : `Login` valide le mot de passe SANS ouvrir de session ; si la 2FA est active, seule une identité « en attente » (id, expiration 10 min) est mise en session et l'utilisateur est envoyé à `/connexion/verification` (`TwoFactorChallenge`). Échecs limités par utilisateur (`two_factor_challenge`). Sans 2FA, le flux historique est inchangé.
+- Obligation optionnelle : middleware `EnsureTwoFactorForAdmins` (groupe `auth`), appliqué aussi aux requêtes Livewire d'une page déjà ouverte via `Livewire::addPersistentMiddleware`.
+
+**Profil** `/profil` (`Livewire\Profile\Show`, sans entreprise requise) : changement de mot de passe (actuel exigé), « Déconnecter les autres appareils », gestion 2FA (mot de passe + code pour désactiver ou régénérer les codes). `AuthenticateSession` est actif globalement : changer le mot de passe (ou `Auth::logoutOtherDevices`) invalide les autres sessions.
+
+**Limitation de débit** (`Support\Security\Throttle`, `config/security.php > rate_limits`) : un limiteur nommé par usage, valeurs par variables d'environnement. Dépassement : erreur de formulaire, HTTP 429 pour les actions d'administration (`ThrottlesAdminActions`) et pour le plafond global `/livewire/update` (limiteur `livewire` par utilisateur ou IP, via `Livewire::setUpdateRoute`). Compteurs dans le cache : Redis en production.
+
+**En-têtes** (`Http\Middleware\SecurityHeaders`, middleware global) : voir D42. Pas de CSP `script-src` : Livewire 4 injecte des scripts en ligne et Alpine évalue des expressions (`unsafe-eval`) ; restreindre `script-src` casserait l'interface sans nonces ni build CSP d'Alpine. Par défaut une CSP « non-script » (`frame-ancestors`, `base-uri`, `form-action`, `object-src`) ; `SECURITY_CSP`/`SECURITY_CSP_REPORT_ONLY` permettent d'expérimenter une politique plus stricte en mode rapport.
+
+**`security:check`** : lecture seule (aucune requête SQL, aucun appel réseau), problèmes bloquants (clé absente, `APP_DEBUG`, cookie de session non sécurisé en HTTPS, `HttpOnly` désactivé, `SMS_SENDING_ENABLED` avec fournisseur fictif, mot de passe de base vide) et avertissements (`APP_ENV`, `APP_URL` non HTTPS, SQLite, `QUEUE_CONNECTION=sync`, etc.). Il n'affiche que des noms et des états, jamais de valeur.
+
+**Surveillance continue** : `SendingPolicy::reviewValidated()` (une méthode ajoutée) suspend une entreprise `validated` dont les envois RÉELS de la fenêtre glissante (sans remonter avant le dernier changement de statut) dépassent les seuils de D12 avec un échantillon minimal ; mise à jour conditionnelle (`WHERE sending_status = 'validated'`). Commande `sending:review` (03:00) ; `credits:verify` (03:30) journalise un échec en erreur, sans donnée. Les messages simulés sont exclus ; chaque entreprise est évaluée uniquement sur ses propres messages.
+
+Exploitation : `docs/OPERATIONS.md`.
 
 ## Cible (étapes suivantes)
 

@@ -6,6 +6,7 @@ use App\Livewire\Auth\ForgotPassword;
 use App\Livewire\Auth\Login;
 use App\Livewire\Auth\Register;
 use App\Livewire\Auth\ResetPassword;
+use App\Livewire\Auth\TwoFactorChallenge;
 use App\Livewire\Campaigns\Form as CampaignForm;
 use App\Livewire\Campaigns\Index as CampaignIndex;
 use App\Livewire\Campaigns\Show as CampaignShow;
@@ -20,6 +21,7 @@ use App\Livewire\Credits\Index as CreditIndex;
 use App\Livewire\Dashboard;
 use App\Livewire\Groups\Index as GroupIndex;
 use App\Livewire\Messages\Index as MessageIndex;
+use App\Livewire\Profile\Show as ProfileShow;
 use App\Livewire\Suppressions\Index as SuppressionIndex;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -31,9 +33,11 @@ Route::middleware('guest')->group(function () {
     Route::get('/inscription', Register::class)->name('register');
     Route::get('/mot-de-passe-oublie', ForgotPassword::class)->name('password.request');
     Route::get('/reinitialiser-mot-de-passe/{token}', ResetPassword::class)->name('password.reset');
+    Route::get('/connexion/verification', TwoFactorChallenge::class)->name('two-factor.challenge'); // étape 9
 });
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'two_factor.admins'])->group(function () {
+    Route::get('/profil', ProfileShow::class)->name('profile'); // étape 9
     Route::post('/deconnexion', function () {
         Auth::logout();
         request()->session()->invalidate();

@@ -21,6 +21,7 @@
                 @if (auth()->user()?->is_platform_admin)<a href="{{ route('admin.companies') }}" class="font-medium text-amber-700 hover:underline">Administration</a>@endif
                 <a href="{{ route('companies.members') }}" class="hover:underline">Membres</a>
                 <a href="{{ route('companies.settings') }}" class="hover:underline">Paramètres</a>
+                <a href="{{ route('profile') }}" class="hover:underline">Profil</a>
                 <livewire:companies.switcher />
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
