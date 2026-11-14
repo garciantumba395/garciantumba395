@@ -1,0 +1,53 @@
+# Environnement de RECETTE sur votre machine : docker compose -f docker-compose.demo.yml up --build
+# Application : http://localhost:8000   |   E-mails reçus (vérification, mot de passe) : http://localhost:8025
+# Mot de passe des comptes démo (affiché une seule fois) : docker compose -f docker-compose.demo.yml logs web
+# Fournisseur SMS SIMULÉ : aucun SMS réel, aucune clé, aucun service payant. Mots de passe ci-dessous = valeurs locales jetables.
+x-app: &app
+  build: { context: ., dockerfile: docker/demo/Dockerfile }
+  environment: &env
+    APP_NAME: Solisend
+    APP_ENV: local
+    APP_DEBUG: "false"
+    APP_KEY: base64:ZGVtby1vbmx5LWtleS1kby1ub3QtdXNlLWluLXByb2Q=
+    APP_URL: http://localhost:8000
+    APP_TIMEZONE: Africa/Kinshasa
+    DB_CONNECTION: pgsql
+    DB_HOST: db
+    DB_DATABASE: solisend
+    DB_USERNAME: solisend
+    DB_PASSWORD: demo-local-only
+    REDIS_HOST: redis
+    SESSION_DRIVER: redis
+    CACHE_STORE: redis
+    QUEUE_CONNECTION: redis
+    MAIL_MAILER: smtp
+    MAIL_HOST: mailpit
+    MAIL_PORT: "1025"
+    SMS_PROVIDER: fake
+    SMS_SENDING_ENABLED: "false"
+    # Mettre à true pour tester le parcours réel (e-mail vérifié par lien, 2FA obligatoire pour les administrateurs).
+    SECURITY_REQUIRE_EMAIL_VERIFICATION: "false"
+    SECURITY_REQUIRE_2FA_FOR_ADMINS: "false"
+  depends_on: [db, redis]
+services:
+  web:
+    <<: *app
+    command: ["web"]
+    ports: ["8000:8000"]
+  worker:
+    <<: *app
+    command: ["worker"]
+  scheduler:
+    <<: *app
+    command: ["scheduler"]
+  db:
+    image: postgres:16
+    environment: { POSTGRES_DB: solisend, POSTGRES_USER: solisend, POSTGRES_PASSWORD: demo-local-only }
+    volumes: [dbdata:/var/lib/postgresql/data]
+  redis:
+    image: redis:7
+  mailpit:
+    image: axllent/mailpit
+    ports: ["8025:8025"]
+volumes:
+  dbdata:
