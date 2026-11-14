@@ -25,6 +25,16 @@ class User extends Authenticatable
         return $this->two_factor_secret !== null && $this->two_factor_confirmed_at !== null;
     }
 
+    /**
+     * Page d'accueil après connexion : un administrateur de plateforme SANS entreprise (l'opérateur) arrive dans l'administration ;
+     * tous les autres sur le tableau de bord (qui propose de créer une entreprise si besoin).
+     * Ne donne aucun accès supplémentaire : seule la destination change.
+     */
+    public function homeRoute(): string
+    {
+        return $this->is_platform_admin && ! $this->companies()->exists() ? 'admin.dashboard' : 'dashboard';
+    }
+
     public function companies(): BelongsToMany
     {
         return $this->belongsToMany(Company::class)->withPivot('role')->withTimestamps();

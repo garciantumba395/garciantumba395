@@ -56,6 +56,17 @@ vendor/bin/pint --test            # style de code
 4. Créer un 2ᵉ compte avec une autre entreprise : il ne voit jamais les membres de la première (`/entreprise/membres`).
 5. Mot de passe oublié : avec `MAIL_MAILER=log`, le lien est écrit dans `storage/logs/laravel.log`.
 
+## Données de démonstration (vérifier l'interface sans rien saisir)
+
+```bash
+php artisan db:seed --class=DemoSeeder      # refuse de tourner en production
+```
+
+Crée 4 comptes **fictifs** (administrateur de plateforme, propriétaire, membre, autre entreprise), une entreprise « Boutique Démo » (12 contacts fictifs
++243 81 0000xxx, groupes, consentements, une désinscription, 100 crédits) et une campagne en brouillon. Le mot de passe de ces comptes est **généré au hasard
+et affiché une seule fois** dans la console ; rien n'est écrit dans le dépôt. Ensuite : `php artisan serve` (et `QUEUE_CONNECTION=sync` pour voir une
+campagne se terminer sans worker). N'utilisez jamais ce jeu de données en production.
+
 ## Vérifier l'étape 2 manuellement
 
 1. `/entreprise/parametres` : vérifier « Pays et indicatif » (RDC +243 par défaut).

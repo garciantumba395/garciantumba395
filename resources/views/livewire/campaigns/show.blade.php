@@ -3,7 +3,7 @@
         <a href="{{ route('campaigns.index') }}" class="text-sm underline">← Campagnes</a>
         <h2 class="mt-1 text-xl font-semibold">{{ $campaign->name }}</h2>
         <p class="mt-1"><span class="rounded bg-slate-100 px-2 py-1 text-sm font-medium">{{ $campaign->status->label() }}</span>
-            @if ($campaign->scheduled_at) <span class="ml-2 text-sm text-slate-600">programmée le {{ $campaign->scheduled_at->timezone(config('app.timezone'))->format('d/m/Y H:i') }}</span>@endif</p>
+            @if ($campaign->started_at) <span class="ml-2 text-sm text-slate-600">lancée le {{ $campaign->started_at->timezone(config('app.timezone'))->format('d/m/Y H:i') }}</span>@elseif ($campaign->scheduled_at) <span class="ml-2 text-sm text-slate-600">programmée le {{ $campaign->scheduled_at->timezone(config('app.timezone'))->format('d/m/Y H:i') }}</span>@endif</p>
     </div>
 
     @if ($live)

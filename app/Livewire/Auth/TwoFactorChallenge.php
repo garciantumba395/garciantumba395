@@ -54,7 +54,7 @@ class TwoFactorChallenge extends Component
         Auth::login($user, (bool) ($pending['remember'] ?? false));
         session()->regenerate();
 
-        return $this->redirectIntended(route('dashboard'), navigate: false);
+        return $this->redirectIntended(route($user->homeRoute()), navigate: false);
     }
 
     /** L'utilisateur en attente, ou null (aucun défi, expiré, compte sans 2FA). */

@@ -15,13 +15,13 @@
     </div>
     <div class="overflow-x-auto rounded bg-white shadow">
         <table class="min-w-full text-left text-sm">
-            <thead class="border-b bg-slate-100"><tr><th class="px-3 py-2">Nom</th><th class="px-3 py-2">Téléphone</th><th class="px-3 py-2">E-mail</th><th class="px-3 py-2">Statut</th><th class="px-3 py-2"></th></tr></thead>
+            <thead class="border-b bg-slate-100"><tr><th class="px-3 py-2">Nom</th><th class="px-3 py-2">Téléphone</th><th class="hidden px-3 py-2 sm:table-cell">E-mail</th><th class="px-3 py-2">Statut</th><th class="px-3 py-2"></th></tr></thead>
             <tbody>
             @forelse ($contacts as $c)
                 <tr class="border-b last:border-0" wire:key="c{{ $c->id }}">
                     <td class="px-3 py-2"><a class="underline" href="{{ route('contacts.show', $c->id) }}">{{ $c->name ?: 'Sans nom' }}</a></td>
                     <td class="px-3 py-2 font-mono">{{ $c->phone }}</td>
-                    <td class="px-3 py-2">{{ $c->email ?: '—' }}</td>
+                    <td class="hidden px-3 py-2 sm:table-cell">{{ $c->email ?: '—' }}</td>
                     <td class="px-3 py-2">@if ($c->is_suppressed)<span class="rounded bg-red-100 px-2 py-0.5 text-red-800">Désinscrit</span>@elseif ($c->has_consent)<span class="rounded bg-green-100 px-2 py-0.5 text-green-800">Consentement</span>@else<span class="rounded bg-slate-100 px-2 py-0.5 text-slate-700">Sans consentement</span>@endif</td>
                     <td class="whitespace-nowrap px-3 py-2 text-right">
                         <a href="{{ route('contacts.edit', $c->id) }}" class="underline">Modifier</a>

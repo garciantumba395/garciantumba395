@@ -63,7 +63,7 @@ class Login extends Component
         Auth::login($user, $this->remember);
         session()->regenerate();
 
-        return $this->redirectIntended(route('dashboard'), navigate: false);
+        return $this->redirectIntended(route($user->homeRoute()), navigate: false);
     }
 
     public function render()

@@ -21,7 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // Étape 8 : compte désactivé = déconnexion (toutes les requêtes web, Livewire compris).
         $middleware->web(append: [EnsureAccountActive::class]);
         $middleware->redirectGuestsTo(fn () => route('login'));
-        $middleware->redirectUsersTo(fn () => route('dashboard'));
+        $middleware->redirectUsersTo(fn () => route(auth()->user()?->homeRoute() ?? 'dashboard'));
         // --- Étape 9 ---
         $middleware->append(SecurityHeaders::class);
         $middleware->authenticateSessions(); // invalide les sessions des autres appareils après changement de mot de passe
