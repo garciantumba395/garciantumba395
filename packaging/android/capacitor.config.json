@@ -1,0 +1,6 @@
+{
+  "appId": "com.example.smsmarketing",
+  "appName": "SMS Marketing",
+  "webDir": "www",
+  "server": { "url": "https://sms.example.invalid", "cleartext": false, "allowNavigation": ["sms.example.invalid"] }
+}

@@ -1,0 +1,23 @@
+{
+  "name": "sms-marketing-desktop",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Application de bureau (coquille Electron) pour SMS Marketing",
+  "main": "main.js",
+  "author": "SMS Marketing",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win nsis portable --x64"
+  },
+  "devDependencies": {
+    "electron": "33.2.1",
+    "electron-builder": "25.1.8"
+  },
+  "build": {
+    "appId": "com.example.smsmarketing",
+    "productName": "SMS Marketing",
+    "files": ["main.js", "app-config.json", "preload.js"],
+    "win": { "target": ["nsis", "portable"] },
+    "nsis": { "oneClick": false, "allowToChangeInstallationDirectory": true }
+  }
+}

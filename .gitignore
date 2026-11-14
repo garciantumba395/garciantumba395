@@ -29,3 +29,6 @@ Thumbs.db
 # Sauvegardes locales de Redis (ne jamais versionner)
 *.rdb
 dump.rdb
+/packaging/*/node_modules
+/packaging/android/android
+/packaging/windows/dist
