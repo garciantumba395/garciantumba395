@@ -378,6 +378,21 @@ class ReportServiceTest extends TestCase
         $this->assertSame(1, $this->svc->summary($this->a->id, $this->f('2026-11-10', '2026-11-10', 'real', 70))->total);
     }
 
+    public function test_cross_company_ledger_references_are_ignored_defence_in_depth(): void
+    {
+        // Données anormales (aucune clé étrangère sur sms_message_id) : une écriture de B pointant vers un message de A,
+        // et une écriture de A pointant vers un message de B qui porte une clé de campagne.
+        $mine = $this->msg($this->a, ['created_at' => '2026-11-10 10:00:00']);
+        $theirs = $this->msg($this->b, ['idempotency_key' => 'campaign:5:contact:1', 'created_at' => '2026-11-10 10:00:00']);
+        $this->ledger($this->b, 'debit', -777000, false, '2026-11-10 10:00:00', $mine);
+        $this->ledger($this->a, 'debit', -5000, false, '2026-11-10 10:00:00', $theirs);
+        $f = $this->f('2026-11-10', '2026-11-10');
+
+        $row = $this->svc->exportQuery($this->a->id, $f)->first();
+        $this->assertSame(0, (int) $row->net_units, 'le coût net ignore le grand livre d\'une autre entreprise');
+        $this->assertSame(0, $this->svc->summary($this->a->id, $this->f('2026-11-10', '2026-11-10', 'real', 5))->debitedUnits, 'le filtre campagne du grand livre ne suit pas un message d\'une autre entreprise');
+    }
+
     // --- Validation des filtres -----------------------------------------------------
 
     public function test_filters_validation(): void
