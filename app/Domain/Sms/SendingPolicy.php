@@ -2,9 +2,11 @@
 
 namespace App\Domain\Sms;
 
+use App\Domain\Audit\AuditLogger;
 use App\Models\Company;
 use App\Models\SmsMessage;
 use App\Models\Suppression;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -65,7 +67,7 @@ class SendingPolicy
         if (trim($reason) === '') {
             throw new \InvalidArgumentException('Un motif est obligatoire.');
         }
-        $this->transition($company, $status, $reason);
+        $this->transition($company, $status, $reason, manual: true);
     }
 
     /** @return array{sample:int, failure_rate:float, optout_rate:float} indicateurs calculés sur les envois RÉELS uniquement. */
@@ -100,13 +102,19 @@ class SendingPolicy
             ->count();
     }
 
-    private function transition(Company $company, SendingStatus $status, string $reason): void
+    /** $manual = false : transition automatique, acteur « système » dans le journal d'audit. */
+    private function transition(Company $company, SendingStatus $status, string $reason, bool $manual = false): void
     {
+        $from = $company->sending_status;
         // Mise à jour conditionnelle : deux évaluations concurrentes ne se contredisent pas.
         DB::table('companies')->where('id', $company->id)->update([
             'sending_status' => $status->value,
             'sending_status_changed_at' => now(),
             'sending_status_reason' => mb_substr($reason, 0, 255),
+        ]);
+
+        app(AuditLogger::class)->recordAs($manual ? Auth::id() : null, $manual ? 'sending.status_changed' : 'sending.status_auto_changed', $company, $company, [
+            'from' => $from->value, 'to' => $status->value, 'reason' => $reason,
         ]);
     }
 }
