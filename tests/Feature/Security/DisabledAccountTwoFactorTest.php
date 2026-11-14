@@ -60,11 +60,22 @@ class DisabledAccountTwoFactorTest extends TestCase
             ->call('login')->assertRedirect(route('two-factor.challenge'));
         $this->assertGuest();
 
-        $this->disable(); // l'administrateur désactive le compte pendant la fenêtre du défi
+        // L'écran de défi est ouvert, puis l'administrateur désactive le compte pendant la fenêtre du défi.
+        $challenge = Livewire::test(TwoFactorChallenge::class);
+        $this->disable();
 
         $code = Totp::at($this->user->fresh()->two_factor_secret, now()->timestamp);
-        Livewire::test(TwoFactorChallenge::class)->set('code', $code)->call('verify')->assertRedirect(route('login'));
+        $challenge->set('code', $code)->call('verify')->assertRedirect(route('login'));
 
+        $this->assertGuest();
+    }
+
+    public function test_challenge_page_itself_redirects_when_the_account_was_disabled(): void
+    {
+        Livewire::test(Login::class)->set('email', $this->user->email)->set('password', 'mot-de-passe-solide-1')->call('login');
+        $this->disable();
+
+        $this->get(route('two-factor.challenge'))->assertRedirect(route('login'));
         $this->assertGuest();
     }
 
