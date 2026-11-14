@@ -1,6 +1,6 @@
 {
-  "appId": "com.example.smsmarketing",
-  "appName": "SMS Marketing",
+  "appId": "com.example.solisend",
+  "appName": "Solisend",
   "webDir": "www",
   "server": { "url": "https://sms.example.invalid", "cleartext": false, "allowNavigation": ["sms.example.invalid"] }
 }

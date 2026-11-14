@@ -1,4 +1,8 @@
-# SMS Marketing SaaS (RDC) — socle
+# Solisend — plateforme de campagnes SMS pour les entreprises (RDC)
+
+*« Vos messages, plus proches de vos clients. »*
+
+Socle technique :
 
 Plateforme SaaS de marketing SMS multi-entreprises (cible initiale : RDC). **Étapes faites** : 1 authentification, entreprises, rôles, isolation ; 2 contacts, groupes, import CSV ; 3 consentement et désinscription ; 4 fournisseur SMS fictif et journal des messages ; 5 crédits, grand livre, tarifs ; 6 campagnes et file d'attente Redis ; 7 rapports d'envoi ; 8 administration et journal d'audit ; 9 durcissement, sécurité, exploitation ; 10 préparatoire (webhooks, désinscription par « STOP », réconciliation) — l'adaptateur d'un fournisseur réel attend la décision D1.
 **Aucun SMS réel ne peut partir** : seul un fournisseur fictif existe, et un fournisseur réel serait refusé tant que `SMS_SENDING_ENABLED=true` n'est pas posé explicitement (voir `docs/SECURITY.md`).
