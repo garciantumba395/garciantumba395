@@ -80,12 +80,31 @@ Règles :
 - Suppression d'un contact : ses consentements sont supprimés avec lui (effacement) ; la désinscription (numéro seul) est conservée.
 - **L'étape 6 (envoi) DOIT appeler `SendEligibility::for()` juste avant chaque envoi** et ne jamais se fier à la liste figée à la création de la campagne.
 
+## Envoi SMS (étape 4)
+
+```
+SmsProvider (interface)  ←  FakeSmsProvider (défaut, aucun réseau)  |  futur fournisseur réel (SmsManager::extend)
+SmsManager  : résout le fournisseur ; un fournisseur « live » n'est JAMAIS instancié sans SMS_SENDING_ENABLED=true
+SmsDispatcher::dispatch(contact, texte, clé d'idempotence) : seul point d'envoi
+sms_messages : journal (UNIQUE company_id + idempotency_key), simulated=true tant que le fournisseur n'est pas réel
+```
+
+Garanties du répartiteur, dans l'ordre :
+1. verrou d'activation (rien n'est écrit ni envoyé si un fournisseur réel n'est pas activé) ;
+2. insertion idempotente (`INSERT … ON CONFLICT DO NOTHING`) : une clé = un seul message ;
+3. **revérification du consentement et de la désinscription** (`SendEligibility`) → statut `blocked` sinon ;
+4. prise en charge atomique `pending → sending` (un seul worker) ;
+5. appel au fournisseur : refus définitif → `failed` ; erreur de transport → `unknown` (**jamais renvoyé automatiquement**, à réconcilier) ;
+6. accusés de réception (`recordDeliveryReport`) : ne font jamais reculer un statut.
+
+À l'étape 5, le débit de crédits s'insérera avant l'étape 5 ci-dessus, avec la même clé d'idempotence.
+Les messages `simulated = true` ne doivent **jamais** être comptés comme des envois réels dans les rapports (étape 7).
+
 ## Cible (étapes suivantes)
 
 ```
 campaigns, campaign_messages (UNIQUE campaign_id+contact_id)
 credit_ledger_entries (append-only, UNIQUE idempotency_key), credit_balances (cache)
-sms_provider_events (accusés de réception)
 ```
 
 ## Flux d'envoi cible

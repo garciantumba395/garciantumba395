@@ -13,6 +13,7 @@ use App\Livewire\Contacts\Index as ContactIndex;
 use App\Livewire\Contacts\Show as ContactShow;
 use App\Livewire\Dashboard;
 use App\Livewire\Groups\Index as GroupIndex;
+use App\Livewire\Messages\Index as MessageIndex;
 use App\Livewire\Suppressions\Index as SuppressionIndex;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -48,6 +49,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/contacts/{contact}/modifier', ContactForm::class)->whereNumber('contact')->name('contacts.edit');
         Route::get('/contacts/{contact}', ContactShow::class)->whereNumber('contact')->name('contacts.show');
         Route::get('/desinscriptions', SuppressionIndex::class)->name('suppressions.index');
+        Route::get('/messages', MessageIndex::class)->name('messages.index');
         Route::get('/groupes', GroupIndex::class)->name('groups.index');
     });
 });

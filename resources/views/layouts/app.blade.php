@@ -15,6 +15,7 @@
                 <a href="{{ route('contacts.index') }}" class="hover:underline">Contacts</a>
                 <a href="{{ route('groups.index') }}" class="hover:underline">Groupes</a>
                 <a href="{{ route('suppressions.index') }}" class="hover:underline">Désinscriptions</a>
+                <a href="{{ route('messages.index') }}" class="hover:underline">Messages</a>
                 <a href="{{ route('companies.members') }}" class="hover:underline">Membres</a>
                 <a href="{{ route('companies.settings') }}" class="hover:underline">Paramètres</a>
                 <livewire:companies.switcher />

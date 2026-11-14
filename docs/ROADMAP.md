@@ -5,7 +5,7 @@
 | **1 (faite)** | Socle : auth, entreprises, rôles, isolation (trait + tests), doc | `php artisan test` vert ; inscription → entreprise créée |
 | **2 (faite)** | Contacts, groupes, import CSV (validation E.164, doublons, rapport d'import) | import idempotent ; tests d'isolation |
 | **3 (faite)** | Consentement (preuve : source, date, texte, IP/utilisateur) + désinscriptions ; décision RLS | impossible d'ajouter un contact ciblable sans statut de consentement |
-| 4 | Interface `SmsProvider` + `FakeSmsProvider` + journal de messages | aucun appel réseau ; activation explicite testée |
+| **4 (faite)** | Interface `SmsProvider` + `FakeSmsProvider` + journal de messages | aucun appel réseau ; activation explicite testée |
 | 5 | Grand livre de crédits (ajout manuel par admin, débit idempotent) | pas de solde négatif ; double débit impossible |
 | 6 | Campagnes + envoi en file Redis (Horizon optionnel) | rejeu d'un job sans double envoi/débit |
 | 7 | Rapports d'envoi (chiffres issus uniquement des données réelles) | export CSV ; aucun chiffre fictif |
