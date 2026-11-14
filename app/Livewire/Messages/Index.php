@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Messages;
 
+use App\Domain\Legal\MessageComposer;
 use App\Domain\Sms\SmsDispatcher;
 use App\Domain\Sms\SmsManager;
 use App\Domain\Sms\SmsSendingDisabledException;
@@ -47,7 +48,7 @@ class Index extends Component
         $this->resetPage();
     }
 
-    public function sendTest(SmsDispatcher $dispatcher, CurrentCompany $current): void
+    public function sendTest(SmsDispatcher $dispatcher, CurrentCompany $current, MessageComposer $composer, SmsManager $manager): void
     {
         abort_unless($current->role()?->canManageCompany(), 403);
         if (! Throttle::attempt('test_send', Auth::id())) {
@@ -59,8 +60,15 @@ class Index extends Component
 
         $contact = Contact::findOrFail($this->contactId); // scopé : 404 hors entreprise
 
+        $company = $current->company();
+        if (config('legal.enforce') && $manager->isLiveMode() && ! $company->hasCompleteLegalIdentity()) {
+            $this->addError('body', 'Identité légale de l\'expéditeur incomplète (art. 66) : complétez-la dans Paramètres avant tout envoi réel.');
+
+            return;
+        }
+
         try {
-            $message = $dispatcher->dispatch($contact, $this->body, 'test:'.$this->attemptKey, null, Auth::id());
+            $message = $dispatcher->dispatch($contact, $composer->compose($this->body, $contact, $company), 'test:'.$this->attemptKey, null, Auth::id());
         } catch (SmsSendingDisabledException|InvalidArgumentException $e) {
             $this->addError('body', $e->getMessage());
 

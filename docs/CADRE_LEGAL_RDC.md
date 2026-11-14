@@ -1,55 +1,55 @@
-# Cadre légal RDC — état des vérifications (décision D4)
+# Cadre légal RDC — ce qui est établi et ce qui est appliqué (décision D4)
 
-> **Ce document n'est pas un avis juridique.** Le propriétaire du produit a demandé d'appliquer le cadre légal de la RDC (D4). Aucune règle n'est
-> encodée dans le produit tant qu'elle n'a pas été **lue dans le texte officiel** : les recherches ci-dessous n'ont donné que le cadre général, et
-> les pages juridiques n'ont pas pu être ouvertes (hôtes bloqués par la politique réseau de la session de développement, le 2026-11-14).
+> **Ce document n'est pas un avis juridique.** Il rapporte ce que le texte lu dit et comment le produit en tient compte. À faire valider par un
+> juriste congolais avant mise en production. Texte lu le 2026-11-14 : **Ordonnance-loi n° 23/010 du 13 mars 2023 portant Code du numérique**
+> (publiée au Journal officiel le 11 avril 2023, en vigueur depuis le 13 mars 2023), via le PDF de 170 pages publié par Droit-Numérique.cd
+> (`droitnumerique.cd/wp-content/uploads/2025/01/Code-du-numerique-I-RD-Congo.pdf`). **Ce PDF est une reproduction non officielle : vérifier chaque
+> article au Journal officiel.** La loi n° 20/017 du 25 novembre 2020 (télécommunications) n'a pas été lue : elle reste à examiner (chevauchements signalés).
 
-## 1. Ce que les recherches indiquent (résultats de recherche, **non relus à la source**)
+## 1. Règles applicables à la prospection par SMS (texte lu, citations abrégées)
 
-| Élément | Indication | Statut |
+| Art. | Ce que dit le texte | Application dans le produit |
 |---|---|---|
-| Code du numérique | Ordonnance-loi n° 23/010 du 13 mars 2023, publiée au Journal officiel le 11 avril 2023 ; la protection des données personnelles y figure (un titre dédié) | à relire dans le texte |
-| Loi sur les télécommunications | Loi n° 20/017 du 25 novembre 2020 ; les articles 126 à 133 traiteraient de la vie privée et des données personnelles dans les télécommunications/TIC | à relire dans le texte |
-| Consentement | Présenté comme **central** dans le dispositif de protection des données (source universitaire) ; conditions exactes non vérifiées | à relire dans le texte |
-| Autorité | Fonctions de l'autorité de protection des données confiées **provisoirement** à l'ARPTIC (décision ministérielle du 17 août 2024), en attendant l'autorité dédiée | à confirmer |
-| Textes d'application | Un rapport de consultation note l'**absence de nombreuses mesures d'application** de la loi 20/017 et des **chevauchements** avec le Code du numérique | à confirmer |
+| **2** | « Prospection directe : envoi de message destiné à promouvoir, directement ou indirectement, des biens, des services ou l'image d'une personne vendant des biens ou fournissant des services » ; « Consentement : manifestation de volonté expresse et non équivoque » | Toute campagne est traitée comme de la prospection directe |
+| **66** | Toute publicité par communications électroniques « doit être clairement identifiée comme telle dès sa réception » ; elle « rend clairement identifiable son expéditeur » (nom, adresse géographique, coordonnées **y compris adresse courrier électronique**, « éventuellement » RCCM, numéro d'impôt, acte autorisant l'activité) ; à défaut, mention « **publicité** » claire, lisible, apparente | Pied de message automatique : mention « Publicité » + nom de l'expéditeur ; page publique du lien de désabonnement qui affiche l'**identité complète** ; identité légale **obligatoire** avant tout envoi réel |
+| **68** | « Est interdite la prospection directe [...] de SMS [...] utilisant les données à caractère personnel d'un utilisateur qui n'a pas préalablement exprimé son consentement » ; « L'absence de réponse ne peut pas être considérée comme un consentement » ; « La charge de la preuve du consentement [...] incombe à la personne [...] à l'origine de la prospection » | Déjà en place : consentement préalable **avec preuve** (source, date, texte), revérifié à chaque envoi ; jamais de consentement implicite |
+| **69** | Exception sans consentement préalable pour une **personne physique** si les coordonnées ont été recueillies lors d'une vente ou prestation, pour des produits **analogues** du même fournisseur, avec possibilité de s'opposer sans frais à chaque message ; personnes morales : coordonnées **impersonnelles** | **Non utilisée** : le produit exige toujours un consentement (choix plus strict). À rediscuter avec un juriste |
+| **70** | Toute personne peut notifier sans frais ni justification qu'elle ne veut plus de prospection ; le fournisseur doit **(1) accuser réception sans délai, (2) agir dans un délai raisonnable, (3) tenir à jour la liste** des personnes opposées | Liste de désinscription par numéro (déjà) ; **lien public de désabonnement** avec accusé de réception affiché immédiatement. Accusé **par SMS** : non fait (nécessite un fournisseur réel, voir §3) |
+| **71** | Exceptions interprétées plus strictement pour enfants, personnes âgées, malades, vulnérables | Pas de contrôle automatisable ; rappel dans l'aide au consentement |
+| **72** | Interdit d'émettre des SMS de prospection « sans indiquer les moyens et les coordonnées valables auxquels le destinataire transmet une demande tendant à obtenir **sans frais**, que ces communications cessent » ; interdit de **dissimuler l'identité** (identité d'un tiers, informations falsifiées, objet sans rapport, incitation à visiter des sites tiers) | Pied de message avec **lien de désabonnement gratuit** ; l'expéditeur affiché est toujours l'entreprise réelle (aucun expéditeur libre) |
+| **196** | Le responsable doit **pouvoir démontrer** le consentement ; demande de consentement **distincte** des autres questions, claire et simple ; **retrait à tout moment « à travers le même moyen utilisé pour le donner »** | Preuve conservée ; retrait par lien web (et par « STOP » avec un fournisseur) |
+| **213** | Droit de s'opposer gratuitement ; une fois l'opposition admise, le responsable « n'utilise ni ne traite plus » les données | Suppression effective **immédiatement** et prioritaire sur tout consentement |
+| **220** | À la collecte : identité et coordonnées du responsable, finalités, catégories, destinataires, droit de ne plus figurer au fichier, droit d'opposition gratuit… | Aide à la saisie de la preuve de consentement (contenu à conserver) |
+| **348** | « Tout message électronique non sollicité envoyé sur la base de la collecte de données à caractère personnel doit contenir **un lien** pouvant permettre au bénéficiaire de se désabonner. » Amende de **500 000 à 2 000 000 FC** | **Lien de désabonnement dans chaque message** (pied automatique, non désactivable en production) |
+| **350** | Transfert de données sans information préalable ou malgré l'opposition : 6 mois à 2 ans de servitude pénale et 2 à 5 millions FC | Aucun transfert à des tiers par le produit ; opposition appliquée immédiatement |
 
-Sources consultées (à ouvrir directement) : [Code du numérique 2023 (PDF, leganet.cd)](https://www.leganet.cd/Doctrine.textes/DroitPenal/Code.numerique.2023.pdf) ·
-[Data Protection in the DRC (DLA Piper)](https://www.dlapiperdataprotection.com/?c=CD&t=law) · [Droit-Numérique.cd](https://droitnumerique.cd) ·
-[ungovr.org — RDC](https://law.ungovr.org/ai/cd).
+## 2. Formalités et obligations **hors code** (à traiter par le propriétaire du produit)
 
-## 2. Ce qui n'est PAS établi (à ne pas supposer)
+- **Art. 186** : le traitement de données personnelles est soumis à une **déclaration préalable** auprès de l'Autorité de protection des données (APD), qui délivre un récépissé.
+- **Art. 187, point 3** : **autorisation préalable** de l'APD pour « le traitement portant sur un numéro national d'identification ou tout autre identifiant de même nature, **notamment les numéros de téléphone** ». Une plateforme de SMS marketing traite des numéros de téléphone : **à examiner d'urgence avec un juriste**.
+- **Art. 189, point 4** : dispense de déclaration préalable lorsque le responsable a désigné un **délégué à la protection des données** (sauf transfert vers un pays tiers) : option à discuter ; ne dispense pas d'une éventuelle autorisation de l'art. 187.
+- **Autorité** : les articles 262 à 270 créent l'APD ; elle n'est pas encore constituée, ses missions sont attribuées **provisoirement à l'ARPTIC** (arrêté ministériel du 17 août 2024) ; plusieurs décrets d'application restent à prendre.
+- **Qui est responsable de traitement** : le client de la plateforme (qui collecte le consentement) ou la plateforme ? Conditionne les contrats et la politique de confidentialité (art. 220 : information des personnes).
+- **Art. 193, point 3** : conservation « pendant une durée n'excédant pas celle nécessaire à la réalisation des finalités » : le texte **ne fixe pas de durée chiffrée** ; à définir (décision D9). Attention : la charge de la preuve du consentement (art. 68) plaide pour conserver les preuves tant qu'un litige est possible.
 
-Aucune source lue n'a confirmé les points suivants, qui conditionnent le produit :
+## 3. Ce qui n'est PAS dans le texte lu (donc non encodé)
 
-1. Les conditions exactes du **consentement** pour un SMS promotionnel (préalable ? écrit ? preuve ? forme ?).
-2. Le droit d'**opposition / désabonnement** : délai, gratuité, mention obligatoire dans chaque message.
-3. Une **plage horaire** d'envoi autorisée pour la prospection.
-4. La **durée de conservation** des preuves de consentement et des données de contact.
-5. L'obligation d'**identifier l'expéditeur** (nom, sender ID) et d'éventuelles **formalités préalables** (déclaration à l'autorité, enregistrement du sender ID auprès des opérateurs).
-6. Les **sanctions** et la responsabilité du prestataire (la plateforme) vis-à-vis de ses clients.
-7. Les règles propres aux **opérateurs** (Airtel, Vodacom, Orange, Africell…) pour les SMS en masse.
+- **Aucune plage horaire** d'envoi : le mot « horaire » n'apparaît pas dans le Code du numérique. Aucune restriction horaire n'est appliquée (un réglage commercial reste possible).
+- **Durée de conservation chiffrée** : non fixée (voir §2).
+- **Enregistrement du sender ID auprès des opérateurs** et règles propres aux opérateurs/ARPTIC pour les SMS en masse : à vérifier (décision D3), hors du Code du numérique.
+- **Loi n° 20/017** (télécommunications, art. 126 à 133 sur la vie privée) : non lue.
+- **Accusé de désinscription par SMS** (art. 70-1) : un accusé est affiché sur la page web ; l'envoi d'un SMS d'accusé exige un fournisseur réel et une règle particulière (il s'adresse à un numéro désinscrit) : à concevoir avec D1.
 
-## 3. Ce que le produit fait déjà (indépendamment du texte exact)
+## 4. Ce que le produit applique (code)
 
-- Consentement **enregistré avec preuve** (source, date, texte), révocable ; aucun envoi sans consentement valide ; **revérifié à chaque envoi**.
-- **Désinscription** prioritaire, liée au numéro, effective immédiatement ; « STOP » entrant traité (fournisseur réel requis).
-- Paramètres déjà **configurables** (`config/consent.php`) : preuve obligatoire, durée de validité d'un consentement.
-- Journal d'audit, export et effacement des données d'un contact possibles techniquement (suppression d'un contact = suppression de ses consentements).
+1. **Pied de message légal automatique** sur chaque campagne : `Publicité - {nom de l'expéditeur}. Désabonnement : {lien}` (art. 66, 72, 348). Inclus dans le calcul des segments et des coûts (il consomme des caractères : un message de 100 caractères passe souvent à 2 segments).
+2. **Lien public de désabonnement** court (`/d/{code}`), sans compte : la page affiche l'identité de l'expéditeur (art. 66), demande une **confirmation** (un simple chargement de la page ne désinscrit jamais : les robots de prévisualisation des messageries ouvrent les liens), enregistre la désinscription **immédiatement** et accuse réception (art. 70, 213). Limitation de débit, codes aléatoires non devinables.
+3. **Identité légale de l'expéditeur** (nom, adresse, e-mail ; RCCM, numéro d'impôt, acte : facultatifs « éventuellement ») : obligatoire pour tout **envoi réel** ; la simulation n'est pas concernée. Campagne mise en pause avec un message clair si incomplète.
+4. **Consentement et preuve** (art. 68, 196) : inchangés ; aide à la saisie de la preuve.
+5. `LEGAL_ENFORCE` (défaut `true`) : `security:check` signale comme **bloquant** un déploiement en production où le pied légal est désactivé.
 
-## 4. Pour appliquer le cadre légal sans rien inventer
+## 5. Limites et à valider par un juriste
 
-Deux options, au choix du propriétaire :
-
-- **A. Autoriser la lecture des textes** : ajouter `www.leganet.cd`, `droitnumerique.cd` et `www.dlapiperdataprotection.com` aux hôtes autorisés de l'environnement
-  de développement (accès en lecture seule). Je relis alors les articles, **cite chaque règle avec son numéro d'article**, et n'encode que ce qui est écrit.
-- **B. Fournir les règles** : le propriétaire ou son conseil juridique transmet les articles/avis applicables (texte ou références précises).
-
-Dans les deux cas, la mise en œuvre prévue (une fois les règles connues) est de la **configuration, pas du code spéculatif** :
-plage horaire d'envoi (pause automatique des campagnes hors plage), mention de désinscription ajoutée aux messages, durées de conservation et purge,
-champs obligatoires de preuve de consentement. Chaque règle sera accompagnée de sa référence légale dans `config/` et dans les tests.
-
-## 4bis. Questions à poser au conseil juridique local / à l'ARPTC
-
-Voir la liste du § 2 ; ajouter : *« Un consentement obtenu par un formulaire papier ou oral enregistré est-il admis ? »*, *« Le sender ID doit-il être déclaré ? »*,
-*« Qui est responsable du traitement : le client de la plateforme ou la plateforme ? »* (conditionne les clauses contractuelles et la politique de confidentialité).
+- Le pied de message est une **interprétation minimale** des art. 66, 72 et 348 pour un SMS (espace restreint) : mention « Publicité », nom, lien ; les autres éléments d'identité (adresse, e-mail, RCCM…) sont publiés sur la page du lien. À confirmer.
+- Le texte lu est une **reproduction non officielle** ; les numéros d'articles et leur contenu sont à vérifier au Journal officiel.
+- Les **montants d'amende** cités (art. 348, 350) sont ceux du texte lu, en francs congolais.

@@ -49,6 +49,8 @@ class CampaignFlowTest extends TestCase
         $this->ua = User::factory()->create();
         $this->a = Company::createFor($this->ua, 'A');
         $this->b = Company::createFor(User::factory()->create(), 'B');
+        // Art. 66 : l'envoi RÉEL exige l'identité de l'expéditeur (la simulation non).
+        $this->a->update(['legal_name' => 'A SARL', 'legal_address' => '1 avenue de test, Kinshasa', 'legal_email' => 'contact@a.example.test']);
         $this->credits = app(CreditService::class);
         $this->credits->credit($this->a, 6000000, 'seed:a'); // 1000 crédits
         $this->credits->credit($this->b, 6000000, 'seed:b');

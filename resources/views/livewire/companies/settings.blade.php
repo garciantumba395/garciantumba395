@@ -16,5 +16,6 @@
         </div>
         <button type="submit" class="w-full rounded bg-slate-900 px-4 py-2 font-medium text-white hover:bg-slate-700">Enregistrer</button>
     </form>
-    <p class="mt-6 text-sm"><a href="{{ route('companies.create') }}" class="underline">Créer une autre entreprise</a></p>
+    <p class="mt-6 text-sm"><a href="{{ route('companies.legal') }}" class="underline">Identité légale de l'expéditeur</a> <span class="text-slate-500">(obligatoire pour les envois réels)</span></p>
+    <p class="mt-2 text-sm"><a href="{{ route('companies.create') }}" class="underline">Créer une autre entreprise</a></p>
 </div>

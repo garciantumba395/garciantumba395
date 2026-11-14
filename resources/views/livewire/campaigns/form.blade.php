@@ -9,6 +9,9 @@
         <div>
             <label for="body" class="text-sm font-medium">Message</label>
             <textarea id="body" wire:model.live.debounce.300ms="body" rows="5" required class="mt-1 w-full rounded border border-slate-300 px-3 py-2"></textarea>
+            @if ($enforce)
+                <p class="mt-1 text-xs text-slate-600">Un <strong>pied légal</strong> de {{ $footerLength }} caractères (« Publicité - {{ $companyName ?? 'expéditeur' }}. Désabonnement : lien ») est ajouté automatiquement à chaque message (art. 66, 72 et 348 du Code du numérique) et compte dans les segments ci-dessous.</p>
+            @endif
             <p class="mt-1 text-xs text-slate-500">{{ $analysis['length'] }} caractères · {{ $analysis['segments'] }} segment(s) ({{ $analysis['encoding'] === 'gsm7' ? 'GSM-7' : 'Unicode : un caractère comme « ç », « â » ou un emoji réduit la taille d\'un segment à 70' }})</p>
             @error('body') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
         </div>

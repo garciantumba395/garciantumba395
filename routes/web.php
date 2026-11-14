@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\VerifyEmailController;
 use App\Http\Controllers\ReportExportController;
+use App\Http\Controllers\UnsubscribeController;
 use App\Http\Controllers\Webhooks\SmsWebhookController;
 use App\Livewire\Admin\AuditLogs as AdminAuditLogs;
 use App\Livewire\Admin\Companies as AdminCompanies;
@@ -19,6 +20,7 @@ use App\Livewire\Campaigns\Form as CampaignForm;
 use App\Livewire\Campaigns\Index as CampaignIndex;
 use App\Livewire\Campaigns\Show as CampaignShow;
 use App\Livewire\Companies\Create as CompanyCreate;
+use App\Livewire\Companies\LegalIdentity as CompanyLegalIdentity;
 use App\Livewire\Companies\Members;
 use App\Livewire\Companies\Settings as CompanySettings;
 use App\Livewire\Contacts\Form as ContactForm;
@@ -86,6 +88,7 @@ Route::middleware(['auth', 'verified.required', 'two_factor.admins'])->group(fun
         Route::get('/tableau-de-bord', Dashboard::class)->name('dashboard');
         Route::get('/entreprise/parametres', CompanySettings::class)->name('companies.settings');
         Route::get('/entreprise/membres', Members::class)->name('companies.members');
+        Route::get('/entreprise/identite-legale', CompanyLegalIdentity::class)->name('companies.legal');
         Route::get('/contacts', ContactIndex::class)->name('contacts.index');
         Route::get('/contacts/nouveau', ContactForm::class)->name('contacts.create');
         Route::get('/contacts/importer', ContactImport::class)->name('contacts.import');
@@ -105,6 +108,10 @@ Route::middleware(['auth', 'verified.required', 'two_factor.admins'])->group(fun
         // --- fin étape 7 ---
     });
 });
+
+// --- Conformité légale RDC (D4) : page PUBLIQUE de désabonnement (art. 70, 72, 348 du Code du numérique). Aucun compte requis. ---
+Route::get('/d/{code}', [UnsubscribeController::class, 'show'])->where('code', '[A-Za-z0-9]{6,32}')->middleware('throttle:unsubscribe')->name('unsubscribe.show');
+Route::post('/d/{code}', [UnsubscribeController::class, 'confirm'])->where('code', '[A-Za-z0-9]{6,32}')->middleware('throttle:unsubscribe')->name('unsubscribe.confirm');
 
 // --- Étape 10 (préparatoire) : webhooks des fournisseurs SMS (agent D) ---
 // Hors session et hors CSRF (appelés par un serveur tiers) : l'authentification est la signature HMAC, vérifiée dans le contrôleur.

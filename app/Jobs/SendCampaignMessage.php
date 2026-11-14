@@ -3,7 +3,9 @@
 namespace App\Jobs;
 
 use App\Domain\Campaigns\CampaignService;
+use App\Domain\Legal\MessageComposer;
 use App\Domain\Sms\SmsDispatcher;
+use App\Domain\Sms\SmsManager;
 use App\Domain\Sms\SmsSendingDisabledException;
 use App\Domain\Sms\SmsStatus;
 use App\Domain\Sms\UnknownSmsProviderException;
@@ -39,7 +41,7 @@ class SendCampaignMessage implements ShouldQueue
         return [10, 60, 300, 900];
     }
 
-    public function handle(SmsDispatcher $dispatcher, CurrentCompany $current, CampaignService $service): void
+    public function handle(SmsDispatcher $dispatcher, CurrentCompany $current, CampaignService $service, MessageComposer $composer, SmsManager $manager): void
     {
         $cm = CampaignMessage::withoutGlobalScopes()->find($this->campaignMessageId);
         if (! $cm || $cm->processed_at !== null) {
@@ -50,15 +52,24 @@ class SendCampaignMessage implements ShouldQueue
             return; // en pause, annulée ou terminée : on n'envoie plus rien
         }
 
-        $release = $current->runAs(Company::findOrFail($cm->company_id), fn () => $this->process($cm, $campaign, $dispatcher, $service));
+        $release = $current->runAs(Company::findOrFail($cm->company_id), fn () => $this->process($cm, $campaign, $dispatcher, $service, $composer, $manager));
         if ($release) {
             $this->release(30); // un autre worker traite ce message : on revérifiera plus tard
         }
     }
 
     /** @return bool true si le job doit être remis en file */
-    private function process(CampaignMessage $cm, Campaign $campaign, SmsDispatcher $dispatcher, CampaignService $service): bool
+    private function process(CampaignMessage $cm, Campaign $campaign, SmsDispatcher $dispatcher, CampaignService $service, MessageComposer $composer, SmsManager $manager): bool
     {
+        $company = Company::findOrFail($cm->company_id);
+
+        // Art. 66 du Code du numérique : un envoi RÉEL de publicité exige l'identité de l'expéditeur. La simulation n'est pas concernée.
+        if (config('legal.enforce') && $manager->isLiveMode() && ! $company->hasCompleteLegalIdentity()) {
+            $service->pause($campaign, 'legal_identity_incomplete', 'Identité légale de l\'expéditeur incomplète (art. 66) : complétez-la dans Paramètres, puis reprenez la campagne.');
+
+            return false;
+        }
+
         $contact = Contact::find($cm->contact_id); // requête scopée par l'entreprise du message
         if (! $contact) {
             $cm->update(['processed_at' => now(), 'note' => 'contact_deleted']);
@@ -70,7 +81,7 @@ class SendCampaignMessage implements ShouldQueue
         $key = "campaign:{$campaign->id}:contact:{$contact->id}".($cm->attempt > 0 ? ":r{$cm->attempt}" : '');
 
         try {
-            $message = $dispatcher->dispatch($contact, $campaign->body, $key, null, $campaign->created_by);
+            $message = $dispatcher->dispatch($contact, $composer->compose($campaign->body, $contact, $company), $key, null, $campaign->created_by);
         } catch (SmsSendingDisabledException|UnknownSmsProviderException $e) {
             // Rien n'a été écrit ni envoyé : on met la campagne en pause, aucun destinataire n'est perdu.
             $service->pause($campaign, 'provider_unavailable', $e->getMessage());

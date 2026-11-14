@@ -4,8 +4,10 @@ namespace App\Livewire\Campaigns;
 
 use App\Domain\Campaigns\CampaignStatus;
 use App\Domain\Credits\SegmentCalculator;
+use App\Domain\Legal\MessageComposer;
 use App\Models\Campaign;
 use App\Models\ContactGroup;
+use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
@@ -79,11 +81,16 @@ class Form extends Component
         return $this->redirectRoute('campaigns.show', $campaign->id, navigate: false);
     }
 
-    public function render(SegmentCalculator $segments)
+    public function render(SegmentCalculator $segments, MessageComposer $composer, CurrentCompany $current)
     {
+        $company = $current->company();
+
         return view('livewire.campaigns.form', [
             'groups' => ContactGroup::orderBy('name')->get(),
-            'analysis' => $segments->analyze($this->body),
+            'analysis' => $segments->analyze($composer->composeForEstimate($this->body, $company)),
+            'footerLength' => $composer->footerLength($company),
+            'enforce' => (bool) config('legal.enforce'),
+            'companyName' => $company->senderName(),
         ]);
     }
 }

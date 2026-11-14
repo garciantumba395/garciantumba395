@@ -35,6 +35,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         // Étape 10 préparatoire : limitation de débit des webhooks (par IP et fournisseur).
+        RateLimiter::for('unsubscribe', fn (Request $request) => Limit::perMinute((int) config('legal.unsubscribe.rate_limit_per_minute'))->by('unsub|'.$request->ip()));
         RateLimiter::for('sms-webhooks', fn (Request $request) => Limit::perMinute((int) config('sms.webhooks.rate_limit_per_minute'))
             ->by($request->ip().'|'.$request->route('provider')));
         // --- Étape 9 : limitation de débit globale des requêtes Livewire (valeurs : config/security.php) ---
