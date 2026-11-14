@@ -10,6 +10,7 @@ WORKDIR /app
 COPY . /app
 RUN composer install --no-interaction --prefer-dist --no-dev --optimize-autoloader \
  && npm install --no-audit --no-fund && npm run build && rm -rf node_modules
-RUN chmod +x docker/demo/entrypoint.sh
+# Robuste sous Windows : retire d'éventuelles fins de ligne CRLF du script, puis le lance avec bash.
+RUN sed -i 's/\r$//' docker/demo/entrypoint.sh
 EXPOSE 8000
-ENTRYPOINT ["docker/demo/entrypoint.sh"]
+ENTRYPOINT ["bash", "docker/demo/entrypoint.sh"]
