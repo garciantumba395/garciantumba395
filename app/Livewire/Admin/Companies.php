@@ -5,6 +5,8 @@ namespace App\Livewire\Admin;
 use App\Domain\Credits\CreditService;
 use App\Domain\Credits\CreditUnits;
 use App\Domain\Credits\InsufficientCreditsException;
+use App\Domain\Sms\SendingPolicy;
+use App\Domain\Sms\SendingStatus;
 use App\Models\Company;
 use App\Models\CreditLedgerEntry;
 use Illuminate\Support\Facades\Auth;
@@ -26,6 +28,12 @@ class Companies extends Component
     public string $amount = '';
 
     public string $reason = '';
+
+    public string $sendingStatus = 'probation';
+
+    public string $sendingReason = '';
+
+    public string $dailyLimit = '';
 
     /** Clé d'idempotence de la tentative en cours : un double clic n'ajoute les crédits qu'une fois. */
     #[Locked]
@@ -65,6 +73,33 @@ class Companies extends Component
         $this->attemptKey = (string) Str::uuid();
         $this->reset('amount', 'reason');
         session()->flash('status', 'Opération enregistrée.');
+    }
+
+    public function updatedCompanyId(): void
+    {
+        $company = $this->companyId ? Company::find($this->companyId) : null;
+        $this->sendingStatus = $company?->sending_status->value ?? 'probation';
+        $this->dailyLimit = (string) ($company?->daily_send_limit ?? '');
+        $this->sendingReason = '';
+    }
+
+    /** Statut d'envoi réel et surcharge de la limite journalière (motif obligatoire, administrateur uniquement). */
+    public function updateSending(SendingPolicy $policy): void
+    {
+        $this->authorizeAdmin();
+        $this->validate([
+            'companyId' => ['required', 'integer', 'exists:companies,id'],
+            'sendingStatus' => ['required', 'in:probation,validated,suspended'],
+            'sendingReason' => ['required', 'string', 'max:255'],
+            'dailyLimit' => ['nullable', 'integer', 'min:0', 'max:10000000'],
+        ]);
+
+        $company = Company::findOrFail($this->companyId);
+        $policy->setStatus($company, SendingStatus::from($this->sendingStatus), $this->sendingReason);
+        $company->forceFill(['daily_send_limit' => $this->dailyLimit === '' ? null : (int) $this->dailyLimit])->save();
+
+        $this->reset('sendingReason');
+        session()->flash('status', 'Statut d\'envoi mis à jour.');
     }
 
     public function render()

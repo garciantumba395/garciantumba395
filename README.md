@@ -95,7 +95,9 @@ Paramètres (`config/consent.php`, variables `CONSENT_REQUIRE_EVIDENCE`, `CONSEN
 3. Connecté comme l'entreprise : `/credits` affiche 100,00 crédits (≈ 120 SMS) et l'historique ; le tableau de bord affiche le solde.
 4. `/messages` : envoi de test → 1 segment = 0,83 crédit débité (marqué « simulation ») ; avec un solde insuffisant → « Bloqué (crédits insuffisants) », rien n'est envoyé.
 5. `/admin/tarifs` : ajouter un tarif pays ou préfixe (saisi en « SMS pour 100 crédits ») ; il s'applique aux envois suivants.
-6. `php artisan credits:verify` → « OK : tous les soldes correspondent au grand livre ».
+6. Garde-fous d'envoi réel (D12) : visibles uniquement en mode réel ; en simulation rien n'est limité. `/admin/entreprises` : statut d'envoi de chaque entreprise
+   (Démarrage / Validée / Suspendue), limite journalière modifiable avec motif. Seuils dans `config/sms.php` (`sending`).
+7. `php artisan credits:verify` → « OK : tous les soldes correspondent au grand livre ».
 
 Un utilisateur non administrateur reçoit une erreur 403 sur `/admin/*`.
 

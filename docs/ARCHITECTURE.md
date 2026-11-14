@@ -123,6 +123,25 @@ sms_messages += segments, encoding, cost_units
 - `php artisan credits:verify` : contrôle en lecture seule solde = somme du grand livre.
 - Administration plateforme (`is_platform_admin`) : `/admin/entreprises` (ajout/retrait avec motif obligatoire, double clic sans effet), `/admin/tarifs`.
 
+## Garde-fous anti-abus de l'envoi réel (D12)
+
+Pas d'approbation manuelle : chaque entreprise démarre en `probation`, puis est **validée ou suspendue automatiquement d'après ses envois réels**.
+Les garde-fous ne s'appliquent **qu'aux envois réels** ; la simulation n'est jamais limitée et ne valide jamais une entreprise.
+
+| Statut | Effet |
+|---|---|
+| `probation` (défaut) | limite journalière réduite (`SMS_PROBATION_DAILY_LIMIT`, 100) ; évaluation à chaque envoi réel |
+| `validated` | plafond journalier configurable (`SMS_VALIDATED_DAILY_LIMIT`, aucun par défaut) |
+| `suspended` | aucun envoi réel (statut `blocked`, motif `suspended`) ; la simulation reste possible |
+
+- Évaluation (`SendingPolicy::evaluate`) dès que `min_sample` (50) envois réels sont atteints : taux d'échec > 20 % ou désinscriptions/envois > 5 % → **suspension automatique** ; sinon → **validation automatique**.
+  Indicateurs calculés sur les envois réels uniquement (envois bloqués et simulés exclus).
+- L'administrateur de la plateforme peut forcer un statut et une limite par entreprise (motif obligatoire) dans `/admin/entreprises`.
+- Messages bloqués (`daily_limit`, `suspended`) : aucun débit, aucun appel au fournisseur.
+- **Limites connues** : limite journalière « souple » (en concurrence, un léger dépassement est possible) ; une entreprise validée n'est pas réévaluée automatiquement (surveillance continue prévue à l'étape 9) ;
+  les désinscriptions sont rapprochées des envois par numéro, à titre indicatif.
+- Le débit de crédits reste un second frein : l'administrateur ne crédite que les entreprises qu'il choisit.
+
 ## Cible (étapes suivantes)
 
 ```

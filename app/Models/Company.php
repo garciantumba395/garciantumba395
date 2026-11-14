@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Domain\Sms\SendingStatus;
 use App\Enums\CompanyRole;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -14,13 +15,14 @@ class Company extends Model
     use HasFactory;
 
     protected $fillable = ['name', 'slug', 'country', 'is_active'];
+    // sending_status, daily_send_limit : jamais assignables en masse (SendingPolicy / administration uniquement).
 
     // Même défaut que la migration, pour les instances non rechargées.
-    protected $attributes = ['country' => 'CD', 'is_active' => true];
+    protected $attributes = ['country' => 'CD', 'is_active' => true, 'sending_status' => 'probation'];
 
     protected function casts(): array
     {
-        return ['is_active' => 'boolean'];
+        return ['is_active' => 'boolean', 'sending_status' => SendingStatus::class, 'sending_status_changed_at' => 'datetime'];
     }
 
     public function users(): BelongsToMany

@@ -11,6 +11,9 @@ class CountingLiveProvider implements SmsProvider
 {
     public int $calls = 0;
 
+    /** @var array<int,string> numéros refusés définitivement */
+    public array $rejectNumbers = [];
+
     public function name(): string
     {
         return 'live-test';
@@ -24,6 +27,10 @@ class CountingLiveProvider implements SmsProvider
     public function send(SmsRequest $request): SmsResult
     {
         $this->calls++;
+
+        if (in_array($request->to, $this->rejectNumbers, true)) {
+            return SmsResult::rejected('LIVE_REJECTED', 'Refusé (test).');
+        }
 
         return SmsResult::accepted('live-'.$this->calls);
     }

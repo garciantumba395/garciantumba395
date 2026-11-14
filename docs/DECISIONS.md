@@ -15,5 +15,5 @@ Rien ci-dessous n'est supposé : ces points conditionnent les étapes indiquées
 | D9 | Hébergement, sauvegardes, rétention des données | exploitation | Étape 9 |
 | D10 | Vérification e-mail obligatoire ? 2FA pour owners/admins ? | sécurité | Étape 9 |
 | D11 | Volumes attendus (SMS/jour, contacts/entreprise) | dimensionnement | Étape 6 |
-| D12 | Activation de l'envoi réel par entreprise. Réponse reçue : « la validation se fera automatiquement après l'envoi » — **formulation à préciser** (voir question en suspens). Tant que ce n'est pas précisé, seul l'interrupteur global `SMS_SENDING_ENABLED` existe | anti-abus, conformité | Étape 8 |
+| D12 | ✅ **Tranchée** : pas d'approbation manuelle avant l'envoi réel ; validation **automatique après les envois** (garde-fous choisis par moi, à ajuster : voir ARCHITECTURE « Garde-fous anti-abus »). Seuils par défaut (démarrage 100 envois réels/jour, échantillon 50, échecs ≤ 20 %, désinscriptions ≤ 5 %) : **valeurs techniques prudentes, à ajuster selon D11 et le fournisseur** | anti-abus | — |
 | D13 | Remboursement des crédits quand l'accusé de réception final est « échec » (après acceptation par le fournisseur) : non remboursé aujourd'hui | modèle économique | Étape 10 |

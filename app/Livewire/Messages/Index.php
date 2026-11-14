@@ -78,6 +78,8 @@ class Index extends Component
             'contacts' => Contact::orderBy('name')->orderBy('id')->limit(200)->get(),
             'statuses' => SmsStatus::cases(),
             'live' => $manager->isLiveMode(),
+            'sendingStatus' => $current->company()->fresh()->sending_status,
+            'sendingReason' => $current->company()->fresh()->sending_status_reason,
             'canTest' => (bool) $current->role()?->canManageCompany(),
         ]);
     }

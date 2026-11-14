@@ -3,6 +3,11 @@
 
     @if ($live)
         <div class="rounded border border-red-300 bg-red-50 p-3 text-sm font-medium text-red-900" role="alert">ENVOI RÉEL ACTIVÉ : les messages sont envoyés à de vraies personnes.</div>
+        @if ($sendingStatus === \App\Domain\Sms\SendingStatus::Suspended)
+            <div class="rounded border border-red-300 bg-red-50 p-3 text-sm text-red-900" role="alert">Envoi réel suspendu pour votre entreprise. {{ $sendingReason }} Contactez l'administrateur de la plateforme.</div>
+        @elseif ($sendingStatus === \App\Domain\Sms\SendingStatus::Probation)
+            <div class="rounded border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900" role="status">Période de démarrage : le nombre d'envois réels par jour est limité. Votre entreprise sera validée automatiquement après des envois réels sans anomalie.</div>
+        @endif
     @else
         <div class="rounded border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900" role="status">
             <strong>Mode simulation</strong> : aucun SMS réel n'est envoyé. Les messages ci-dessous sont des simulations, ils ne comptent pas comme des envois réels.
@@ -48,7 +53,7 @@
                     <td class="px-3 py-2 font-mono">{{ $m->phone }}</td>
                     <td class="max-w-xs truncate px-3 py-2" title="{{ $m->body }}">{{ $m->body }}</td>
                     <td class="px-3 py-2">{{ $m->segments ?? '—' }}</td>
-                    <td class="px-3 py-2">{{ $m->status->label() }}@if ($m->blocked_reason) <span class="text-slate-500">({{ ['suppressed' => 'désinscrit', 'no_consent' => 'sans consentement', 'insufficient_credits' => 'crédits insuffisants'][$m->blocked_reason] ?? $m->blocked_reason }})</span>@endif
+                    <td class="px-3 py-2">{{ $m->status->label() }}@if ($m->blocked_reason) <span class="text-slate-500">({{ ['suppressed' => 'désinscrit', 'no_consent' => 'sans consentement', 'insufficient_credits' => 'crédits insuffisants', 'daily_limit' => 'limite journalière atteinte', 'suspended' => 'envoi suspendu'][$m->blocked_reason] ?? $m->blocked_reason }})</span>@endif
                         @if ($m->error_message)<div class="text-xs text-red-700">{{ $m->error_message }}</div>@endif</td>
                     <td class="px-3 py-2">@if ($m->simulated)<span class="rounded bg-amber-100 px-2 py-0.5 text-amber-900">Simulation</span>@else<span class="rounded bg-red-100 px-2 py-0.5 text-red-900">Réel</span>@endif</td>
                 </tr>

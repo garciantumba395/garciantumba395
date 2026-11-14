@@ -20,6 +20,7 @@ use Throwable;
  *  1. fournisseur résolu d'abord : verrou d'activation (rien n'est créé ni envoyé si un fournisseur réel n'est pas activé) ;
  *  2. consentement + désinscription revérifiés au moment de l'envoi (SendEligibility) ;
  *  3. idempotence : une clé d'idempotence = au plus UN envoi (contrainte UNIQUE en base + prise en charge atomique) ;
+ *  3bis. envoi RÉEL seulement : garde-fous anti-abus (SendingPolicy : suspension, limite journalière) ;
  *  4. débit des crédits AVANT l'appel au fournisseur (clé « sms:{id} », donc jamais deux fois) ; solde insuffisant = aucun envoi ;
  *  5. refus définitif du fournisseur = remboursement (une seule fois) ; une erreur de transport laisse le statut « unknown »,
  *     SANS remboursement et SANS renvoi automatique (le message a peut-être été envoyé : réconciliation manuelle).
@@ -32,6 +33,7 @@ class SmsDispatcher
         private CurrentCompany $current,
         private CreditService $credits,
         private CostCalculator $costs,
+        private SendingPolicy $policy,
     ) {}
 
     public function dispatch(Contact $contact, string $body, string $idempotencyKey, ?string $senderId = null, ?int $userId = null): SmsMessage
@@ -80,6 +82,13 @@ class SmsDispatcher
             return $message;
         }
 
+        // Garde-fous anti-abus : uniquement pour un fournisseur réel (la simulation n'est jamais limitée).
+        if ($provider->isLive() && ($reason = $this->policy->blockReason($companyId, $message->id))) {
+            $message->update(['status' => SmsStatus::Blocked, 'blocked_reason' => $reason]);
+
+            return $message;
+        }
+
         // Prise en charge atomique : un seul appelant peut passer de pending à sending.
         $claimed = SmsMessage::whereKey($message->id)->where('status', SmsStatus::Pending->value)
             ->update(['status' => SmsStatus::Sending->value, 'attempts' => DB::raw('attempts + 1'), 'sending_at' => now()]);
@@ -102,6 +111,7 @@ class SmsDispatcher
             // 4. Résultat inconnu : le message a pu partir. Pas de renvoi automatique.
             $message->update(['status' => SmsStatus::Unknown, 'error_code' => 'TRANSPORT_ERROR', 'error_message' => mb_substr($e->getMessage(), 0, 500)]);
             report($e);
+            $this->evaluateIfLive($provider, $companyId);
 
             return $message;
         }
@@ -114,7 +124,16 @@ class SmsDispatcher
             $message->update(['status' => SmsStatus::Failed, 'error_code' => $result->errorCode, 'error_message' => mb_substr((string) $result->errorMessage, 0, 500)]);
         }
 
+        $this->evaluateIfLive($provider, $companyId);
+
         return $message;
+    }
+
+    private function evaluateIfLive(SmsProvider $provider, int $companyId): void
+    {
+        if ($provider->isLive()) {
+            $this->policy->evaluate($companyId); // D12 : validation / suspension automatiques après les envois réels
+        }
     }
 
     /**
