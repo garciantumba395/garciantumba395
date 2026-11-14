@@ -4,11 +4,11 @@ name: Build Solisend Recette (Windows)
 on:
   workflow_dispatch:
   push:
-    branches: ['claude/**']
+    branches: ['claude/**', main]
     paths: ['packaging/desktop-local/**', '.github/workflows/build-desktop-recette.yml']
 
 permissions:
-  contents: read
+  contents: write   # uniquement pour publier la release « recette-windows » de ce dépôt
 
 jobs:
   windows-recette:
@@ -66,3 +66,14 @@ jobs:
           path: |
             packaging/desktop-local/dist/*.exe
             packaging/desktop-local/dist/SHA256.txt
+      - name: Publier / mettre à jour la release « recette-windows » (téléchargement depuis le dépôt)
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd packaging/desktop-local/dist
+          gh release delete recette-windows --yes --cleanup-tag --repo "$GITHUB_REPOSITORY" || true
+          gh release create recette-windows --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease \
+            --title "Solisend Recette (Windows)" \
+            --notes "Version de RECETTE autonome : PHP et base SQLite embarqués, données fictives, SMS simulés (aucun envoi réel). Installateur (*Setup*.exe) ou version portable. Commit ${GITHUB_SHA}. Non signée : Windows SmartScreen peut afficher un avertissement (Informations complémentaires > Exécuter quand même). Mot de passe des comptes de démonstration : fichier COMPTES-DEMO.txt, indiqué au premier lancement." \
+            *.exe SHA256.txt
