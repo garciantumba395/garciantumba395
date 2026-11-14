@@ -63,7 +63,8 @@ class Form extends Component
 
         $attrs = [
             'name' => $data['name'], 'body' => $data['body'], 'contact_group_id' => $this->groupId ?: null,
-            'scheduled_at' => $this->scheduledAt !== '' ? Carbon::parse($this->scheduledAt, config('app.timezone'))->utc() : null,
+            // Laravel enregistre et relit les dates dans le fuseau de l'application : surtout pas de conversion en UTC ici.
+            'scheduled_at' => $this->scheduledAt !== '' ? Carbon::parse($this->scheduledAt, config('app.timezone')) : null,
         ];
 
         if ($this->campaignId) {

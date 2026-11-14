@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Campaigns;
 
+use App\Domain\Campaigns\CampaignService;
 use App\Domain\Campaigns\CampaignStatus;
 use App\Domain\Consent\ConsentService;
 use App\Domain\Credits\CreditService;
@@ -104,6 +105,24 @@ class CampaignUiTest extends TestCase
 
         $stored = $this->in($this->a, fn () => Campaign::first()->scheduled_at);
         $this->assertSame($when, $stored->timezone(config('app.timezone'))->format('Y-m-d\TH:i'));
+    }
+
+    public function test_scheduled_campaign_starts_at_the_wall_clock_time_the_user_entered(): void
+    {
+        $this->consenting($this->a, '+243811000001');
+        $when = now()->addHours(2)->setTimezone(config('app.timezone'))->format('Y-m-d\TH:i');
+        Livewire::actingAs($this->owner)->test(Form::class)->set('name', 'X')->set('body', 'Y')->set('scheduledAt', $when)->call('save')->assertHasNoErrors();
+        $campaign = Campaign::withoutGlobalScopes()->first();
+        $service = app(CampaignService::class);
+        $this->in($this->a, fn () => $service->launch($campaign, $campaign->scheduled_at));
+
+        $this->travel(119)->minutes(); // avant l'heure saisie : rien ne part (au plus 1 minute d'écart avec la saisie tronquée)
+        $this->assertSame(0, $service->dispatchDue());
+        $this->assertSame(0, SmsMessage::withoutGlobalScopes()->count());
+
+        $this->travel(3)->minutes(); // après l'heure saisie
+        $this->assertSame(1, $service->dispatchDue());
+        $this->assertSame(1, SmsMessage::withoutGlobalScopes()->count());
     }
 
     public function test_only_drafts_can_be_edited_or_deleted(): void
