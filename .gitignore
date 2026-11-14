@@ -32,3 +32,5 @@ dump.rdb
 /packaging/*/node_modules
 /packaging/android/android
 /packaging/windows/dist
+/packaging/desktop-local/stage
+/packaging/desktop-local/dist
