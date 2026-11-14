@@ -1,0 +1,67 @@
+# Architecture
+
+Plateforme SaaS de marketing SMS multi-entreprises (cible initiale : RDC).
+
+## Stack (versions vérifiées le 2026-11-14)
+
+| Composant | Version | Remarque |
+|---|---|---|
+| PHP | 8.3+ | requis par Laravel 13 |
+| Laravel | 13.x | dernière majeure stable |
+| Livewire | 4.x | composants « full-page » |
+| PostgreSQL | 16 | base principale (SQLite en mémoire pour les tests rapides) |
+| Redis | 7 | files d'attente, verrous (étapes ultérieures) |
+| Node / Vite / Tailwind | Node 22 | build des assets |
+
+Les versions sont à **re-vérifier avant chaque montée de version** (`composer outdated`).
+
+## Principes
+
+1. **Monolithe modulaire** : un seul dépôt, un seul déploiement. Le code métier vit dans `app/Domain/*`
+   (à partir de l'étape 2) ; `app/Livewire` ne contient que l'UI.
+2. **Multi-tenant à base partagée** : toutes les tables métier portent `company_id`.
+   L'isolation est garantie par :
+   - le trait `BelongsToCompany` (global scope + remplissage automatique de `company_id`),
+   - le service `CurrentCompany` (entreprise active, issue de la session et **revérifiée** contre les adhésions),
+   - les policies/rôles,
+   - des tests d'isolation obligatoires pour chaque nouveau modèle (voir `tests/Feature/Tenancy`).
+   Défense en profondeur envisagée à l'étape 3 : Row-Level Security PostgreSQL (décision D6).
+3. **Rôles par adhésion** : un utilisateur peut appartenir à plusieurs entreprises, avec un rôle par entreprise
+   (`owner`, `admin`, `member`). L'administrateur de la plateforme est un drapeau distinct
+   (`users.is_platform_admin`) qui ne donne **aucun** accès implicite aux données d'une entreprise.
+4. **Fournisseur SMS interchangeable** : interface `SmsProvider`, implémentation `FakeSmsProvider` par défaut.
+   Aucun envoi réel sans activation explicite (`SMS_SENDING_ENABLED=true` + fournisseur réel configuré).
+5. **Idempotence** : chaque envoi et chaque débit de crédits porte une clé d'idempotence unique
+   (contrainte `UNIQUE` en base) ; le grand livre de crédits est en ajout seul.
+6. **Consentement avant envoi** : vérification consentement + désinscription au moment de l'envoi
+   (pas seulement à la création de la campagne).
+7. **Aucun secret / donnée client dans le dépôt** : `.env` ignoré, seeders sans données réelles.
+
+## Modèle de données (étape 1)
+
+```
+users(id, name, email*, password, is_platform_admin, ...)
+companies(id, name, slug*, is_active, ...)
+company_user(company_id, user_id, role, PK(company_id,user_id))   -- adhésions + rôle
+```
+
+## Cible (étapes suivantes)
+
+```
+contacts, contact_groups, consents (preuve), suppressions (désinscriptions)
+campaigns, campaign_messages (UNIQUE campaign_id+contact_id)
+credit_ledger_entries (append-only, UNIQUE idempotency_key), credit_balances (cache)
+sms_provider_events (accusés de réception)
+```
+
+## Flux d'envoi cible
+
+```
+Campagne planifiée → Job "PrepareCampaign" (fige les destinataires)
+  → pour chaque message : Job "SendMessage" (file Redis)
+       1. verrou + statut atomique (pending → sending)
+       2. re-vérifier consentement + désinscription
+       3. débit idempotent (clé = message_id)
+       4. SmsProvider::send()  (Fake par défaut)
+       5. enregistrer résultat ; rembourser si échec définitif (écriture inverse)
+```
