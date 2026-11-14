@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ReportExportController;
 use App\Livewire\Admin\Companies as AdminCompanies;
 use App\Livewire\Admin\Rates as AdminRates;
 use App\Livewire\Auth\ForgotPassword;
@@ -20,6 +21,7 @@ use App\Livewire\Credits\Index as CreditIndex;
 use App\Livewire\Dashboard;
 use App\Livewire\Groups\Index as GroupIndex;
 use App\Livewire\Messages\Index as MessageIndex;
+use App\Livewire\Reports\Index as ReportIndex;
 use App\Livewire\Suppressions\Index as SuppressionIndex;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -68,5 +70,9 @@ Route::middleware('auth')->group(function () {
         Route::get('/campagnes/{campaign}/modifier', CampaignForm::class)->whereNumber('campaign')->name('campaigns.edit');
         Route::get('/credits', CreditIndex::class)->name('credits.index');
         Route::get('/groupes', GroupIndex::class)->name('groups.index');
+        // --- Étape 7 : rapports d'envoi (agrégats : tous rôles ; export CSV : owner/admin, vérifié dans le contrôleur) ---
+        Route::get('/rapports', ReportIndex::class)->name('reports.index');
+        Route::get('/rapports/export', ReportExportController::class)->name('reports.export');
+        // --- fin étape 7 ---
     });
 });

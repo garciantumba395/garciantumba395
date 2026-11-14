@@ -48,6 +48,7 @@
             <div><dt class="text-slate-500">Bloqués à l'envoi</dt><dd class="text-xl font-semibold">{{ $stats['blocked_consent'] }}</dd></div>
             <div><dt class="text-slate-500">Exclus à la préparation</dt><dd class="text-xl font-semibold">{{ $campaign->excluded_count }}</dd></div>
         </dl>
+        <p class="mt-2 text-sm"><a href="{{ route('reports.index', ['campaign' => $campaign->id, 'mode' => $stats['simulated'] ? 'simulated' : 'real', 'from' => $reportFrom, 'to' => $reportTo]) }}" class="underline">Voir le rapport détaillé de cette campagne</a></p>
         <p class="mt-2 text-xs text-slate-500">Chiffres issus du journal des messages. « Délivrés » dépend des accusés de réception du fournisseur (aucun en simulation).</p>
     </section>
     @endunless

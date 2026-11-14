@@ -9,6 +9,7 @@ use App\Models\Campaign;
 use App\Models\CampaignMessage;
 use App\Models\ContactGroup;
 use App\Support\Tenancy\CurrentCompany;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 use Livewire\Attributes\Layout;
@@ -70,9 +71,20 @@ class Show extends Component
             'group' => $campaign->contact_group_id ? ContactGroup::find($campaign->contact_group_id) : null,
             'estimate' => in_array($campaign->status, [CampaignStatus::Draft, CampaignStatus::Scheduled], true) ? $service->estimate($campaign) : null,
             'stats' => $this->stats($campaign),
+            ...$this->reportPeriod($campaign),
             'live' => $manager->isLiveMode(),
             'canManage' => (bool) $current->role()?->canManageCompany(),
         ]);
+    }
+
+    /** Période du lien vers le rapport : de la création de la campagne à aujourd'hui (fuseau de l'application), bornée à la période maximale. */
+    private function reportPeriod(Campaign $campaign): array
+    {
+        $today = CarbonImmutable::now(config('app.timezone'))->startOfDay();
+        $from = CarbonImmutable::parse($campaign->created_at->format('Y-m-d'), config('app.timezone'))->startOfDay();
+        $earliest = $today->subDays((int) config('reports.max_range_days') - 1);
+
+        return ['reportFrom' => max($from, $earliest)->format('Y-m-d'), 'reportTo' => $today->format('Y-m-d')];
     }
 
     /** Compteurs issus UNIQUEMENT des données réelles de la base (messages du journal). */
