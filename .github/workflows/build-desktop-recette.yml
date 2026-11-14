@@ -39,19 +39,20 @@ jobs:
           PHPDIR="$(dirname "$(which php)")"
           cp -r "$PHPDIR"/* "$D/php/"
           ls "$D/php" | head -30
-      - name: Test de fumée (migrations, données fictives, serveur, page de connexion)
+      - name: Test de fumée (copie de l'application, migrations, données fictives, serveur, page de connexion)
         run: |
-          D="$PWD/packaging/desktop-local/stage"; T="$RUNNER_TEMP/smoke"; mkdir -p "$T/storage/framework/"{cache/data,sessions,views} "$T/storage/logs" "$T/bc"; : > "$T/database.sqlite"
-          export APP_ENV=local APP_DEBUG=false APP_KEY="base64:$(head -c32 /dev/urandom | base64)" APP_URL=http://127.0.0.1:8777 DB_CONNECTION=sqlite DB_DATABASE="$T/database.sqlite" SESSION_DRIVER=file CACHE_STORE=file QUEUE_CONNECTION=sync MAIL_MAILER=log LOG_CHANNEL=single SMS_PROVIDER=fake SMS_SENDING_ENABLED=false SECURITY_REQUIRE_EMAIL_VERIFICATION=false SECURITY_REQUIRE_2FA_FOR_ADMINS=false LARAVEL_STORAGE_PATH="$T/storage" APP_SERVICES_CACHE="$T/bc/services.php" APP_PACKAGES_CACHE="$T/bc/packages.php" APP_CONFIG_CACHE="$T/bc/config.php" APP_ROUTES_CACHE="$T/bc/routes.php" APP_EVENTS_CACHE="$T/bc/events.php" PHPRC="$D/php" PHP_INI_SCAN_DIR=
+          D="$PWD/packaging/desktop-local/stage"; T="$RUNNER_TEMP/smoke"; rm -rf "$T"; mkdir -p "$T"
+          cp -r "$D/app" "$T/app"; mkdir -p "$T/app/storage/"{app,logs,framework/{cache/data,sessions,views}} "$T/app/bootstrap/cache"; : > "$T/database.sqlite"
+          export APP_ENV=local APP_DEBUG=false APP_KEY="base64:$(head -c32 /dev/urandom | base64)" APP_URL=http://127.0.0.1:8777 DB_CONNECTION=sqlite DB_DATABASE="$T/database.sqlite" SESSION_DRIVER=file CACHE_STORE=file QUEUE_CONNECTION=sync MAIL_MAILER=log LOG_CHANNEL=single SMS_PROVIDER=fake SMS_SENDING_ENABLED=false SECURITY_REQUIRE_EMAIL_VERIFICATION=false SECURITY_REQUIRE_2FA_FOR_ADMINS=false PHPRC="$D/php" PHP_INI_SCAN_DIR=
           PHP="$D/php/php.exe -d extension_dir=$D/php/ext"
-          cd "$D/app"
+          cd "$T/app"
           $PHP artisan migrate --force | tail -3
           $PHP artisan db:seed --class=DemoSeeder --force | grep -c "Données de démonstration prêtes"
           cd public
           $PHP -S 127.0.0.1:8777 ../vendor/laravel/framework/src/Illuminate/Foundation/resources/server.php > "$T/server.log" 2>&1 &
           sleep 5
           code="$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8777/connexion)"; echo "connexion HTTP $code"
-          [ "$code" = "200" ] || { cat "$T/server.log" | tail -30; cat "$T"/storage/logs/*.log 2>/dev/null | tail -30; exit 1; }
+          [ "$code" = "200" ] || { tail -30 "$T/server.log"; tail -30 "$T"/app/storage/logs/*.log 2>/dev/null; exit 1; }
       - name: Construire l'installateur Windows
         working-directory: packaging/desktop-local
         run: |

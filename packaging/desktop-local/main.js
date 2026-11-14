@@ -9,8 +9,9 @@ const path = require('path');
 
 const res = app.isPackaged ? process.resourcesPath : path.join(__dirname, 'stage');
 const phpExe = path.join(res, 'php', 'php.exe');
-const appDir = path.join(res, 'app');
+const appSrc = path.join(res, 'app');
 const data = path.join(app.getPath('userData'), 'solisend-data');
+let appDir = '';
 let server = null, scheduler = null, port = 0, quitting = false;
 
 if (!app.requestSingleInstanceLock()) app.quit();
@@ -21,7 +22,6 @@ const mk = (...p) => fs.mkdirSync(path.join(data, ...p), { recursive: true });
 function env() {
   const keyFile = path.join(data, 'app.key');
   if (!fs.existsSync(keyFile)) fs.writeFileSync(keyFile, 'base64:' + crypto.randomBytes(32).toString('base64'));
-  const bc = path.join(data, 'bootstrap-cache');
   return {
     ...process.env,
     PHPRC: path.join(res, 'php'), PHP_INI_SCAN_DIR: '',
@@ -31,17 +31,29 @@ function env() {
     SESSION_DRIVER: 'file', CACHE_STORE: 'file', QUEUE_CONNECTION: 'sync', MAIL_MAILER: 'log', LOG_CHANNEL: 'single', LOG_LEVEL: 'warning',
     SMS_PROVIDER: 'fake', SMS_SENDING_ENABLED: 'false',
     SECURITY_REQUIRE_EMAIL_VERIFICATION: 'false', SECURITY_REQUIRE_2FA_FOR_ADMINS: 'false',
-    LARAVEL_STORAGE_PATH: path.join(data, 'storage'),
-    APP_SERVICES_CACHE: path.join(bc, 'services.php'), APP_PACKAGES_CACHE: path.join(bc, 'packages.php'),
-    APP_CONFIG_CACHE: path.join(bc, 'config.php'), APP_ROUTES_CACHE: path.join(bc, 'routes.php'), APP_EVENTS_CACHE: path.join(bc, 'events.php'),
   };
 }
 
 const phpArgs = ['-d', 'extension_dir=' + path.join(res, 'php', 'ext')];
 const artisan = (args, e) => spawnSync(phpExe, [...phpArgs, 'artisan', ...args], { cwd: appDir, env: e, encoding: 'utf8', windowsHide: true });
 
+function prepareApp() {
+  // Le dossier d'installation peut être en lecture seule : on travaille sur une copie dans le profil de l'utilisateur
+  // (recopiée à chaque nouvelle version). Les données (base, clé, comptes) restent à part et ne sont jamais effacées.
+  appDir = path.join(data, 'app');
+  const stamp = path.join(appDir, '.stamp');
+  const want = app.getVersion();
+  if (!fs.existsSync(stamp) || fs.readFileSync(stamp, 'utf8') !== want) {
+    fs.rmSync(appDir, { recursive: true, force: true });
+    fs.cpSync(appSrc, appDir, { recursive: true });
+    for (const d of [['storage', 'app'], ['storage', 'framework', 'cache', 'data'], ['storage', 'framework', 'sessions'], ['storage', 'framework', 'views'], ['storage', 'logs'], ['bootstrap', 'cache']]) fs.mkdirSync(path.join(appDir, ...d), { recursive: true });
+    fs.writeFileSync(stamp, want);
+  }
+}
+
 async function start() {
-  for (const d of [['storage', 'app'], ['storage', 'framework', 'cache', 'data'], ['storage', 'framework', 'sessions'], ['storage', 'framework', 'views'], ['storage', 'logs'], ['bootstrap-cache']]) mk(...d);
+  fs.mkdirSync(data, { recursive: true });
+  prepareApp();
   const db = path.join(data, 'database.sqlite');
   if (!fs.existsSync(db)) fs.writeFileSync(db, '');
   port = await freePort();
