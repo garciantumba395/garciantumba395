@@ -1,12 +1,14 @@
 # SMS Marketing SaaS (RDC) — socle
 
-Plateforme SaaS de marketing SMS multi-entreprises. **Étapes faites : 1 (authentification, entreprises, rôles, isolation), 2 (contacts, groupes, import CSV) et 3 (consentement, désinscription) 4 (fournisseur SMS fictif, journal des messages) 5 (crédits, grand livre, tarifs) et 6 (campagnes, envoi en file d'attente Redis).**
-Aucun SMS n'est envoyé par ce socle (aucun fournisseur SMS n'est encore intégré).
+Plateforme SaaS de marketing SMS multi-entreprises (cible initiale : RDC). **Étapes faites** : 1 authentification, entreprises, rôles, isolation ; 2 contacts, groupes, import CSV ; 3 consentement et désinscription ; 4 fournisseur SMS fictif et journal des messages ; 5 crédits, grand livre, tarifs ; 6 campagnes et file d'attente Redis ; 7 rapports d'envoi ; 8 administration et journal d'audit ; 9 durcissement, sécurité, exploitation ; 10 préparatoire (webhooks, désinscription par « STOP », réconciliation) — l'adaptateur d'un fournisseur réel attend la décision D1.
+**Aucun SMS réel ne peut partir** : seul un fournisseur fictif existe, et un fournisseur réel serait refusé tant que `SMS_SENDING_ENABLED=true` n'est pas posé explicitement (voir `docs/SECURITY.md`).
 
 - Architecture : [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - Plan par étapes : [docs/ROADMAP.md](docs/ROADMAP.md)
 - Décisions en attente : [docs/DECISIONS.md](docs/DECISIONS.md)
 - Sécurité / règles du dépôt : [docs/SECURITY.md](docs/SECURITY.md)
+- Exploitation (déploiement, sauvegardes, workers, urgence) : [docs/OPERATIONS.md](docs/OPERATIONS.md)
+- Brancher un fournisseur SMS : [docs/PROVIDERS.md](docs/PROVIDERS.md)
 
 ## Prérequis
 
@@ -181,9 +183,12 @@ Tout modèle métier utilise le trait `App\Models\Concerns\BelongsToCompany` et 
 `tests/Feature/Tenancy/DataIsolationTest.php`. Sans entreprise active, les requêtes ne renvoient **rien**
 et la création est refusée (fail-closed). Les jobs en file devront fixer explicitement le contexte via `CurrentCompany::set()`.
 
-## Limites connues de l'étape 1
+## Limites connues
 
-- Pas encore de rapports exportables (étape 7), aucun fournisseur réel (étape 10) ; pas de paiement en ligne (les crédits sont ajoutés à la main) ; la désinscription par réponse « STOP » nécessitera les SMS entrants (fournisseur, étape 10) ; l'import est synchrone.
-- Pas d'invitation de membres ni de changement de rôle (étape ultérieure).
-- Pas de vérification d'e-mail (décision D10) ; la 2FA TOTP est optionnelle depuis l'étape 9 (D40).
-- Inscription ouverte (décision D5 tranchée ; anti-abus à reconsidérer à l'étape 9).
+- **Aucun fournisseur SMS réel** (décision D1) : l'adaptateur reste à écrire ; la préparation (webhooks signés, STOP, réconciliation) est livrée, voir `docs/PROVIDERS.md`.
+- Pas de paiement en ligne : les crédits sont ajoutés à la main par l'administrateur de la plateforme (décision D7).
+- Pas d'invitation de membres ni de changement de rôle depuis l'interface (étape ultérieure).
+- Pas de vérification d'e-mail (décision D10) ; la 2FA TOTP est optionnelle (D40), son obligation est désactivée par défaut.
+- Inscription ouverte (D5) ; les garde-fous anti-abus de l'envoi réel (démarrage limité, validation/suspension automatiques, revue des entreprises validées) sont en place, **leurs seuils sont à ajuster** (D11).
+- Cadre légal local (consentement, désinscription, heures d'envoi, rétention) **non défini** : à faire valider par un juriste (D4).
+- Les chiffres des rapports distinguent toujours envois réels et simulés ; tant que le fournisseur est fictif, tout est « simulation ».
