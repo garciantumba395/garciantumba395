@@ -70,7 +70,7 @@ class UiTextsTest extends TestCase
 
     public function test_default_application_name_is_not_the_framework_placeholder(): void
     {
-        $this->assertSame('SMS Marketing', config('app.name'));
+        $this->assertSame('Solisend', config('app.name'));
         $this->actingAs($this->owner)->get('/tableau-de-bord')->assertDontSee('>Laravel<', false);
     }
 }

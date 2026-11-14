@@ -22,7 +22,7 @@ Le workflow est **manuel**, sans secret, et ne déploie rien.
 
 - **Signature** : l'APK est signé avec la clé de débogage (installation hors Play Store après autorisation des sources inconnues). Pour le Play Store : créer une clé de production (à conserver hors dépôt) et publier un AAB. L'installateur Windows n'est pas signé : Windows SmartScreen affichera un avertissement tant qu'un certificat de signature de code n'est pas acheté et configuré.
 - **Identifiants** : `com.example.smsmarketing` est un identifiant provisoire à remplacer avant publication.
-- **Icônes** : une icône provisoire (bulle de message) est fournie ; à remplacer par l'identité visuelle.
+- **Icônes** : issues du pack de marque Solisend (`public/brand/`). Les icônes fournies font moins de 200 px : elles sont agrandies pour la PWA et le .exe (rendu un peu flou). Fournir des versions vectorielles ou 1024 px pour la publication ; icônes adaptatives Android (premier plan/arrière-plan) à ajouter.
 - **Sécurité** : la coquille Windows désactive l'intégration Node, active le bac à sable et ne laisse naviguer que sur l'origine de l'application ; les liens externes s'ouvrent dans le navigateur (https uniquement).
 - **Mise à jour** : l'application web se met à jour côté serveur sans réinstaller ; seule la coquille nécessite une nouvelle version.
 - **PWA et données** : le service worker ne conserve jamais de page HTML ni de réponse Livewire (confidentialité des contacts et messages).

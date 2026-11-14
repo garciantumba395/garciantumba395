@@ -5,8 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $title ?? config('app.name') }} — {{ config('app.name') }}</title>
     <link rel="manifest" href="/manifest.webmanifest">
-    <meta name="theme-color" content="#0f172a">
-    <link rel="icon" href="/icons/icon.svg" type="image/svg+xml">
+    <meta name="theme-color" content="#0b1f4a">
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link rel="icon" href="/icons/favicon-64.png" type="image/png" sizes="64x64">
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
@@ -15,7 +16,7 @@
     @php($hasCompany = ! $forcedTwoFactor && app(\App\Support\Tenancy\CurrentCompany::class)->company() !== null)
     <header class="border-b bg-white">
         <div class="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3">
-            <a href="{{ route(auth()->user()?->homeRoute() ?? 'dashboard') }}" class="font-semibold">{{ config('app.name') }}</a>
+            <a href="{{ route(auth()->user()?->homeRoute() ?? 'dashboard') }}" class="flex items-center" aria-label="{{ config('app.name') }}"><img src="/brand/logo-web-sans-slogan.png" alt="{{ config('app.name') }}" width="135" height="32" class="h-8 w-auto"></a>
             <nav class="flex flex-wrap items-center gap-4 text-sm">
                 @if ($hasCompany)
                 <a href="{{ route('dashboard') }}" class="hover:underline">Tableau de bord</a>

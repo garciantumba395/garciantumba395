@@ -13,7 +13,7 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'SMS Marketing'),
+    'name' => env('APP_NAME', 'Solisend'),
 
     /*
     |--------------------------------------------------------------------------
