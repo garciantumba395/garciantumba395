@@ -192,6 +192,10 @@ curl -i -X POST http://localhost:8000/webhooks/sms/fake \
 2. Ouvrir le lien : la page affiche l'expéditeur mais ne désinscrit pas ; le bouton « Me désabonner » confirme.
 3. Vider l'identité légale de l'entreprise : un envoi réel est refusé (campagne en pause). Voir `docs/CADRE_LEGAL_RDC.md`.
 
+## Recette avant achat de l'hébergement
+
+Voir `docs/RECETTE.md` : démo locale (Docker ou installation) avec données fictives et fournisseur simulé, parcours à cocher.
+
 ## Versions installables (PWA, Android, Windows)
 
 Voir `docs/INSTALLATION_APPS.md` : PWA prête ; APK et .exe construits par le workflow manuel *Build installable apps* une fois l'URL de production connue.
