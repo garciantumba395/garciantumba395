@@ -168,6 +168,37 @@ draft → scheduled → preparing → sending → completed        (paused ↔ s
 
 Exploitation : `php artisan queue:work redis --queue=sms` (plusieurs workers possibles) + `php artisan schedule:work`. Vérifié avec Redis réel et 4 workers en parallèle (voir le journal de l'étape).
 
+## Webhooks et fournisseurs (étape 10 préparatoire)
+
+Infrastructure **indépendante du fournisseur** (le fournisseur réel n'est pas choisi : D1). Aucun adaptateur réel, aucun appel réseau, aucun format de webhook
+réel : tout est validé avec le `FakeSmsProvider` et un format de webhook **fictif** propre à la simulation. Guide d'écriture d'un adaptateur : `docs/PROVIDERS.md`.
+
+```
+POST /webhooks/sms/{provider}      (hors session, hors CSRF, JSON, limité en débit : throttle sms-webhooks)
+  SmsWebhookController  (générique, fail-closed)
+    SmsWebhookRegistry  → SmsWebhookVerifier du fournisseur (verify : signature + horodatage ; parse : corps → SmsWebhookEvent)
+    webhook_events      → déduplication UNIQUE (provider, event_id), dans la même transaction que le traitement
+    SmsWebhookProcessor → accusé : SmsDispatcher::recordDeliveryReport ; entrant : mot-clé → ConsentService::optOut sous CurrentCompany::runAs()
+```
+
+- **Fail-closed** : fournisseur sans vérificateur → 404 ; secret absent (`SMS_WEBHOOK_FAKE_SECRET` vide par défaut) → 401 pour toute requête ; signature
+  absente/invalide, mauvais secret, horodatage hors fenêtre (passé OU futur, `SMS_WEBHOOK_TOLERANCE_SECONDS`) → 401 ; corps > `SMS_WEBHOOK_MAX_BODY_BYTES` → 413.
+  Comparaison de signature en temps constant (`hash_equals`) sur le corps brut. Plusieurs couches vérifient la présence du secret (contrôleur, vérificateur, `HmacSignature`) : recouvrement voulu.
+- **Déduplication** : un événement rejoué (même `provider` + `event_id`) est acquitté en 200 `duplicate` sans effet. Si le traitement échoue (500), l'enregistrement est
+  annulé avec la transaction : le fournisseur peut rejouer. `webhook_events` ne contient que l'identité de l'événement (ni corps, ni numéro, ni texte). Table technique
+  globale, sans `company_id` (un webhook n'a pas de contexte d'entreprise) ; pas de purge automatique (à prévoir avec D9, rétention).
+- **Accusés de réception** : `recordDeliveryReport` inchangé (ne fait jamais reculer un statut ; message inconnu ou d'un autre fournisseur → ignoré, événement acquitté).
+- **Messages entrants** : seul un texte égal à un mot-clé (`SMS_INBOUND_OPTOUT_KEYWORDS`, défaut `STOP`, à valider D4/D14 ; casse, accents, espaces et ponctuation de bord ignorés ;
+  « please stop » ne correspond pas) a un effet. Les autres messages sont ignorés et **leur contenu n'est jamais stocké** (données personnelles).
+- **Règle de désinscription et son ambiguïté** : un SMS entrant ne dit pas à quelle entreprise il s'adresse (un numéro peut avoir été contacté par plusieurs). Le numéro est
+  désinscrit dans **chaque entreprise ayant envoyé un message RÉEL** (`simulated = false`, statut envoyé, délivré ou inconnu — pas bloqué/échoué/en attente) à ce numéro dans les
+  `SMS_INBOUND_WINDOW_DAYS` derniers jours (30). Conséquence assumée : un « STOP » destiné à l'entreprise X coupe aussi Y si Y a écrit au même numéro dans la fenêtre
+  (choix prudent côté consentement). Les entreprises sans envoi récent et les messages simulés ne sont jamais touchés. Idempotent (une seule désinscription active par entreprise et numéro).
+- **Réconciliation** : `php artisan sms:reconcile` (lecture seule) liste par entreprise les messages `sending`/`unknown` depuis plus de `SMS_RECONCILE_STALE_MINUTES` (60),
+  numéros masqués (`+243*******01`), sans contenu ; simulés exclus sauf `--include-simulated` (section séparée, sans effet sur le code de sortie). Sortie : 0 = rien, 1 = au moins un
+  message réel, 2 = option invalide. La résolution automatique/remboursement dépend de D13 : **non implémentée** (procédure manuelle dans `docs/PROVIDERS.md`).
+- **Contrats de test** réutilisables : `Tests\Contracts\SmsProviderContractTest` et `Tests\Contracts\SmsWebhookVerifierContractTest`.
+
 ## Cible (étapes suivantes)
 
 ```

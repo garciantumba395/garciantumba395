@@ -11,6 +11,6 @@
 | 7 | Rapports d'envoi (chiffres issus uniquement des données réelles) | export CSV ; aucun chiffre fictif |
 | 8 | Administration plateforme (entreprises, crédits, audit) | journal d'audit |
 | 9 | Durcissement : 2FA, limitation de débit, sauvegardes, observabilité | revue sécurité |
-| 10 | Intégration d'un fournisseur réel (après décisions D1–D3) | recette en sandbox du fournisseur |
+| 10 (préparée : adaptateur réel en attente de D1) | Intégration d'un fournisseur réel (après décisions D1–D3). **Prêt** : webhooks signés + déduplication, accusés, désinscription par mot-clé, `sms:reconcile`, contrats de test, `docs/PROVIDERS.md`. **Reste** : adaptateur réel, tarifs, D13 | recette en sandbox du fournisseur |
 
 Chaque étape : migrations + tests (dont isolation) + mise à jour de la doc.

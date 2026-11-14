@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Webhooks\SmsWebhookController;
 use App\Livewire\Admin\Companies as AdminCompanies;
 use App\Livewire\Admin\Rates as AdminRates;
 use App\Livewire\Auth\ForgotPassword;
@@ -21,8 +22,13 @@ use App\Livewire\Dashboard;
 use App\Livewire\Groups\Index as GroupIndex;
 use App\Livewire\Messages\Index as MessageIndex;
 use App\Livewire\Suppressions\Index as SuppressionIndex;
+use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
+use Illuminate\Cookie\Middleware\EncryptCookies;
+use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
+use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
+use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 Route::redirect('/', '/connexion');
 
@@ -70,3 +76,18 @@ Route::middleware('auth')->group(function () {
         Route::get('/groupes', GroupIndex::class)->name('groups.index');
     });
 });
+
+// --- Étape 10 (préparatoire) : webhooks des fournisseurs SMS (agent D) ---
+// Hors session et hors CSRF (appelés par un serveur tiers) : l'authentification est la signature HMAC, vérifiée dans le contrôleur.
+Route::post('/webhooks/sms/{provider}', SmsWebhookController::class)
+    ->where('provider', '[a-z0-9_-]{1,30}')
+    ->middleware('throttle:sms-webhooks')
+    ->withoutMiddleware([
+        EncryptCookies::class,
+        AddQueuedCookiesToResponse::class,
+        StartSession::class,
+        ShareErrorsFromSession::class,
+        PreventRequestForgery::class,
+    ])
+    ->name('webhooks.sms');
+// --- Fin étape 10 (préparatoire) ---

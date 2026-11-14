@@ -112,6 +112,29 @@ Un utilisateur non administrateur reçoit une erreur 403 sur `/admin/*`.
 
 Sans worker, les campagnes restent en « Préparation » : c'est normal (les jobs attendent dans la file Redis `sms`).
 
+## Vérifier l'étape 10 (préparation) manuellement
+
+Aucun fournisseur réel : on teste avec le fournisseur **fictif** et un secret local de démonstration (à ne jamais réutiliser ailleurs).
+
+1. Dans `.env` : `SMS_WEBHOOK_FAKE_SECRET=secret-de-demonstration-local` (vide = tout webhook est refusé : vérifiez d'abord qu'une requête renvoie 401), puis `php artisan config:clear`.
+2. Lancer le serveur (`php artisan serve`) et envoyer un accusé de réception **signé** (le message doit exister : envoyez d'abord un SMS simulé et relevez son `provider_message_id`, ex. `fake-…`, dans `/messages` ou la base) :
+
+```bash
+SECRET=secret-de-demonstration-local
+BODY='{"event_id":"evt-001","type":"delivery_report","message_id":"fake-XXXXXXXXXXXXXXXX","status":"delivered"}'
+TS=$(date +%s)
+SIG=$(printf '%s' "$TS.$BODY" | openssl dgst -sha256 -hmac "$SECRET" | sed 's/^.* //')
+curl -i -X POST http://localhost:8000/webhooks/sms/fake \
+  -H 'Content-Type: application/json' -H "X-Fake-Timestamp: $TS" -H "X-Fake-Signature: $SIG" --data "$BODY"
+```
+
+3. Réponse attendue : `200 {"status":"applied"}` (le message passe à « Délivré »). Rejouer la même commande : `200 {"status":"duplicate"}`. Modifier un caractère du corps ou la signature : `401`.
+   Un `TS` vieux de plus de 5 minutes : `401`. Un fournisseur inconnu (`/webhooks/sms/autre`) : `404`.
+4. Désinscription : un « STOP » entrant (`{"event_id":"evt-002","type":"inbound","from":"+243810000001","text":"STOP"}`, signé de la même façon) ne désinscrit **que** si une entreprise a envoyé un message
+   **réel** à ce numéro dans les 30 derniers jours ; avec le fournisseur fictif (messages simulés) la réponse est `{"status":"ignored"}` : c'est voulu.
+5. `php artisan sms:reconcile` : liste (numéros masqués) les messages réels bloqués en « en cours »/« résultat inconnu » ; `--include-simulated` pour voir aussi les simulés. Code de sortie 1 s'il y en a (`echo $?`).
+6. Tests : `php artisan test --filter=Sms` (contrats d'adaptateur, webhooks, désinscription, réconciliation).
+
 ## Rôles
 
 | Rôle | Paramètres entreprise | Membres (lecture) |
