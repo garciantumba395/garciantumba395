@@ -5,6 +5,7 @@ namespace App\Livewire\Admin;
 use App\Domain\Audit\AuditLogger;
 use App\Domain\Contacts\PhoneNormalizer;
 use App\Domain\Credits\CreditUnits;
+use App\Livewire\Concerns\ThrottlesAdminActions;
 use App\Models\SmsRate;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
@@ -17,6 +18,8 @@ use Livewire\Component;
 #[Title('Administration — tarifs')]
 class Rates extends Component
 {
+    use ThrottlesAdminActions;
+
     public string $country = 'CD';
 
     public string $prefix = '';
@@ -33,6 +36,7 @@ class Rates extends Component
     public function add(AuditLogger $audit): void
     {
         $this->authorizeAdmin();
+        $this->throttleAdminAction();
         $prefix = preg_replace('/[\s\-]/', '', $this->prefix);
         $this->prefix = $prefix;
 
@@ -68,6 +72,7 @@ class Rates extends Component
     public function toggle(int $id, AuditLogger $audit): void
     {
         $this->authorizeAdmin();
+        $this->throttleAdminAction();
         $rate = SmsRate::findOrFail($id);
         $rate->update(['is_active' => ! $rate->is_active]);
         $audit->record($rate->is_active ? 'rates.activated' : 'rates.deactivated', null, $rate, ['country' => $rate->country]);

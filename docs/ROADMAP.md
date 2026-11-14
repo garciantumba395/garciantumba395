@@ -10,7 +10,7 @@
 | **6 (faite)** | Campagnes + envoi en file Redis (Horizon optionnel) | rejeu d'un job sans double envoi/débit |
 | **7 (faite)** | Rapports d'envoi (chiffres issus uniquement du journal et du grand livre ; simulé et réel jamais mélangés) | export CSV ; aucun chiffre fictif |
 | **8 (faite)** | Administration plateforme (entreprises, crédits, audit) | journal d'audit en ajout seul ; pages admin ; commandes console |
-| 9 | Durcissement : 2FA, limitation de débit, sauvegardes, observabilité | revue sécurité |
+| **9 (faite)** | Durcissement : 2FA (optionnelle), limitation de débit, en-têtes, `security:check`, surveillance continue, exploitation (`docs/OPERATIONS.md`) | revue sécurité ; la rétention des sauvegardes (D9/D44) reste à valider |
 | 10 (préparée : adaptateur réel en attente de D1) | Intégration d'un fournisseur réel (après décisions D1–D3). **Prêt** : webhooks signés + déduplication, accusés, désinscription par mot-clé, `sms:reconcile`, contrats de test, `docs/PROVIDERS.md`. **Reste** : adaptateur réel, tarifs, D13 | recette en sandbox du fournisseur |
 
 Chaque étape : migrations + tests (dont isolation) + mise à jour de la doc.

@@ -6,6 +6,7 @@ use App\Domain\Consent\ConsentDeclaration;
 use App\Domain\Contacts\ContactImporter;
 use App\Models\ContactGroup;
 use App\Models\ContactImport;
+use App\Support\Security\Throttle;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use InvalidArgumentException;
@@ -36,6 +37,11 @@ class Import extends Component
 
     public function import(ContactImporter $importer): void
     {
+        if (! Throttle::attempt('csv_import', Auth::id())) {
+            $this->addError('file', Throttle::message('csv_import', Auth::id()));
+
+            return;
+        }
         $this->validate([
             'file' => ['required', 'file', 'mimes:csv,txt', 'max:5120'],
             'groupId' => ['nullable', 'integer'],

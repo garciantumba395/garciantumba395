@@ -152,6 +152,16 @@ curl -i -X POST http://localhost:8000/webhooks/sms/fake \
 4. `/admin/utilisateurs` : désactiver un compte (motif obligatoire) → il ne peut plus se connecter (« Identifiants incorrects, ou compte désactivé ») et, s'il était connecté, est déconnecté à sa prochaine action. Essayer de désactiver votre propre compte, ou le seul administrateur : refusé.
 5. Faire quelques actions (ajouter des crédits, changer le statut d'envoi, lever une désinscription, mettre une campagne en pause, modifier le nom de l'entreprise) puis ouvrir `/admin/audit` : une entrée par action, avec l'acteur (ou « Système » pour les transitions automatiques), sans numéro ni texte de message. Tester les filtres (action, entreprise, acteur, période). Le journal est en lecture seule.
 6. Confidentialité : aucune page `/admin/*` n'affiche de contact, numéro, texte de message ni consentement ; le statut d'administrateur ne donne accès à aucune page d'entreprise (`/contacts`, `/campagnes`… renvoient vers la création d'entreprise si l'administrateur n'en est pas membre).
+## Vérifier l'étape 9 manuellement
+
+1. Se connecter puis ouvrir **Profil** (`/profil`) : changer le mot de passe (l'ancien est exigé ; 10 caractères minimum). Une autre session ouverte dans un second navigateur est déconnectée à son prochain clic.
+2. **Double authentification** : « Activer » → saisir la clé affichée dans une application d'authentification (saisie manuelle, type « basé sur l'heure ») → entrer le code à 6 chiffres → noter les **8 codes de secours** (affichés une seule fois). Se déconnecter puis se reconnecter : une étape « Vérification en deux étapes » apparaît ; un code déjà utilisé est refusé, un code de secours ne sert qu'une fois. Sans 2FA, la connexion est inchangée.
+3. Désactivation (profil) : mot de passe **et** code requis. Pour rendre la 2FA obligatoire aux owners/admins : `SECURITY_REQUIRE_2FA_FOR_ADMINS=true` (décision D40).
+4. Limitation de débit : 6 essais de connexion ou de code 2FA erronés → message « Trop de tentatives ». Valeurs : `config/security.php`.
+5. En-têtes : `curl -sI http://localhost:8000/connexion` montre `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`, `Content-Security-Policy` (HSTS seulement en HTTPS).
+6. `php artisan security:check` : en développement il signale `APP_DEBUG`, etc. (code de sortie 1) ; aucune valeur secrète n'est affichée. `--strict` traite aussi les avertissements comme bloquants.
+7. `php artisan sending:review` : examine les entreprises « validées » (suspension automatique si dérive) ; `php artisan schedule:list` montre `sending:review` (03:00) et `credits:verify` (03:30).
+8. Exploitation (workers, sauvegardes, interrupteur d'urgence `SMS_SENDING_ENABLED=false`, incident, rotation) : voir `docs/OPERATIONS.md`.
 
 ## Rôles
 
@@ -175,5 +185,5 @@ et la création est refusée (fail-closed). Les jobs en file devront fixer expli
 
 - Pas encore de rapports exportables (étape 7), aucun fournisseur réel (étape 10) ; pas de paiement en ligne (les crédits sont ajoutés à la main) ; la désinscription par réponse « STOP » nécessitera les SMS entrants (fournisseur, étape 10) ; l'import est synchrone.
 - Pas d'invitation de membres ni de changement de rôle (étape ultérieure).
-- Pas de vérification d'e-mail ni de 2FA (décision D10).
+- Pas de vérification d'e-mail (décision D10) ; la 2FA TOTP est optionnelle depuis l'étape 9 (D40).
 - Inscription ouverte (décision D5 tranchée ; anti-abus à reconsidérer à l'étape 9).

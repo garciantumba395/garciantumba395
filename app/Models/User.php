@@ -13,11 +13,17 @@ use Illuminate\Notifications\Notifiable;
 
 // is_platform_admin volontairement absent de $fillable : jamais assignable en masse.
 #[Fillable(['name', 'email', 'password'])]
-#[Hidden(['password', 'remember_token'])]
+#[Hidden(['password', 'remember_token', 'two_factor_secret', 'two_factor_recovery_codes'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
+
+    /** 2FA activée ET confirmée par un premier code valide. */
+    public function hasTwoFactorEnabled(): bool
+    {
+        return $this->two_factor_secret !== null && $this->two_factor_confirmed_at !== null;
+    }
 
     public function companies(): BelongsToMany
     {
@@ -36,6 +42,10 @@ class User extends Authenticatable
             'password' => 'hashed',
             'is_platform_admin' => 'boolean',
             'disabled_at' => 'datetime', // jamais assignable en masse (AccountService uniquement)
+            // Étape 9 : secret TOTP et codes de secours (hachés) chiffrés au repos ; jamais assignables en masse.
+            'two_factor_secret' => 'encrypted',
+            'two_factor_recovery_codes' => 'encrypted:array',
+            'two_factor_confirmed_at' => 'datetime',
         ];
     }
 }

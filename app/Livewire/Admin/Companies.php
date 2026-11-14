@@ -8,6 +8,7 @@ use App\Domain\Credits\CreditUnits;
 use App\Domain\Credits\InsufficientCreditsException;
 use App\Domain\Sms\SendingPolicy;
 use App\Domain\Sms\SendingStatus;
+use App\Livewire\Concerns\ThrottlesAdminActions;
 use App\Models\Company;
 use App\Models\CreditLedgerEntry;
 use Illuminate\Support\Facades\Auth;
@@ -22,6 +23,8 @@ use Livewire\Component;
 #[Title('Administration — entreprises et crédits')]
 class Companies extends Component
 {
+    use ThrottlesAdminActions;
+
     public ?int $companyId = null;
 
     public string $operation = 'credit';   // credit | retrait
@@ -54,6 +57,7 @@ class Companies extends Component
     public function submit(CreditService $credits, AuditLogger $audit): void
     {
         $this->authorizeAdmin();
+        $this->throttleAdminAction();
         $this->validate([
             'companyId' => ['required', 'integer', 'exists:companies,id'],
             'operation' => ['required', 'in:credit,retrait'],
@@ -99,6 +103,7 @@ class Companies extends Component
     public function updateSending(SendingPolicy $policy, AuditLogger $audit): void
     {
         $this->authorizeAdmin();
+        $this->throttleAdminAction();
         $this->validate([
             'companyId' => ['required', 'integer', 'exists:companies,id'],
             'sendingStatus' => ['required', 'in:probation,validated,suspended'],

@@ -8,6 +8,7 @@ use App\Domain\Sms\SmsSendingDisabledException;
 use App\Domain\Sms\SmsStatus;
 use App\Models\Contact;
 use App\Models\SmsMessage;
+use App\Support\Security\Throttle;
 use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -49,6 +50,11 @@ class Index extends Component
     public function sendTest(SmsDispatcher $dispatcher, CurrentCompany $current): void
     {
         abort_unless($current->role()?->canManageCompany(), 403);
+        if (! Throttle::attempt('test_send', Auth::id())) {
+            $this->addError('body', Throttle::message('test_send', Auth::id()));
+
+            return;
+        }
         $this->validate(['contactId' => ['required', 'integer'], 'body' => ['required', 'string', 'max:'.config('sms.max_body_length')]]);
 
         $contact = Contact::findOrFail($this->contactId); // scopé : 404 hors entreprise
