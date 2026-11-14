@@ -3,6 +3,7 @@
 namespace Tests\Feature\Admin;
 
 use App\Enums\CompanyRole;
+use App\Http\Middleware\EnsurePlatformAdmin;
 use App\Livewire\Admin\AuditLogs;
 use App\Livewire\Admin\Companies;
 use App\Livewire\Admin\CompanyShow;
@@ -13,7 +14,9 @@ use App\Models\AuditLog;
 use App\Models\Company;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Request;
 use Livewire\Livewire;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\TestCase;
 
 /** Autorisation de CHAQUE route et action d'administration de la plateforme. */
@@ -110,11 +113,33 @@ class AdminAccessTest extends TestCase
         $this->loseAdminThen(Companies::class, [], ['companyId' => $this->co->id, 'amount' => '10', 'reason' => 'x'], 'submit');
         $this->loseAdminThen(Companies::class, [], ['companyId' => $this->co->id, 'sendingReason' => 'x'], 'updateSending');
         $this->loseAdminThen(Rates::class, [], ['smsPer100' => '120'], 'add');
+        // Rendu (rafraîchissement) : revérifié aussi.
+        $this->loseAdminThen(Dashboard::class, [], [], '$refresh');
+        $this->loseAdminThen(AuditLogs::class, [], [], '$refresh');
 
         $this->assertTrue($this->co->fresh()->is_active);
         $this->assertNull($this->owner->fresh()->disabled_at);
         $this->assertSame(0, (int) $this->co->fresh()->credit_balance_units);
         $this->assertSame(0, AuditLog::count());
+    }
+
+    public function test_platform_admin_middleware_alone_refuses_non_admins(): void
+    {
+        // Couche « middleware » testée isolément (les composants ont leur propre contrôle).
+        $middleware = new EnsurePlatformAdmin;
+        $request = Request::create('/admin');
+        $request->setUserResolver(fn () => $this->owner);
+        try {
+            $middleware->handle($request, fn () => response('ok'));
+            $this->fail('403 attendu');
+        } catch (HttpException $e) {
+            $this->assertSame(403, $e->getStatusCode());
+        }
+        $request->setUserResolver(fn () => $this->admin);
+        $this->assertSame('ok', $middleware->handle($request, fn () => response('ok'))->getContent());
+        $request->setUserResolver(fn () => null);
+        $this->expectException(HttpException::class);
+        $middleware->handle($request, fn () => response('ok'));
     }
 
     public function test_non_admin_cannot_perform_admin_actions_directly(): void
