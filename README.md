@@ -8,6 +8,7 @@ Plateforme SaaS de marketing SMS multi-entreprises (cible initiale : RDC). **Ét
 - Décisions en attente : [docs/DECISIONS.md](docs/DECISIONS.md)
 - Sécurité / règles du dépôt : [docs/SECURITY.md](docs/SECURITY.md)
 - Exploitation (déploiement, sauvegardes, workers, urgence) : [docs/OPERATIONS.md](docs/OPERATIONS.md)
+- Cadre légal RDC (état des vérifications, pas un avis juridique) : [docs/CADRE_LEGAL_RDC.md](docs/CADRE_LEGAL_RDC.md)
 - Brancher un fournisseur SMS : [docs/PROVIDERS.md](docs/PROVIDERS.md)
 
 ## Prérequis
@@ -206,5 +207,5 @@ et la création est refusée (fail-closed). Les jobs en file devront fixer expli
 - Pas d'invitation de membres ni de changement de rôle depuis l'interface (étape ultérieure).
 - E-mail vérifié et 2FA des rôles d'administration **obligatoires** (D10) : un envoi d'e-mails réel est requis en production (`docs/OPERATIONS.md` § 1bis).
 - Inscription ouverte (D5) ; les garde-fous anti-abus de l'envoi réel (démarrage limité, validation/suspension automatiques, revue des entreprises validées) sont en place, **leurs seuils sont à ajuster** (D11).
-- Cadre légal local (consentement, désinscription, heures d'envoi, rétention) **non défini** : à faire valider par un juriste (D4).
+- Cadre légal RDC (consentement, désinscription, heures d'envoi, rétention) : **non encodé tant que les textes officiels ne sont pas lus** ; état des vérifications dans `docs/CADRE_LEGAL_RDC.md` (D4). Ce n'est pas un avis juridique.
 - Les chiffres des rapports distinguent toujours envois réels et simulés ; tant que le fournisseur est fictif, tout est « simulation ».
