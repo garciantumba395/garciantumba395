@@ -38,4 +38,25 @@ return [
         'reject_numbers' => [],   // numéros E.164 refusés définitivement
         'throw_numbers' => [],    // numéros provoquant une erreur de transport (résultat inconnu)
     ],
+
+    // --- Étape 10 (préparatoire) : webhooks, messages entrants, réconciliation. Valeurs techniques, à valider (docs/DECISIONS.md D50-D53). ---
+    'webhooks' => [
+        // Secret du fournisseur FICTIF. VIDE PAR DÉFAUT = tout webhook est refusé (fail-closed). Jamais de secret dans le dépôt.
+        'fake_secret' => env('SMS_WEBHOOK_FAKE_SECRET', ''),
+        'tolerance_seconds' => (int) env('SMS_WEBHOOK_TOLERANCE_SECONDS', 300),   // fenêtre d'horodatage (passé et futur)
+        'max_body_bytes' => (int) env('SMS_WEBHOOK_MAX_BODY_BYTES', 65536),
+        'rate_limit_per_minute' => (int) env('SMS_WEBHOOK_RATE_LIMIT_PER_MINUTE', 600), // par IP et fournisseur
+    ],
+
+    'inbound' => [
+        // Mots-clés de désinscription (texte entier, casse/accents/espaces ignorés). Liste à valider : D4 / D14.
+        'optout_keywords' => array_values(array_filter(array_map('trim', explode(',', (string) env('SMS_INBOUND_OPTOUT_KEYWORDS', 'STOP'))), fn ($k) => $k !== '')),
+        // Une désinscription vise les entreprises ayant envoyé un message RÉEL à ce numéro dans cette fenêtre (jours).
+        'window_days' => (int) env('SMS_INBOUND_WINDOW_DAYS', 30),
+    ],
+
+    'reconcile' => [
+        // Un message « en cours » ou « résultat inconnu » depuis plus de N minutes est signalé par sms:reconcile.
+        'stale_minutes' => (int) env('SMS_RECONCILE_STALE_MINUTES', 60),
+    ],
 ];
