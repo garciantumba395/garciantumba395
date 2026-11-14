@@ -16,6 +16,7 @@ PostgreSQL ≥ 16, Redis ≥ 7.
 ## Installation
 
 ```bash
+bash scripts/setup-local.sh   # tout-en-un (ou les étapes manuelles ci-dessous)
 composer install
 cp .env.example .env
 php artisan key:generate
