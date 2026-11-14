@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Domain\Sms\InfobipSmsProvider;
 use App\Domain\Sms\SmsManager;
 use App\Domain\Sms\SmsProvider;
 use App\Domain\Sms\Webhooks\SmsWebhookRegistry;
@@ -23,7 +24,14 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->scoped(CurrentCompany::class);
-        $this->app->singleton(SmsManager::class);
+        $this->app->singleton(SmsManager::class, function () {
+            $manager = new SmsManager;
+            $manager->extend('infobip', fn () => new InfobipSmsProvider(
+                (string) config('sms.infobip.base_url'), (string) config('sms.infobip.api_key'),
+                config('sms.infobip.default_sender'), (int) config('sms.infobip.timeout')));
+
+            return $manager;
+        });
         $this->app->singleton(SmsWebhookRegistry::class); // étape 10 préparatoire : vérificateurs de webhook par fournisseur
         // Toute résolution directe de SmsProvider passe par le verrou d'activation du manager.
         $this->app->bind(SmsProvider::class, fn ($app) => $app->make(SmsManager::class)->provider());

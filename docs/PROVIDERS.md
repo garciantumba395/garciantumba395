@@ -1,6 +1,6 @@
 # Écrire un adaptateur de fournisseur SMS
 
-**État : aucun fournisseur réel n'est choisi (décision D1).** Ce document décrit comment en brancher un le moment venu ; l'infrastructure
+**État : fournisseur retenu = Infobip (décision D1), adaptateur écrit mais NON activé et non validé en sandbox ; vérificateur de webhook non écrit (les webhooks `infobip` restent refusés, fail-closed).** Ce document décrit comment en brancher un le moment venu ; l'infrastructure
 (webhooks, accusés, désinscription par mot-clé, réconciliation, contrats de test) est déjà prête et validée avec le `FakeSmsProvider`.
 Rien dans le dépôt ne connaît l'API d'un vrai fournisseur : le format de webhook du fournisseur fictif (en-têtes `X-Fake-*`) est
 une invention de simulation, **pas** un modèle de format réel.

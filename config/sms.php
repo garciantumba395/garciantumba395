@@ -33,6 +33,14 @@ return [
         'max_optout_rate' => 0.05,     // désinscriptions / envois réels : au-delà, suspension automatique
     ],
 
+    // Infobip (D1). Secrets UNIQUEMENT dans le .env du serveur. Rien ne part sans SMS_PROVIDER=infobip ET SMS_SENDING_ENABLED=true.
+    'infobip' => [
+        'base_url' => env('INFOBIP_BASE_URL', ''),   // hôte de votre compte (sans https://)
+        'api_key' => env('INFOBIP_API_KEY', ''),
+        'default_sender' => env('INFOBIP_DEFAULT_SENDER'),
+        'timeout' => (int) env('INFOBIP_TIMEOUT', 15),
+    ],
+
     // Comportement du fournisseur fictif (tests et démonstration).
     'fake' => [
         'reject_numbers' => [],   // numéros E.164 refusés définitivement
