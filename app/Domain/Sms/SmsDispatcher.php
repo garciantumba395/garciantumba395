@@ -4,6 +4,9 @@ namespace App\Domain\Sms;
 
 use App\Domain\Consent\Eligibility;
 use App\Domain\Consent\SendEligibility;
+use App\Domain\Credits\CostCalculator;
+use App\Domain\Credits\CreditService;
+use App\Domain\Credits\InsufficientCreditsException;
 use App\Models\Contact;
 use App\Models\SmsMessage;
 use App\Support\Tenancy\CurrentCompany;
@@ -17,8 +20,9 @@ use Throwable;
  *  1. fournisseur résolu d'abord : verrou d'activation (rien n'est créé ni envoyé si un fournisseur réel n'est pas activé) ;
  *  2. consentement + désinscription revérifiés au moment de l'envoi (SendEligibility) ;
  *  3. idempotence : une clé d'idempotence = au plus UN envoi (contrainte UNIQUE en base + prise en charge atomique) ;
- *  4. une erreur de transport laisse le statut « unknown » et n'est JAMAIS renvoyée automatiquement.
- * (Étape 5 : le débit de crédits s'insérera ici, avant l'appel au fournisseur, avec la même clé d'idempotence.)
+ *  4. débit des crédits AVANT l'appel au fournisseur (clé « sms:{id} », donc jamais deux fois) ; solde insuffisant = aucun envoi ;
+ *  5. refus définitif du fournisseur = remboursement (une seule fois) ; une erreur de transport laisse le statut « unknown »,
+ *     SANS remboursement et SANS renvoi automatique (le message a peut-être été envoyé : réconciliation manuelle).
  */
 class SmsDispatcher
 {
@@ -26,6 +30,8 @@ class SmsDispatcher
         private SmsManager $manager,
         private SendEligibility $eligibility,
         private CurrentCompany $current,
+        private CreditService $credits,
+        private CostCalculator $costs,
     ) {}
 
     public function dispatch(Contact $contact, string $body, string $idempotencyKey, ?string $senderId = null, ?int $userId = null): SmsMessage
@@ -40,6 +46,8 @@ class SmsDispatcher
         // 1. Verrou d'activation : lève SmsSendingDisabledException AVANT toute écriture.
         $provider = $this->manager->provider();
 
+        $cost = $this->costs->forMessage($contact->phone, $body);
+
         // 3. Idempotence : insertion ignorée si la clé existe déjà (pas d'erreur SQL, sûr en concurrence).
         $inserted = DB::table('sms_messages')->insertOrIgnore([
             'company_id' => $companyId,
@@ -51,6 +59,9 @@ class SmsDispatcher
             'status' => SmsStatus::Pending->value,
             'provider' => $provider->name(),
             'simulated' => ! $provider->isLive(),
+            'segments' => $cost->segments,
+            'encoding' => $cost->encoding,
+            'cost_units' => $cost->totalUnits(),
             'created_by' => $userId,
             'created_at' => now(),
             'updated_at' => now(),
@@ -76,6 +87,15 @@ class SmsDispatcher
             return $message->fresh();
         }
 
+        // 4. Débit idempotent avant l'envoi : sans crédits suffisants, rien n'est envoyé.
+        try {
+            $debit = $this->credits->debit($companyId, $cost->totalUnits(), 'sms:'.$message->id, $message->id, ! $provider->isLive(), $userId);
+        } catch (InsufficientCreditsException) {
+            $message->update(['status' => SmsStatus::Blocked, 'blocked_reason' => 'insufficient_credits']);
+
+            return $message;
+        }
+
         try {
             $result = $provider->send(new SmsRequest($contact->phone, $body, 'm'.$message->id, $senderId));
         } catch (Throwable $e) {
@@ -89,6 +109,8 @@ class SmsDispatcher
         if ($result->accepted) {
             $message->update(['status' => SmsStatus::Sent, 'provider_message_id' => $result->providerMessageId, 'sent_at' => now()]);
         } else {
+            // 5. Refus définitif : le message n'est pas parti, on rembourse (une seule fois, clé dérivée du débit).
+            $this->credits->refund($debit, 'Refus du fournisseur : '.$result->errorCode);
             $message->update(['status' => SmsStatus::Failed, 'error_code' => $result->errorCode, 'error_message' => mb_substr((string) $result->errorMessage, 0, 500)]);
         }
 

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\EnsureCompany;
+use App\Http\Middleware\EnsurePlatformAdmin;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -13,7 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->alias(['company' => EnsureCompany::class]);
+        $middleware->alias(['company' => EnsureCompany::class, 'platform.admin' => EnsurePlatformAdmin::class]);
         $middleware->redirectGuestsTo(fn () => route('login'));
         $middleware->redirectUsersTo(fn () => route('dashboard'));
         $middleware->trustProxies(at: env('TRUSTED_PROXIES') ? explode(',', env('TRUSTED_PROXIES')) : null);

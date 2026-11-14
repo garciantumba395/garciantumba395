@@ -40,19 +40,20 @@
 
     <div class="overflow-x-auto rounded bg-white shadow">
         <table class="min-w-full text-left text-sm">
-            <thead class="border-b bg-slate-100"><tr><th class="px-3 py-2">Date</th><th class="px-3 py-2">Numéro</th><th class="px-3 py-2">Message</th><th class="px-3 py-2">Statut</th><th class="px-3 py-2">Mode</th></tr></thead>
+            <thead class="border-b bg-slate-100"><tr><th class="px-3 py-2">Date</th><th class="px-3 py-2">Numéro</th><th class="px-3 py-2">Message</th><th class="px-3 py-2">Segments</th><th class="px-3 py-2">Statut</th><th class="px-3 py-2">Mode</th></tr></thead>
             <tbody>
             @forelse ($messages as $m)
                 <tr class="border-b align-top last:border-0" wire:key="m{{ $m->id }}">
                     <td class="whitespace-nowrap px-3 py-2">{{ $m->created_at->format('d/m/Y H:i') }}</td>
                     <td class="px-3 py-2 font-mono">{{ $m->phone }}</td>
                     <td class="max-w-xs truncate px-3 py-2" title="{{ $m->body }}">{{ $m->body }}</td>
-                    <td class="px-3 py-2">{{ $m->status->label() }}@if ($m->blocked_reason) <span class="text-slate-500">({{ $m->blocked_reason === 'suppressed' ? 'désinscrit' : 'sans consentement' }})</span>@endif
+                    <td class="px-3 py-2">{{ $m->segments ?? '—' }}</td>
+                    <td class="px-3 py-2">{{ $m->status->label() }}@if ($m->blocked_reason) <span class="text-slate-500">({{ ['suppressed' => 'désinscrit', 'no_consent' => 'sans consentement', 'insufficient_credits' => 'crédits insuffisants'][$m->blocked_reason] ?? $m->blocked_reason }})</span>@endif
                         @if ($m->error_message)<div class="text-xs text-red-700">{{ $m->error_message }}</div>@endif</td>
                     <td class="px-3 py-2">@if ($m->simulated)<span class="rounded bg-amber-100 px-2 py-0.5 text-amber-900">Simulation</span>@else<span class="rounded bg-red-100 px-2 py-0.5 text-red-900">Réel</span>@endif</td>
                 </tr>
             @empty
-                <tr><td colspan="5" class="px-3 py-6 text-center text-slate-500">Aucun message.</td></tr>
+                <tr><td colspan="6" class="px-3 py-6 text-center text-slate-500">Aucun message.</td></tr>
             @endforelse
             </tbody>
         </table>

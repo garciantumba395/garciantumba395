@@ -3,6 +3,7 @@
 namespace Tests\Feature\Sms;
 
 use App\Domain\Consent\ConsentService;
+use App\Domain\Credits\CreditService;
 use App\Domain\Sms\FakeSmsProvider;
 use App\Domain\Sms\SmsDispatcher;
 use App\Domain\Sms\SmsManager;
@@ -39,6 +40,8 @@ class SmsDispatcherTest extends TestCase
         Http::preventStrayRequests(); // toute requête HTTP sortante fait échouer le test
         $this->a = Company::createFor(User::factory()->create(), 'A');
         $this->b = Company::createFor(User::factory()->create(), 'B');
+        app(CreditService::class)->credit($this->a, 600000, 'seed:a'); // 100 crédits
+        app(CreditService::class)->credit($this->b, 600000, 'seed:b');
         app(CurrentCompany::class)->set($this->a);
         $this->dispatcher = app(SmsDispatcher::class);
     }

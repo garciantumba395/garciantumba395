@@ -16,6 +16,8 @@
                 <a href="{{ route('groups.index') }}" class="hover:underline">Groupes</a>
                 <a href="{{ route('suppressions.index') }}" class="hover:underline">Désinscriptions</a>
                 <a href="{{ route('messages.index') }}" class="hover:underline">Messages</a>
+                <a href="{{ route('credits.index') }}" class="hover:underline">Crédits</a>
+                @if (auth()->user()?->is_platform_admin)<a href="{{ route('admin.companies') }}" class="font-medium text-amber-700 hover:underline">Administration</a>@endif
                 <a href="{{ route('companies.members') }}" class="hover:underline">Membres</a>
                 <a href="{{ route('companies.settings') }}" class="hover:underline">Paramètres</a>
                 <livewire:companies.switcher />

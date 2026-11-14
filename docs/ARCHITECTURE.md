@@ -97,14 +97,36 @@ Garanties du répartiteur, dans l'ordre :
 5. appel au fournisseur : refus définitif → `failed` ; erreur de transport → `unknown` (**jamais renvoyé automatiquement**, à réconcilier) ;
 6. accusés de réception (`recordDeliveryReport`) : ne font jamais reculer un statut.
 
-À l'étape 5, le débit de crédits s'insérera avant l'étape 5 ci-dessus, avec la même clé d'idempotence.
 Les messages `simulated = true` ne doivent **jamais** être comptés comme des envois réels dans les rapports (étape 7).
+
+## Crédits (étape 5)
+
+Règle fournie (D2) : **100 crédits = 120 SMS**, 1 SMS = 1 segment. Les montants sont des **unités entières** :
+1 crédit = 6 000 unités, 1 segment au tarif par défaut = 5 000 unités (5/6 de crédit, exact : 120 envois = 100 crédits pile).
+
+```
+companies.credit_balance_units          (CHECK >= 0 sur PostgreSQL)
+credit_ledger_entries(company_id, type credit|debit|refund|adjustment, amount_units signé, balance_after_units,
+                      idempotency_key, sms_message_id?, reason, simulated, created_by, created_at)
+    UNIQUE(company_id, idempotency_key) ; AJOUT SEUL (modification/suppression refusées par le modèle)
+sms_rates(country, prefix?, label, units_per_segment, is_active)      -- tarifs globaux, saisis par l'admin plateforme
+sms_messages += segments, encoding, cost_units
+```
+
+- **Coût** = segments × tarif. Segments : norme GSM-7 (160/153) ou UCS-2 (70/67) ; un seul caractère hors GSM-7 (« ç », « â », emoji…) bascule tout le message en UCS-2.
+  Tarif : préfixe d'opérateur le plus long > tarif du pays > tarif par défaut. **Aucun préfixe ni tarif n'est pré-rempli.**
+- `CreditService` est le seul code qui modifie un solde : verrou de ligne, `UPDATE … WHERE solde >= montant` (jamais négatif),
+  écriture au grand livre dans la même transaction, **une clé d'idempotence = une seule écriture**, un remboursement par débit.
+- Envoi : débit (`sms:{id}`) **avant** l'appel au fournisseur ; solde insuffisant → message bloqué `insufficient_credits`, rien n'est envoyé ;
+  refus définitif → remboursement ; erreur de transport → pas de remboursement (le message a peut-être été envoyé), réconciliation manuelle (correction admin).
+- Les écritures liées à un envoi fictif sont marquées `simulated` (les rapports de l'étape 7 ne doivent pas les présenter comme des envois réels).
+- `php artisan credits:verify` : contrôle en lecture seule solde = somme du grand livre.
+- Administration plateforme (`is_platform_admin`) : `/admin/entreprises` (ajout/retrait avec motif obligatoire, double clic sans effet), `/admin/tarifs`.
 
 ## Cible (étapes suivantes)
 
 ```
 campaigns, campaign_messages (UNIQUE campaign_id+contact_id)
-credit_ledger_entries (append-only, UNIQUE idempotency_key), credit_balances (cache)
 ```
 
 ## Flux d'envoi cible

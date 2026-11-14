@@ -2,6 +2,8 @@
 
 namespace App\Livewire;
 
+use App\Domain\Credits\CreditService;
+use App\Domain\Credits\CreditUnits;
 use App\Models\Contact;
 use App\Models\ContactGroup;
 use App\Models\Suppression;
@@ -16,6 +18,6 @@ class Dashboard extends Component
 {
     public function render(CurrentCompany $current)
     {
-        return view('livewire.dashboard', ['company' => $current->company(), 'role' => $current->role(), 'contacts' => Contact::count(), 'groups' => ContactGroup::count(), 'sendable' => Contact::sendable()->count(), 'suppressed' => Suppression::active()->count()]);
+        return view('livewire.dashboard', ['company' => $current->company(), 'role' => $current->role(), 'contacts' => Contact::count(), 'groups' => ContactGroup::count(), 'balance' => CreditUnits::format(app(CreditService::class)->balance($current->company())), 'sendable' => Contact::sendable()->count(), 'suppressed' => Suppression::active()->count()]);
     }
 }

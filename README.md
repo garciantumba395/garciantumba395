@@ -1,6 +1,6 @@
 # SMS Marketing SaaS (RDC) — socle
 
-Plateforme SaaS de marketing SMS multi-entreprises. **Étapes faites : 1 (authentification, entreprises, rôles, isolation), 2 (contacts, groupes, import CSV) et 3 (consentement, désinscription) et 4 (fournisseur SMS fictif, journal des messages).**
+Plateforme SaaS de marketing SMS multi-entreprises. **Étapes faites : 1 (authentification, entreprises, rôles, isolation), 2 (contacts, groupes, import CSV) et 3 (consentement, désinscription) 4 (fournisseur SMS fictif, journal des messages) et 5 (crédits, grand livre, tarifs).**
 Aucun SMS n'est envoyé par ce socle (aucun fournisseur SMS n'est encore intégré).
 
 - Architecture : [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
@@ -87,6 +87,18 @@ Paramètres (`config/consent.php`, variables `CONSENT_REQUIRE_EVIDENCE`, `CONSEN
 4. Dans `.env`, `SMS_PROVIDER=fake` et `SMS_SENDING_ENABLED=false` (défauts). Aucun fournisseur réel n'existe encore : mettre
    `SMS_SENDING_ENABLED=true` avec le fournisseur fictif ne change rien et n'envoie rien de réel.
 
+## Vérifier l'étape 5 manuellement
+
+1. Créer un administrateur de plateforme (console uniquement) :
+   `php artisan tinker` puis `User::where('email','…')->first()->forceFill(['is_platform_admin'=>true])->save();`
+2. Connecté en administrateur : `/admin/entreprises` → sélectionner une entreprise → ajouter `100` crédits avec un motif.
+3. Connecté comme l'entreprise : `/credits` affiche 100,00 crédits (≈ 120 SMS) et l'historique ; le tableau de bord affiche le solde.
+4. `/messages` : envoi de test → 1 segment = 0,83 crédit débité (marqué « simulation ») ; avec un solde insuffisant → « Bloqué (crédits insuffisants) », rien n'est envoyé.
+5. `/admin/tarifs` : ajouter un tarif pays ou préfixe (saisi en « SMS pour 100 crédits ») ; il s'applique aux envois suivants.
+6. `php artisan credits:verify` → « OK : tous les soldes correspondent au grand livre ».
+
+Un utilisateur non administrateur reçoit une erreur 403 sur `/admin/*`.
+
 ## Rôles
 
 | Rôle | Paramètres entreprise | Membres (lecture) |
@@ -107,7 +119,7 @@ et la création est refusée (fail-closed). Les jobs en file devront fixer expli
 
 ## Limites connues de l'étape 1
 
-- Pas de campagnes ni de crédits (étapes 5 et 6), aucun fournisseur réel (étape 10) ; la désinscription par réponse « STOP » nécessitera les SMS entrants (fournisseur, étape 10) ; l'import est synchrone.
+- Pas de campagnes (étape 6), pas de rapports (étape 7), aucun fournisseur réel (étape 10) ; pas de paiement en ligne (les crédits sont ajoutés à la main) ; la désinscription par réponse « STOP » nécessitera les SMS entrants (fournisseur, étape 10) ; l'import est synchrone.
 - Pas d'invitation de membres ni de changement de rôle (étape ultérieure).
 - Pas de vérification d'e-mail ni de 2FA (décision D10).
 - Inscription ouverte (décision D5 tranchée ; anti-abus à reconsidérer à l'étape 9).

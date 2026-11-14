@@ -1,5 +1,7 @@
 <?php
 
+use App\Livewire\Admin\Companies as AdminCompanies;
+use App\Livewire\Admin\Rates as AdminRates;
 use App\Livewire\Auth\ForgotPassword;
 use App\Livewire\Auth\Login;
 use App\Livewire\Auth\Register;
@@ -11,6 +13,7 @@ use App\Livewire\Contacts\Form as ContactForm;
 use App\Livewire\Contacts\Import as ContactImport;
 use App\Livewire\Contacts\Index as ContactIndex;
 use App\Livewire\Contacts\Show as ContactShow;
+use App\Livewire\Credits\Index as CreditIndex;
 use App\Livewire\Dashboard;
 use App\Livewire\Groups\Index as GroupIndex;
 use App\Livewire\Messages\Index as MessageIndex;
@@ -39,6 +42,12 @@ Route::middleware('auth')->group(function () {
     // Création d'entreprise : accessible sans entreprise active.
     Route::get('/entreprises/nouvelle', CompanyCreate::class)->name('companies.create');
 
+    // Administration de la plateforme : réservée à is_platform_admin, sans entreprise active requise.
+    Route::middleware('platform.admin')->prefix('admin')->group(function () {
+        Route::get('/entreprises', AdminCompanies::class)->name('admin.companies');
+        Route::get('/tarifs', AdminRates::class)->name('admin.rates');
+    });
+
     Route::middleware('company')->group(function () {
         Route::get('/tableau-de-bord', Dashboard::class)->name('dashboard');
         Route::get('/entreprise/parametres', CompanySettings::class)->name('companies.settings');
@@ -50,6 +59,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/contacts/{contact}', ContactShow::class)->whereNumber('contact')->name('contacts.show');
         Route::get('/desinscriptions', SuppressionIndex::class)->name('suppressions.index');
         Route::get('/messages', MessageIndex::class)->name('messages.index');
+        Route::get('/credits', CreditIndex::class)->name('credits.index');
         Route::get('/groupes', GroupIndex::class)->name('groups.index');
     });
 });

@@ -3,6 +3,7 @@
 namespace Tests\Feature\Sms;
 
 use App\Domain\Consent\ConsentService;
+use App\Domain\Credits\CreditService;
 use App\Domain\Sms\SmsDispatcher;
 use App\Domain\Sms\SmsManager;
 use App\Enums\CompanyRole;
@@ -38,6 +39,8 @@ class MessageLogTest extends TestCase
         $this->ub = User::factory()->create();
         $this->a = Company::createFor($this->ua, 'A');
         $this->b = Company::createFor($this->ub, 'B');
+        app(CreditService::class)->credit($this->a, 600000, 'seed:a'); // 100 crédits
+        app(CreditService::class)->credit($this->b, 600000, 'seed:b');
     }
 
     private function in(Company $c, callable $fn): mixed
