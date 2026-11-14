@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Domain\Sms\SmsManager;
 use App\Domain\Sms\SmsProvider;
 use App\Domain\Sms\Webhooks\SmsWebhookRegistry;
+use App\Http\Middleware\EnsureEmailIsVerifiedIfRequired;
 use App\Http\Middleware\EnsureTwoFactorForAdmins;
 use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -43,7 +44,7 @@ class AppServiceProvider extends ServiceProvider
             return new Limit('livewire:'.($request->user()?->id ?? $request->ip()), (int) $c['max'], (int) $c['decay']);
         });
         Livewire::setUpdateRoute(fn ($handle) => Route::post('/livewire/update', $handle)->middleware('throttle:livewire'));
-        Livewire::addPersistentMiddleware([EnsureTwoFactorForAdmins::class]);
+        Livewire::addPersistentMiddleware([EnsureEmailIsVerifiedIfRequired::class, EnsureTwoFactorForAdmins::class]);
         // --- fin étape 9 ---
     }
 }

@@ -44,6 +44,9 @@ class ResetPassword extends Component
             ['email' => $this->email, 'password' => $this->password, 'password_confirmation' => $this->password_confirmation, 'token' => $this->token],
             function ($user) {
                 $user->forceFill(['password' => Hash::make($this->password), 'remember_token' => Str::random(60)])->save();
+                if (! $user->hasVerifiedEmail()) {
+                    $user->markEmailAsVerified(); // le lien reçu par e-mail prouve le contrôle de l'adresse
+                }
                 event(new PasswordReset($user));
             }
         );

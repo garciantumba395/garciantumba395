@@ -7,7 +7,8 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="min-h-screen bg-slate-50 text-slate-800 antialiased">
-    @php($hasCompany = app(\App\Support\Tenancy\CurrentCompany::class)->company() !== null)
+    @php($forcedTwoFactor = auth()->check() && config('security.require_2fa_for_admins') && ! auth()->user()->hasTwoFactorEnabled() && app(\App\Support\Security\TwoFactor::class)->isRequiredFor(auth()->user()))
+    @php($hasCompany = ! $forcedTwoFactor && app(\App\Support\Tenancy\CurrentCompany::class)->company() !== null)
     <header class="border-b bg-white">
         <div class="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3">
             <a href="{{ route(auth()->user()?->homeRoute() ?? 'dashboard') }}" class="font-semibold">{{ config('app.name') }}</a>
@@ -22,7 +23,7 @@
                 <a href="{{ route('credits.index') }}" class="hover:underline">Crédits</a>
                 <a href="{{ route('reports.index') }}" class="hover:underline">Rapports</a>
                 @endif
-                @if (auth()->user()?->is_platform_admin)<a href="{{ route('admin.companies') }}" class="font-medium text-amber-700 hover:underline">Administration</a><a href="{{ route('admin.dashboard') }}" class="font-medium text-amber-700 hover:underline">Plateforme</a>@endif
+                @if (auth()->user()?->is_platform_admin && ! $forcedTwoFactor)<a href="{{ route('admin.companies') }}" class="font-medium text-amber-700 hover:underline">Administration</a><a href="{{ route('admin.dashboard') }}" class="font-medium text-amber-700 hover:underline">Plateforme</a>@endif
                 @if ($hasCompany)
                 <a href="{{ route('companies.members') }}" class="hover:underline">Membres</a>
                 <a href="{{ route('companies.settings') }}" class="hover:underline">Paramètres</a>

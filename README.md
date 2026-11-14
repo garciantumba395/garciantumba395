@@ -67,6 +67,11 @@ Crée 4 comptes **fictifs** (administrateur de plateforme, propriétaire, membre
 et affiché une seule fois** dans la console ; rien n'est écrit dans le dépôt. Ensuite : `php artisan serve` (et `QUEUE_CONNECTION=sync` pour voir une
 campagne se terminer sans worker). N'utilisez jamais ce jeu de données en production.
 
+> **D10 (e-mail vérifié et 2FA obligatoires)** : pour la démonstration locale, mettez `SECURITY_REQUIRE_EMAIL_VERIFICATION=false` et
+> `SECURITY_REQUIRE_2FA_FOR_ADMINS=false` dans votre `.env` (les comptes de démonstration ont déjà une adresse vérifiée, mais pas de 2FA).
+> Avec les réglages par défaut (`true`), l'inscription envoie un lien (écrit dans `storage/logs/laravel.log` si `MAIL_MAILER=log`) et le premier
+> accès d'un propriétaire passe par l'activation de la 2FA. Voir `docs/OPERATIONS.md` § 1bis.
+
 ## Vérifier l'étape 2 manuellement
 
 1. `/entreprise/parametres` : vérifier « Pays et indicatif » (RDC +243 par défaut).
@@ -199,7 +204,7 @@ et la création est refusée (fail-closed). Les jobs en file devront fixer expli
 - **Aucun fournisseur SMS réel** (décision D1) : l'adaptateur reste à écrire ; la préparation (webhooks signés, STOP, réconciliation) est livrée, voir `docs/PROVIDERS.md`.
 - Pas de paiement en ligne : les crédits sont ajoutés à la main par l'administrateur de la plateforme (décision D7).
 - Pas d'invitation de membres ni de changement de rôle depuis l'interface (étape ultérieure).
-- Pas de vérification d'e-mail (décision D10) ; la 2FA TOTP est optionnelle (D40), son obligation est désactivée par défaut.
+- E-mail vérifié et 2FA des rôles d'administration **obligatoires** (D10) : un envoi d'e-mails réel est requis en production (`docs/OPERATIONS.md` § 1bis).
 - Inscription ouverte (D5) ; les garde-fous anti-abus de l'envoi réel (démarrage limité, validation/suspension automatiques, revue des entreprises validées) sont en place, **leurs seuils sont à ajuster** (D11).
 - Cadre légal local (consentement, désinscription, heures d'envoi, rétention) **non défini** : à faire valider par un juriste (D4).
 - Les chiffres des rapports distinguent toujours envois réels et simulés ; tant que le fournisseur est fictif, tout est « simulation ».

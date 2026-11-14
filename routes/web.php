@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Auth\VerifyEmailController;
 use App\Http\Controllers\ReportExportController;
 use App\Http\Controllers\Webhooks\SmsWebhookController;
 use App\Livewire\Admin\AuditLogs as AdminAuditLogs;
@@ -13,6 +14,7 @@ use App\Livewire\Auth\Login;
 use App\Livewire\Auth\Register;
 use App\Livewire\Auth\ResetPassword;
 use App\Livewire\Auth\TwoFactorChallenge;
+use App\Livewire\Auth\VerifyEmailNotice;
 use App\Livewire\Campaigns\Form as CampaignForm;
 use App\Livewire\Campaigns\Index as CampaignIndex;
 use App\Livewire\Campaigns\Show as CampaignShow;
@@ -48,8 +50,11 @@ Route::middleware('guest')->group(function () {
     Route::get('/connexion/verification', TwoFactorChallenge::class)->name('two-factor.challenge'); // étape 9
 });
 
-Route::middleware(['auth', 'two_factor.admins'])->group(function () {
-    Route::get('/profil', ProfileShow::class)->name('profile'); // étape 9
+// D10 : vérification de l'adresse e-mail. Accessible sans être « vérifié » (sinon impossible de vérifier), ainsi que la déconnexion.
+Route::middleware('auth')->group(function () {
+    Route::get('/verification-email', VerifyEmailNotice::class)->name('verification.notice');
+    Route::get('/verification-email/{id}/{hash}', VerifyEmailController::class)
+        ->whereNumber('id')->middleware(['signed', 'throttle:6,1'])->name('verification.verify');
     Route::post('/deconnexion', function () {
         Auth::logout();
         request()->session()->invalidate();
@@ -57,6 +62,10 @@ Route::middleware(['auth', 'two_factor.admins'])->group(function () {
 
         return redirect()->route('login');
     })->name('logout');
+});
+
+Route::middleware(['auth', 'verified.required', 'two_factor.admins'])->group(function () {
+    Route::get('/profil', ProfileShow::class)->name('profile'); // étape 9
 
     // Création d'entreprise : accessible sans entreprise active.
     Route::get('/entreprises/nouvelle', CompanyCreate::class)->name('companies.create');
