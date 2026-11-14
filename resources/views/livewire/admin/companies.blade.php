@@ -1,6 +1,20 @@
 <div class="space-y-6">
     <h2 class="text-xl font-semibold">Administration — entreprises et crédits</h2>
-    <p class="text-sm text-slate-600"><a class="underline" href="{{ route('admin.rates') }}">Gérer les tarifs par pays / opérateur</a></p>
+    <p class="text-sm text-slate-600"><a class="underline" href="{{ route('admin.rates') }}">Gérer les tarifs par pays / opérateur</a> · <a class="underline" href="{{ route('admin.dashboard') }}">Tableau de bord</a> · <a class="underline" href="{{ route('admin.users') }}">Utilisateurs</a> · <a class="underline" href="{{ route('admin.audit') }}">Journal d'audit</a></p>
+
+    <div class="flex flex-wrap gap-3 rounded bg-white p-4 shadow">
+        <div>
+            <label for="search" class="text-sm font-medium">Rechercher une entreprise</label>
+            <input id="search" type="search" wire:model.live.debounce.300ms="search" class="mt-1 w-full rounded border border-slate-300 px-3 py-2">
+        </div>
+        <div>
+            <label for="statusFilter" class="text-sm font-medium">Statut d'envoi</label>
+            <select id="statusFilter" wire:model.live="statusFilter" class="mt-1 w-full rounded border border-slate-300 px-3 py-2">
+                <option value="">Tous</option>
+                @foreach (\App\Domain\Sms\SendingStatus::cases() as $s)<option value="{{ $s->value }}">{{ $s->label() }}</option>@endforeach
+            </select>
+        </div>
+    </div>
 
     <div class="overflow-x-auto rounded bg-white shadow">
         <table class="min-w-full text-left text-sm">
@@ -8,7 +22,7 @@
             <tbody>
             @foreach ($companies as $c)
                 <tr class="border-b last:border-0 {{ $companyId === $c->id ? 'bg-slate-50' : '' }}" wire:key="co{{ $c->id }}">
-                    <td class="px-3 py-2">{{ $c->name }}</td>
+                    <td class="px-3 py-2"><a class="underline" href="{{ route('admin.companies.show', $c->id) }}">{{ $c->name }}</a>@unless ($c->is_active) <span class="rounded bg-red-100 px-1 text-xs text-red-700">désactivée</span>@endunless</td>
                     <td class="px-3 py-2">{{ $c->country }}</td>
                     <td class="px-3 py-2">{{ $c->users_count }}</td>
                     <td class="px-3 py-2" title="{{ $c->sending_status_reason }}">{{ $c->sending_status->label() }}@if ($c->daily_send_limit !== null) <span class="text-xs text-slate-500">(max {{ $c->daily_send_limit }}/jour)</span>@endif</td>

@@ -2,9 +2,11 @@
 
 namespace App\Domain\Sms;
 
+use App\Domain\Audit\AuditLogger;
 use App\Models\Company;
 use App\Models\SmsMessage;
 use App\Models\Suppression;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -59,13 +61,50 @@ class SendingPolicy
         }
     }
 
+    /**
+     * Surveillance continue (étape 9, lacune de D12) : suspend une entreprise VALIDÉE dont les envois RÉELS de la fenêtre glissante
+     * (security.review.window_days, jamais avant le dernier changement de statut) dépassent les seuils d'échec ou de désinscription,
+     * avec un échantillon minimal (security.review.min_sample). Ne touche que les entreprises « validated » ; retourne true si suspendue.
+     */
+    public function reviewValidated(int $companyId): bool
+    {
+        $company = Company::find($companyId);
+        if (! $company || $company->sending_status !== SendingStatus::Validated) {
+            return false;
+        }
+
+        $since = now()->subDays(max(1, (int) config('security.review.window_days')));
+        if ($company->sending_status_changed_at && $company->sending_status_changed_at->greaterThan($since)) {
+            $since = $company->sending_status_changed_at; // les envois antérieurs à la dernière décision ne sont pas rejugés
+        }
+        $m = $this->metrics($companyId, $since);
+        if ($m['sample'] < (int) config('security.review.min_sample')) {
+            return false;
+        }
+
+        if ($m['failure_rate'] > config('sms.sending.max_failure_rate')) {
+            $reason = sprintf('Suspension automatique (surveillance) : taux d\'échec %.0f %% sur %d envois réels récents.', $m['failure_rate'] * 100, $m['sample']);
+        } elseif ($m['optout_rate'] > config('sms.sending.max_optout_rate')) {
+            $reason = sprintf('Suspension automatique (surveillance) : taux de désinscription %.0f %% sur %d envois réels récents.', $m['optout_rate'] * 100, $m['sample']);
+        } else {
+            return false;
+        }
+
+        // Mise à jour conditionnelle : seule une entreprise encore « validée » est suspendue (pas d'écrasement d'une décision concurrente).
+        return DB::table('companies')->where('id', $company->id)->where('sending_status', SendingStatus::Validated->value)->update([
+            'sending_status' => SendingStatus::Suspended->value,
+            'sending_status_changed_at' => now(),
+            'sending_status_reason' => mb_substr($reason, 0, 255),
+        ]) === 1;
+    }
+
     /** Changement manuel par l'administrateur de la plateforme (motif obligatoire). */
     public function setStatus(Company $company, SendingStatus $status, string $reason): void
     {
         if (trim($reason) === '') {
             throw new \InvalidArgumentException('Un motif est obligatoire.');
         }
-        $this->transition($company, $status, $reason);
+        $this->transition($company, $status, $reason, manual: true);
     }
 
     /** @return array{sample:int, failure_rate:float, optout_rate:float} indicateurs calculés sur les envois RÉELS uniquement. */
@@ -100,13 +139,19 @@ class SendingPolicy
             ->count();
     }
 
-    private function transition(Company $company, SendingStatus $status, string $reason): void
+    /** $manual = false : transition automatique, acteur « système » dans le journal d'audit. */
+    private function transition(Company $company, SendingStatus $status, string $reason, bool $manual = false): void
     {
+        $from = $company->sending_status;
         // Mise à jour conditionnelle : deux évaluations concurrentes ne se contredisent pas.
         DB::table('companies')->where('id', $company->id)->update([
             'sending_status' => $status->value,
             'sending_status_changed_at' => now(),
             'sending_status_reason' => mb_substr($reason, 0, 255),
+        ]);
+
+        app(AuditLogger::class)->recordAs($manual ? Auth::id() : null, $manual ? 'sending.status_changed' : 'sending.status_auto_changed', $company, $company, [
+            'from' => $from->value, 'to' => $status->value, 'reason' => $reason,
         ]);
     }
 }

@@ -4,10 +4,12 @@ namespace App\Livewire\Auth;
 
 use App\Models\Company;
 use App\Models\User;
+use App\Support\Security\Throttle;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
+use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -28,6 +30,10 @@ class Register extends Component
 
     public function register()
     {
+        if (! Throttle::attempt('register', request()->ip())) {
+            throw ValidationException::withMessages(['email' => Throttle::message('register', request()->ip())]);
+        }
+
         $data = $this->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email'],

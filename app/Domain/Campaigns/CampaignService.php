@@ -2,6 +2,7 @@
 
 namespace App\Domain\Campaigns;
 
+use App\Domain\Audit\AuditLogger;
 use App\Domain\Credits\CostCalculator;
 use App\Domain\Credits\CreditService;
 use App\Jobs\PrepareCampaign;
@@ -68,7 +69,10 @@ class CampaignService
     {
         $started = 0;
         $ids = Campaign::withoutGlobalScopes()->where('status', CampaignStatus::Scheduled->value)
-            ->where('scheduled_at', '<=', now())->pluck('id');
+            ->where('scheduled_at', '<=', now())
+            // Une entreprise désactivée par l'administration ne démarre plus de campagne (étape 8).
+            ->whereIn('company_id', fn ($q) => $q->select('id')->from('companies')->where('is_active', true))
+            ->pluck('id');
 
         foreach ($ids as $id) {
             if ($this->claimForPreparation($id)) {
@@ -94,7 +98,11 @@ class CampaignService
         $ids = Campaign::withoutGlobalScopes()->where('status', CampaignStatus::Paused->value)
             ->where('pause_code', 'daily_limit')->where('paused_at', '<', now()->startOfDay())->pluck('id');
         foreach ($ids as $id) {
-            $n += $this->resume(Campaign::withoutGlobalScopes()->findOrFail($id)) ? 1 : 0;
+            $campaign = Campaign::withoutGlobalScopes()->findOrFail($id);
+            if ($this->resume($campaign)) {
+                $n++;
+                app(AuditLogger::class)->recordSystem('campaign.resumed', $campaign->company_id, $campaign, ['code' => 'daily_limit_reset']);
+            }
         }
 
         return $n;
@@ -102,9 +110,15 @@ class CampaignService
 
     public function pause(Campaign $campaign, string $code = 'manual', ?string $message = null): bool
     {
-        return Campaign::withoutGlobalScopes()->whereKey($campaign->id)
+        $ok = Campaign::withoutGlobalScopes()->whereKey($campaign->id)
             ->whereIn('status', [CampaignStatus::Preparing->value, CampaignStatus::Sending->value])
             ->update(['status' => CampaignStatus::Paused->value, 'pause_code' => $code, 'pause_message' => $message ? mb_substr($message, 0, 255) : null, 'paused_at' => now()]) === 1;
+        // Pause manuelle : auditée par l'action de l'utilisateur (Campaigns\Show). Pause automatique : acteur « système ».
+        if ($ok && $code !== 'manual') {
+            app(AuditLogger::class)->recordSystem('campaign.paused', $campaign->company_id, $campaign, ['code' => $code]);
+        }
+
+        return $ok;
     }
 
     /** Reprend une campagne en pause : seuls les destinataires non traités sont relancés (clés d'idempotence : aucun doublon). */

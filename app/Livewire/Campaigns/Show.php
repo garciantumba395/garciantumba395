@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Campaigns;
 
+use App\Domain\Audit\AuditLogger;
 use App\Domain\Campaigns\CampaignService;
 use App\Domain\Campaigns\CampaignStatus;
 use App\Domain\Sms\SmsManager;
@@ -9,6 +10,7 @@ use App\Models\Campaign;
 use App\Models\CampaignMessage;
 use App\Models\ContactGroup;
 use App\Support\Tenancy\CurrentCompany;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 use Livewire\Attributes\Layout;
@@ -28,7 +30,7 @@ class Show extends Component
         $this->campaignId = Campaign::findOrFail($campaign)->id; // 404 hors entreprise
     }
 
-    public function launch(CampaignService $service, CurrentCompany $current): void
+    public function launch(CampaignService $service, CurrentCompany $current, AuditLogger $audit): void
     {
         $this->authorizeManage($current);
         $campaign = Campaign::findOrFail($this->campaignId);
@@ -39,25 +41,35 @@ class Show extends Component
 
             return;
         }
+        $audit->record('campaign.launched', $campaign->company_id, $campaign, ['scheduled' => (bool) ($campaign->scheduled_at && $campaign->scheduled_at->isFuture())]);
         session()->flash('status', $campaign->scheduled_at && $campaign->scheduled_at->isFuture() ? 'Campagne programmée.' : 'Campagne lancée.');
     }
 
-    public function pause(CampaignService $service, CurrentCompany $current): void
+    public function pause(CampaignService $service, CurrentCompany $current, AuditLogger $audit): void
     {
         $this->authorizeManage($current);
-        $service->pause(Campaign::findOrFail($this->campaignId), 'manual', 'Mise en pause manuelle.');
+        $campaign = Campaign::findOrFail($this->campaignId);
+        if ($service->pause($campaign, 'manual', 'Mise en pause manuelle.')) {
+            $audit->record('campaign.paused', $campaign->company_id, $campaign, ['code' => 'manual']);
+        }
     }
 
-    public function resume(CampaignService $service, CurrentCompany $current): void
+    public function resume(CampaignService $service, CurrentCompany $current, AuditLogger $audit): void
     {
         $this->authorizeManage($current);
-        $service->resume(Campaign::findOrFail($this->campaignId));
+        $campaign = Campaign::findOrFail($this->campaignId);
+        if ($service->resume($campaign)) {
+            $audit->record('campaign.resumed', $campaign->company_id, $campaign, ['code' => 'manual']);
+        }
     }
 
-    public function cancel(CampaignService $service, CurrentCompany $current): void
+    public function cancel(CampaignService $service, CurrentCompany $current, AuditLogger $audit): void
     {
         $this->authorizeManage($current);
-        $service->cancel(Campaign::findOrFail($this->campaignId));
+        $campaign = Campaign::findOrFail($this->campaignId);
+        if ($service->cancel($campaign)) {
+            $audit->record('campaign.cancelled', $campaign->company_id, $campaign);
+        }
         session()->flash('status', 'Campagne annulée : plus aucun message ne sera envoyé.');
     }
 
@@ -70,9 +82,20 @@ class Show extends Component
             'group' => $campaign->contact_group_id ? ContactGroup::find($campaign->contact_group_id) : null,
             'estimate' => in_array($campaign->status, [CampaignStatus::Draft, CampaignStatus::Scheduled], true) ? $service->estimate($campaign) : null,
             'stats' => $this->stats($campaign),
+            ...$this->reportPeriod($campaign),
             'live' => $manager->isLiveMode(),
             'canManage' => (bool) $current->role()?->canManageCompany(),
         ]);
+    }
+
+    /** Période du lien vers le rapport : de la création de la campagne à aujourd'hui (fuseau de l'application), bornée à la période maximale. */
+    private function reportPeriod(Campaign $campaign): array
+    {
+        $today = CarbonImmutable::now(config('app.timezone'))->startOfDay();
+        $from = CarbonImmutable::parse($campaign->created_at->format('Y-m-d'), config('app.timezone'))->startOfDay();
+        $earliest = $today->subDays((int) config('reports.max_range_days') - 1);
+
+        return ['reportFrom' => max($from, $earliest)->format('Y-m-d'), 'reportTo' => $today->format('Y-m-d')];
     }
 
     /** Compteurs issus UNIQUEMENT des données réelles de la base (messages du journal). */

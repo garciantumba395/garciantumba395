@@ -1,12 +1,14 @@
 # SMS Marketing SaaS (RDC) — socle
 
-Plateforme SaaS de marketing SMS multi-entreprises. **Étapes faites : 1 (authentification, entreprises, rôles, isolation), 2 (contacts, groupes, import CSV) et 3 (consentement, désinscription) 4 (fournisseur SMS fictif, journal des messages) 5 (crédits, grand livre, tarifs) et 6 (campagnes, envoi en file d'attente Redis).**
-Aucun SMS n'est envoyé par ce socle (aucun fournisseur SMS n'est encore intégré).
+Plateforme SaaS de marketing SMS multi-entreprises (cible initiale : RDC). **Étapes faites** : 1 authentification, entreprises, rôles, isolation ; 2 contacts, groupes, import CSV ; 3 consentement et désinscription ; 4 fournisseur SMS fictif et journal des messages ; 5 crédits, grand livre, tarifs ; 6 campagnes et file d'attente Redis ; 7 rapports d'envoi ; 8 administration et journal d'audit ; 9 durcissement, sécurité, exploitation ; 10 préparatoire (webhooks, désinscription par « STOP », réconciliation) — l'adaptateur d'un fournisseur réel attend la décision D1.
+**Aucun SMS réel ne peut partir** : seul un fournisseur fictif existe, et un fournisseur réel serait refusé tant que `SMS_SENDING_ENABLED=true` n'est pas posé explicitement (voir `docs/SECURITY.md`).
 
 - Architecture : [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - Plan par étapes : [docs/ROADMAP.md](docs/ROADMAP.md)
 - Décisions en attente : [docs/DECISIONS.md](docs/DECISIONS.md)
 - Sécurité / règles du dépôt : [docs/SECURITY.md](docs/SECURITY.md)
+- Exploitation (déploiement, sauvegardes, workers, urgence) : [docs/OPERATIONS.md](docs/OPERATIONS.md)
+- Brancher un fournisseur SMS : [docs/PROVIDERS.md](docs/PROVIDERS.md)
 
 ## Prérequis
 
@@ -53,6 +55,17 @@ vendor/bin/pint --test            # style de code
 3. `/entreprises/nouvelle` : créer une 2ᵉ entreprise ; le sélecteur d'entreprise apparaît dans l'en-tête.
 4. Créer un 2ᵉ compte avec une autre entreprise : il ne voit jamais les membres de la première (`/entreprise/membres`).
 5. Mot de passe oublié : avec `MAIL_MAILER=log`, le lien est écrit dans `storage/logs/laravel.log`.
+
+## Données de démonstration (vérifier l'interface sans rien saisir)
+
+```bash
+php artisan db:seed --class=DemoSeeder      # refuse de tourner en production
+```
+
+Crée 4 comptes **fictifs** (administrateur de plateforme, propriétaire, membre, autre entreprise), une entreprise « Boutique Démo » (12 contacts fictifs
++243 81 0000xxx, groupes, consentements, une désinscription, 100 crédits) et une campagne en brouillon. Le mot de passe de ces comptes est **généré au hasard
+et affiché une seule fois** dans la console ; rien n'est écrit dans le dépôt. Ensuite : `php artisan serve` (et `QUEUE_CONNECTION=sync` pour voir une
+campagne se terminer sans worker). N'utilisez jamais ce jeu de données en production.
 
 ## Vérifier l'étape 2 manuellement
 
@@ -112,6 +125,57 @@ Un utilisateur non administrateur reçoit une erreur 403 sur `/admin/*`.
 
 Sans worker, les campagnes restent en « Préparation » : c'est normal (les jobs attendent dans la file Redis `sms`).
 
+## Vérifier l'étape 7 manuellement
+
+1. Se connecter (propriétaire), menu **Rapports** : période par défaut = 30 derniers jours (fuseau `APP_TIMEZONE`), onglet « Envois réels » vide → « Aucune donnée sur cette période ».
+2. Faire un envoi de test (Messages) puis une campagne (fournisseur fictif) : onglet **Simulation** → bandeau « Simulation : aucun SMS réel n'a été envoyé », totaux, bloqués par motif, crédits consommés, série par jour ; l'onglet « Envois réels » reste vide (jamais de total cumulé).
+3. Fiche d'une campagne → « Voir le rapport détaillé de cette campagne » : mêmes chiffres que la fiche, filtrés sur cette campagne.
+4. Dates invalides, fin avant début ou période > 366 jours → message d'erreur, aucun chiffre. Campagne d'une autre entreprise (URL forgée `?campaign=…`) → « Campagne introuvable ».
+5. **Télécharger le CSV** (owner/admin) : ouvrir dans Excel (UTF-8 BOM, séparateur `;`). Créer une campagne nommée `=1+1` : la cellule apparaît préfixée d'une apostrophe. Un membre simple voit les agrégats mais pas le bouton, et `/rapports/export` lui répond 403.
+6. Abaisser le plafond : `REPORTS_EXPORT_MAX_ROWS=1` dans `.env` → export refusé avec un message clair (rien n'est tronqué).
+7. `php artisan credits:verify` reste « OK » ; « crédits consommés » = ajouts − solde actuel (hors corrections).
+## Vérifier l'étape 10 (préparation) manuellement
+
+Aucun fournisseur réel : on teste avec le fournisseur **fictif** et un secret local de démonstration (à ne jamais réutiliser ailleurs).
+
+1. Dans `.env` : `SMS_WEBHOOK_FAKE_SECRET=secret-de-demonstration-local` (vide = tout webhook est refusé : vérifiez d'abord qu'une requête renvoie 401), puis `php artisan config:clear`.
+2. Lancer le serveur (`php artisan serve`) et envoyer un accusé de réception **signé** (le message doit exister : envoyez d'abord un SMS simulé et relevez son `provider_message_id`, ex. `fake-…`, dans `/messages` ou la base) :
+
+```bash
+SECRET=secret-de-demonstration-local
+BODY='{"event_id":"evt-001","type":"delivery_report","message_id":"fake-XXXXXXXXXXXXXXXX","status":"delivered"}'
+TS=$(date +%s)
+SIG=$(printf '%s' "$TS.$BODY" | openssl dgst -sha256 -hmac "$SECRET" | sed 's/^.* //')
+curl -i -X POST http://localhost:8000/webhooks/sms/fake \
+  -H 'Content-Type: application/json' -H "X-Fake-Timestamp: $TS" -H "X-Fake-Signature: $SIG" --data "$BODY"
+```
+
+3. Réponse attendue : `200 {"status":"applied"}` (le message passe à « Délivré »). Rejouer la même commande : `200 {"status":"duplicate"}`. Modifier un caractère du corps ou la signature : `401`.
+   Un `TS` vieux de plus de 5 minutes : `401`. Un fournisseur inconnu (`/webhooks/sms/autre`) : `404`.
+4. Désinscription : un « STOP » entrant (`{"event_id":"evt-002","type":"inbound","from":"+243810000001","text":"STOP"}`, signé de la même façon) ne désinscrit **que** si une entreprise a envoyé un message
+   **réel** à ce numéro dans les 30 derniers jours ; avec le fournisseur fictif (messages simulés) la réponse est `{"status":"ignored"}` : c'est voulu.
+5. `php artisan sms:reconcile` : liste (numéros masqués) les messages réels bloqués en « en cours »/« résultat inconnu » ; `--include-simulated` pour voir aussi les simulés. Code de sortie 1 s'il y en a (`echo $?`).
+6. Tests : `php artisan test --filter=Sms` (contrats d'adaptateur, webhooks, désinscription, réconciliation).
+## Vérifier l'étape 8 manuellement
+
+1. Migrer (`php artisan migrate`), puis attribuer le statut d'administrateur **en console** (seule voie) :
+   `php artisan platform:grant-admin admin@exemple.test` (compte existant). Pour le retirer : `php artisan platform:revoke-admin …` (refusé pour le dernier administrateur actif).
+2. Connecté en administrateur : lien « Plateforme » dans la navigation → `/admin` : chiffres réels (entreprises, utilisateurs, messages réels et simulés **séparés**, crédits en circulation, campagnes actives, jobs en échec). Un propriétaire/membre d'entreprise reçoit **403** sur toutes les pages `/admin/*` ; un visiteur non connecté est renvoyé vers la connexion.
+3. `/admin/entreprises` : recherche par nom, filtre par statut d'envoi ; cliquer une entreprise → fiche (membres, solde, statut, activité récente). Désactiver l'entreprise **sans motif** → refusé ; avec motif → ses membres perdent l'accès, ses campagnes en cours se mettent en pause. Réactiver.
+4. `/admin/utilisateurs` : désactiver un compte (motif obligatoire) → il ne peut plus se connecter (« Identifiants incorrects, ou compte désactivé ») et, s'il était connecté, est déconnecté à sa prochaine action. Essayer de désactiver votre propre compte, ou le seul administrateur : refusé.
+5. Faire quelques actions (ajouter des crédits, changer le statut d'envoi, lever une désinscription, mettre une campagne en pause, modifier le nom de l'entreprise) puis ouvrir `/admin/audit` : une entrée par action, avec l'acteur (ou « Système » pour les transitions automatiques), sans numéro ni texte de message. Tester les filtres (action, entreprise, acteur, période). Le journal est en lecture seule.
+6. Confidentialité : aucune page `/admin/*` n'affiche de contact, numéro, texte de message ni consentement ; le statut d'administrateur ne donne accès à aucune page d'entreprise (`/contacts`, `/campagnes`… renvoient vers la création d'entreprise si l'administrateur n'en est pas membre).
+## Vérifier l'étape 9 manuellement
+
+1. Se connecter puis ouvrir **Profil** (`/profil`) : changer le mot de passe (l'ancien est exigé ; 10 caractères minimum). Une autre session ouverte dans un second navigateur est déconnectée à son prochain clic.
+2. **Double authentification** : « Activer » → saisir la clé affichée dans une application d'authentification (saisie manuelle, type « basé sur l'heure ») → entrer le code à 6 chiffres → noter les **8 codes de secours** (affichés une seule fois). Se déconnecter puis se reconnecter : une étape « Vérification en deux étapes » apparaît ; un code déjà utilisé est refusé, un code de secours ne sert qu'une fois. Sans 2FA, la connexion est inchangée.
+3. Désactivation (profil) : mot de passe **et** code requis. Pour rendre la 2FA obligatoire aux owners/admins : `SECURITY_REQUIRE_2FA_FOR_ADMINS=true` (décision D40).
+4. Limitation de débit : 6 essais de connexion ou de code 2FA erronés → message « Trop de tentatives ». Valeurs : `config/security.php`.
+5. En-têtes : `curl -sI http://localhost:8000/connexion` montre `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`, `Content-Security-Policy` (HSTS seulement en HTTPS).
+6. `php artisan security:check` : en développement il signale `APP_DEBUG`, etc. (code de sortie 1) ; aucune valeur secrète n'est affichée. `--strict` traite aussi les avertissements comme bloquants.
+7. `php artisan sending:review` : examine les entreprises « validées » (suspension automatique si dérive) ; `php artisan schedule:list` montre `sending:review` (03:00) et `credits:verify` (03:30).
+8. Exploitation (workers, sauvegardes, interrupteur d'urgence `SMS_SENDING_ENABLED=false`, incident, rotation) : voir `docs/OPERATIONS.md`.
+
 ## Rôles
 
 | Rôle | Paramètres entreprise | Membres (lecture) |
@@ -122,7 +186,7 @@ Sans worker, les campagnes restent en « Préparation » : c'est normal (les job
 
 `users.is_platform_admin` (administrateur de la plateforme) est **séparé** des rôles et n'est pas assignable en masse ;
 il ne donne aucun accès aux données d'une entreprise. Pour en définir un (console uniquement) :
-`php artisan tinker` puis `User::where('email','…')->first()->forceFill(['is_platform_admin'=>true])->save();`
+`php artisan platform:grant-admin {email}` (retrait : `php artisan platform:revoke-admin {email}`, refusé pour le dernier administrateur).
 
 ## Règle d'or de l'isolation
 
@@ -130,9 +194,12 @@ Tout modèle métier utilise le trait `App\Models\Concerns\BelongsToCompany` et 
 `tests/Feature/Tenancy/DataIsolationTest.php`. Sans entreprise active, les requêtes ne renvoient **rien**
 et la création est refusée (fail-closed). Les jobs en file devront fixer explicitement le contexte via `CurrentCompany::set()`.
 
-## Limites connues de l'étape 1
+## Limites connues
 
-- Pas encore de rapports exportables (étape 7), aucun fournisseur réel (étape 10) ; pas de paiement en ligne (les crédits sont ajoutés à la main) ; la désinscription par réponse « STOP » nécessitera les SMS entrants (fournisseur, étape 10) ; l'import est synchrone.
-- Pas d'invitation de membres ni de changement de rôle (étape ultérieure).
-- Pas de vérification d'e-mail ni de 2FA (décision D10).
-- Inscription ouverte (décision D5 tranchée ; anti-abus à reconsidérer à l'étape 9).
+- **Aucun fournisseur SMS réel** (décision D1) : l'adaptateur reste à écrire ; la préparation (webhooks signés, STOP, réconciliation) est livrée, voir `docs/PROVIDERS.md`.
+- Pas de paiement en ligne : les crédits sont ajoutés à la main par l'administrateur de la plateforme (décision D7).
+- Pas d'invitation de membres ni de changement de rôle depuis l'interface (étape ultérieure).
+- Pas de vérification d'e-mail (décision D10) ; la 2FA TOTP est optionnelle (D40), son obligation est désactivée par défaut.
+- Inscription ouverte (D5) ; les garde-fous anti-abus de l'envoi réel (démarrage limité, validation/suspension automatiques, revue des entreprises validées) sont en place, **leurs seuils sont à ajuster** (D11).
+- Cadre légal local (consentement, désinscription, heures d'envoi, rétention) **non défini** : à faire valider par un juriste (D4).
+- Les chiffres des rapports distinguent toujours envois réels et simulés ; tant que le fournisseur est fictif, tout est « simulation ».

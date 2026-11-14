@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Suppressions;
 
+use App\Domain\Audit\AuditLogger;
 use App\Domain\Consent\ConsentService;
 use App\Domain\Contacts\PhoneNormalizer;
 use App\Models\Suppression;
@@ -47,7 +48,7 @@ class Index extends Component
         session()->flash('status', "$done numéro(s) désinscrit(s)".($invalid ? ", $invalid ligne(s) ignorée(s) (numéro invalide)." : '.'));
     }
 
-    public function lift(int $id, ConsentService $service, CurrentCompany $current): void
+    public function lift(int $id, ConsentService $service, CurrentCompany $current, AuditLogger $audit): void
     {
         // Levée réservée aux owner/admin ; vérifiée à chaque action (l'état Livewire vient du client).
         abort_unless($current->role()?->canManageCompany(), 403);
@@ -61,6 +62,8 @@ class Index extends Component
 
             return;
         }
+        // Audit : identifiant seul (ni numéro ni motif libre).
+        $audit->record('suppression.lifted', $current->company(), $suppression);
         session()->flash('status', 'Désinscription levée. Un nouveau consentement est requis avant tout envoi.');
     }
 

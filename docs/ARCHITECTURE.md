@@ -138,7 +138,7 @@ Les garde-fous ne s'appliquent **qu'aux envois réels** ; la simulation n'est ja
   Indicateurs calculés sur les envois réels uniquement (envois bloqués et simulés exclus).
 - L'administrateur de la plateforme peut forcer un statut et une limite par entreprise (motif obligatoire) dans `/admin/entreprises`.
 - Messages bloqués (`daily_limit`, `suspended`) : aucun débit, aucun appel au fournisseur.
-- **Limites connues** : limite journalière « souple » (en concurrence, un léger dépassement est possible) ; une entreprise validée n'est pas réévaluée automatiquement (surveillance continue prévue à l'étape 9) ;
+- **Limites connues** : limite journalière « souple » (en concurrence, un léger dépassement est possible) ; une entreprise validée est réévaluée chaque jour par `sending:review` (étape 9, D43) ;
   les désinscriptions sont rapprochées des envois par numéro, à titre indicatif.
 - Le débit de crédits reste un second frein : l'administrateur ne crédite que les entreprises qu'il choisit.
 
@@ -167,6 +167,109 @@ draft → scheduled → preparing → sending → completed        (paused ↔ s
 - Rôles : tout membre crée/modifie un brouillon ; owner/admin lancent, pausent, reprennent, annulent.
 
 Exploitation : `php artisan queue:work redis --queue=sms` (plusieurs workers possibles) + `php artisan schedule:work`. Vérifié avec Redis réel et 4 workers en parallèle (voir le journal de l'étape).
+
+## Rapports (étape 7)
+
+Page `/rapports` (`App\Livewire\Reports\Index`, tous rôles : agrégats) et export `/rapports/export` (`ReportExportController`, owner/admin). Code métier dans `app/Domain/Reports`.
+
+```
+ReportFilters       période (jours civils du fuseau de l'application, fin incluse), campagne facultative, mode real|simulated ; validation unique
+ReportService       agrégats GROUP BY (messages, grand livre), série journalière, requête d'export
+ReportSummary       totaux d'UN bloc (réel OU simulé) ; aucune méthode n'additionne deux blocs
+MessageCsvExporter  CSV streamé (lots par id), BOM UTF-8, séparateur configurable ; CsvCell = neutralisation des formules
+config/reports.php  période par défaut, période maximale, plafond de lignes, séparateur (variables REPORTS_*)
+```
+
+- **Sources uniques** : `sms_messages` et `credit_ledger_entries` de l'entreprise active. Les requêtes sont des `DB::table(...)` avec `company_id` **explicite** (l'appelant passe l'id de l'entreprise active) et `simulated` **toujours filtré** : un bloc ne contient jamais l'autre. La campagne d'un filtre doit appartenir à l'entreprise active (règle de validation `exists … where company_id`), sinon « Campagne introuvable » (page) ou 404 (export).
+- **Séparation stricte** : onglets « Envois réels » / « Simulation » ; bandeau « Simulation : aucun SMS réel n'a été envoyé » ; aucun total cumulé ; état vide « Aucune donnée sur cette période » (pas de zéros) ; taux jamais calculés sur un dénominateur nul. « Délivrés » dépend des accusés du fournisseur (le dit l'interface).
+- **Fuseaux** : Laravel stocke et relit `created_at` en heure locale de l'application (jamais UTC). Les bornes sont donc comparées telles quelles : `created_at >= « début 00:00:00 » AND created_at < « lendemain de la fin 00:00:00 »`, et `DATE(created_at)` regroupe par jour civil local. Aucune conversion de fuseau n'est faite (D20). Testé en UTC, Africa/Kinshasa et Pacific/Auckland.
+- **Campagne** : pas de colonne `campaign_id` sur `sms_messages` ; rattachement par le préfixe de clé d'idempotence `campaign:{id}:` (D21), ce qui inclut les tentatives bloquées rejouées. Lien « Voir le rapport détaillé » depuis la fiche campagne.
+- **Crédits** : consommés = −(débits + remboursements) du grand livre de l'onglet (`credit_ledger_entries.simulated`) ; cohérent avec `credits:verify` (solde = ajouts − consommation nette ± corrections), testé.
+- **Export** : lignes lues par lots (`lazyById`, `REPORTS_EXPORT_MAX_ROWS` max, refus au-delà), coût net par sous-requête sur le grand livre ; colonnes : date, numéro, campagne, statut, motif de blocage, segments, coût en crédits, simulé. **Injection de formules** : toute cellule (numéros compris) commençant par `= + - @ \t \r` est préfixée d'une apostrophe (D25). Rôle vérifié à chaque requête ; une entreprise ne voit jamais les données d'une autre ; le statut `is_platform_admin` n'ouvre rien.
+- **Index** (migration `2026_11_15_100001`) : `sms_messages(company_id, simulated, created_at)` et `credit_ledger_entries(company_id, simulated, created_at)`. Les requêtes filtrent toutes sur ces trois colonnes ; sans `simulated` dans l'index, un bloc devrait lire les lignes de l'autre pour les écarter. Les index existants `(company_id, created_at)` ne sont pas modifiés.
+- **Limites connues** : le filtre campagne utilise `LIKE 'campaign:{id}:%'` (pas de gain d'index sur ce motif, la plage de dates borne déjà la lecture) ; la lecture `COUNT` puis export n'est pas un instantané unique (des messages créés entre les deux peuvent dépasser légèrement le plafond) ; pas de journal d'audit des exports (étape 9).
+## Webhooks et fournisseurs (étape 10 préparatoire)
+
+Infrastructure **indépendante du fournisseur** (le fournisseur réel n'est pas choisi : D1). Aucun adaptateur réel, aucun appel réseau, aucun format de webhook
+réel : tout est validé avec le `FakeSmsProvider` et un format de webhook **fictif** propre à la simulation. Guide d'écriture d'un adaptateur : `docs/PROVIDERS.md`.
+
+```
+POST /webhooks/sms/{provider}      (hors session, hors CSRF, JSON, limité en débit : throttle sms-webhooks)
+  SmsWebhookController  (générique, fail-closed)
+    SmsWebhookRegistry  → SmsWebhookVerifier du fournisseur (verify : signature + horodatage ; parse : corps → SmsWebhookEvent)
+    webhook_events      → déduplication UNIQUE (provider, event_id), dans la même transaction que le traitement
+    SmsWebhookProcessor → accusé : SmsDispatcher::recordDeliveryReport ; entrant : mot-clé → ConsentService::optOut sous CurrentCompany::runAs()
+```
+
+- **Fail-closed** : fournisseur sans vérificateur → 404 ; secret absent (`SMS_WEBHOOK_FAKE_SECRET` vide par défaut) → 401 pour toute requête ; signature
+  absente/invalide, mauvais secret, horodatage hors fenêtre (passé OU futur, `SMS_WEBHOOK_TOLERANCE_SECONDS`) → 401 ; corps > `SMS_WEBHOOK_MAX_BODY_BYTES` → 413.
+  Comparaison de signature en temps constant (`hash_equals`) sur le corps brut. Plusieurs couches vérifient la présence du secret (contrôleur, vérificateur, `HmacSignature`) : recouvrement voulu.
+- **Déduplication** : un événement rejoué (même `provider` + `event_id`) est acquitté en 200 `duplicate` sans effet. Si le traitement échoue (500), l'enregistrement est
+  annulé avec la transaction : le fournisseur peut rejouer. `webhook_events` ne contient que l'identité de l'événement (ni corps, ni numéro, ni texte). Table technique
+  globale, sans `company_id` (un webhook n'a pas de contexte d'entreprise) ; pas de purge automatique (à prévoir avec D9, rétention).
+- **Accusés de réception** : `recordDeliveryReport` inchangé (ne fait jamais reculer un statut ; message inconnu ou d'un autre fournisseur → ignoré, événement acquitté).
+- **Messages entrants** : seul un texte égal à un mot-clé (`SMS_INBOUND_OPTOUT_KEYWORDS`, défaut `STOP`, à valider D4/D14 ; casse, accents, espaces et ponctuation de bord ignorés ;
+  « please stop » ne correspond pas) a un effet. Les autres messages sont ignorés et **leur contenu n'est jamais stocké** (données personnelles).
+- **Règle de désinscription et son ambiguïté** : un SMS entrant ne dit pas à quelle entreprise il s'adresse (un numéro peut avoir été contacté par plusieurs). Le numéro est
+  désinscrit dans **chaque entreprise ayant envoyé un message RÉEL** (`simulated = false`, statut envoyé, délivré ou inconnu — pas bloqué/échoué/en attente) à ce numéro dans les
+  `SMS_INBOUND_WINDOW_DAYS` derniers jours (30). Conséquence assumée : un « STOP » destiné à l'entreprise X coupe aussi Y si Y a écrit au même numéro dans la fenêtre
+  (choix prudent côté consentement). Les entreprises sans envoi récent et les messages simulés ne sont jamais touchés. Idempotent (une seule désinscription active par entreprise et numéro).
+- **Réconciliation** : `php artisan sms:reconcile` (lecture seule) liste par entreprise les messages `sending`/`unknown` depuis plus de `SMS_RECONCILE_STALE_MINUTES` (60),
+  numéros masqués (`+243*******01`), sans contenu ; simulés exclus sauf `--include-simulated` (section séparée, sans effet sur le code de sortie). Sortie : 0 = rien, 1 = au moins un
+  message réel, 2 = option invalide. La résolution automatique/remboursement dépend de D13 : **non implémentée** (procédure manuelle dans `docs/PROVIDERS.md`).
+- **Contrats de test** réutilisables : `Tests\Contracts\SmsProviderContractTest` et `Tests\Contracts\SmsWebhookVerifierContractTest`.
+## Administration et audit (étape 8)
+
+**Journal d'audit** (`audit_logs`, modèle `AuditLog`, service `App\Domain\Audit\AuditLogger`)
+- **Ajout seul**, comme le grand livre : le modèle refuse toute modification et toute suppression (`LogicException`). Colonnes : acteur (`actor_id`, nul = **système**), entreprise (nulle), `action` (clé stable `domaine.verbe`, ex. `credits.added`),
+  sujet (`subject_type`/`subject_id`), `details` JSON, IP, user-agent tronqué à 255, date (fuseau de l'application).
+- **Jamais de secret, mot de passe, contenu de message ni numéro de téléphone** : `AuditLogger` *refuse* (exception) toute clé de détail suspecte (`password`, `token`, `secret`, `body`, `message`, `content`, `phone`, `email`, `number`…) et *masque* (`[masqué]`) les numéros et adresses e-mail qui apparaîtraient dans un texte libre (motifs saisis). On y met des identifiants et des valeurs techniques.
+- Pas de `BelongsToCompany` : c'est un journal de **plateforme** (entreprise facultative), lu uniquement par les administrateurs de plateforme ; aucune page d'entreprise ne l'expose.
+- Trois méthodes : `record()` (acteur = utilisateur connecté), `recordSystem()` (jobs, planificateur), `recordAs($id)` (console).
+
+**Actions instrumentées** (clés) : `credits.added`, `credits.removed` (une seule entrée même en cas de rejeu idempotent), `rates.created`, `rates.activated`, `rates.deactivated`,
+`sending.status_changed` (manuel, acteur = administrateur), `sending.status_auto_changed` (`SendingPolicy`, acteur = système, avec le motif), `sending.limit_changed`, `suppression.lifted` (identifiant seul : ni numéro ni motif),
+`campaign.launched|paused|resumed|cancelled` (actions des utilisateurs ; pause automatique et reprise du lendemain = système), `company.updated` (nom/pays : ancienne et nouvelle valeur),
+`company.disabled|enabled`, `user.disabled|enabled`, `platform_admin.granted|revoked` (console).
+Modifications des fichiers existants : un appel `AuditLogger` ciblé par action (dans `SendingPolicy::transition`, `CampaignService::pause/resumeDailyLimited`, `Campaigns\Show`, `Suppressions\Index`, `Companies\Settings`, `Admin\Companies`, `Admin\Rates`).
+
+**Pages d'administration** (middleware `platform.admin` + contrôle `is_platform_admin` revérifié au montage, dans **chaque action** et au rendu : trait `AuthorizesPlatformAdmin`)
+| Route | Composant | Contenu |
+|---|---|---|
+| `/admin` | `Admin\Dashboard` | entreprises, utilisateurs, messages **réels** et **simulés** (compteurs séparés), crédits en circulation (somme des soldes), campagnes actives (programmées, en préparation, en envoi), jobs en échec (`failed_jobs`) |
+| `/admin/entreprises` | `Admin\Companies` | liste avec recherche par nom et filtre par statut d'envoi ; crédits, statut, limite (existant) |
+| `/admin/entreprises/{id}` | `Admin\CompanyShow` | membres (compte, rôle), solde, statut, activité d'audit récente ; désactivation/réactivation avec **motif obligatoire** |
+| `/admin/utilisateurs` | `Admin\Users` | recherche, désactivation/réactivation d'un compte (motif obligatoire) |
+| `/admin/audit` | `Admin\AuditLogs` | lecture seule, paginée (25), filtres : action, entreprise, acteur (ou « système »), période (bornes de jour inclusives dans le fuseau de l'application) |
+
+**Désactivation d'un compte** : colonnes `users.disabled_at` / `disabled_reason` (jamais assignables en masse). Contrôles : (1) `Login` n'authentifie que `disabled_at IS NULL` (message identique à un mauvais mot de passe : pas d'énumération) ; (2) middleware `EnsureAccountActive` dans le groupe `web` (donc aussi sur les requêtes Livewire) : un compte désactivé est déconnecté, session invalidée, à sa **prochaine requête** ;
+(3) les lignes de la table `sessions` (pilote `database`) sont supprimées. Règles (`AccountService`) : on ne peut pas se désactiver soi-même ni désactiver le **dernier administrateur de plateforme actif** (compte désactivé = ne compte plus).
+
+**Désactivation d'une entreprise** (`companies.is_active`) : ses membres n'ont plus de contexte d'entreprise (existant) ; **en plus**, ses campagnes en préparation/en envoi passent en pause (`company_disabled`) et ses campagnes programmées ne démarrent plus. Rien n'est supprimé ; à la réactivation, les campagnes en pause se reprennent manuellement.
+
+**Statut d'administrateur de plateforme** : attribué **uniquement en console** — `php artisan platform:grant-admin {email}` / `platform:revoke-admin {email}` (refus de retirer le dernier administrateur actif ; compte désactivé refusé ; idempotent ; entrée d'audit sans l'e-mail). Aucune route web ne l'attribue.
+
+**Confidentialité** : l'administrateur de plateforme ne voit **aucun contact, numéro, texte de message, consentement ni nom de campagne**. Les pages n'affichent que des agrégats (comptages, somme des soldes) et des métadonnées (noms/e-mails des **comptes** membres, rôles, statuts, soldes). Le statut d'administrateur ne donne accès à aucune page d'entreprise : sans appartenance à l'entreprise, `CurrentCompany` est nul et les modèles métier renvoient « rien » (fail-closed). Testé : aucune page admin ne contient de données sensibles semées.
+## Sécurité et exploitation (étape 9)
+
+**2FA TOTP** (`App\Support\Security\Totp`, `TwoFactor`). `Totp` implémente HOTP/TOTP (RFC 4226/6238, HMAC-SHA1, Base32) et est vérifié par les vecteurs officiels des RFC (SHA-1/256/512). Pas de bibliothèque ajoutée : ~100 lignes, entièrement testées, pas de dépendance supplémentaire à maintenir (D40).
+`users` reçoit `two_factor_secret` (cast `encrypted`), `two_factor_recovery_codes` (`encrypted:array` de HMAC-SHA256 ; jamais de code en clair en base), `two_factor_confirmed_at`, `two_factor_last_step`.
+- Activation : `beginSetup` crée un secret NON confirmé ; la 2FA n'est effective qu'après `confirm` avec un premier code valide (les codes de secours sont alors affichés une seule fois).
+- Anti-rejeu : un code n'est accepté que si son pas est strictement supérieur à `two_factor_last_step`, via `UPDATE … WHERE last_step < pas` (deux requêtes simultanées ne peuvent pas réussir toutes deux). Tolérance : ±1 pas (`SECURITY_TOTP_WINDOW`). Le code de confirmation est consommé.
+- Connexion : `Login` valide le mot de passe SANS ouvrir de session ; si la 2FA est active, seule une identité « en attente » (id, expiration 10 min) est mise en session et l'utilisateur est envoyé à `/connexion/verification` (`TwoFactorChallenge`). Échecs limités par utilisateur (`two_factor_challenge`). Sans 2FA, le flux historique est inchangé.
+- Obligation optionnelle : middleware `EnsureTwoFactorForAdmins` (groupe `auth`), appliqué aussi aux requêtes Livewire d'une page déjà ouverte via `Livewire::addPersistentMiddleware`.
+
+**Profil** `/profil` (`Livewire\Profile\Show`, sans entreprise requise) : changement de mot de passe (actuel exigé), « Déconnecter les autres appareils », gestion 2FA (mot de passe + code pour désactiver ou régénérer les codes). `AuthenticateSession` est actif globalement : changer le mot de passe (ou `Auth::logoutOtherDevices`) invalide les autres sessions.
+
+**Limitation de débit** (`Support\Security\Throttle`, `config/security.php > rate_limits`) : un limiteur nommé par usage, valeurs par variables d'environnement. Dépassement : erreur de formulaire, HTTP 429 pour les actions d'administration (`ThrottlesAdminActions`) et pour le plafond global `/livewire/update` (limiteur `livewire` par utilisateur ou IP, via `Livewire::setUpdateRoute`). Compteurs dans le cache : Redis en production.
+
+**En-têtes** (`Http\Middleware\SecurityHeaders`, middleware global) : voir D42. Pas de CSP `script-src` : Livewire 4 injecte des scripts en ligne et Alpine évalue des expressions (`unsafe-eval`) ; restreindre `script-src` casserait l'interface sans nonces ni build CSP d'Alpine. Par défaut une CSP « non-script » (`frame-ancestors`, `base-uri`, `form-action`, `object-src`) ; `SECURITY_CSP`/`SECURITY_CSP_REPORT_ONLY` permettent d'expérimenter une politique plus stricte en mode rapport.
+
+**`security:check`** : lecture seule (aucune requête SQL, aucun appel réseau), problèmes bloquants (clé absente, `APP_DEBUG`, cookie de session non sécurisé en HTTPS, `HttpOnly` désactivé, `SMS_SENDING_ENABLED` avec fournisseur fictif, mot de passe de base vide) et avertissements (`APP_ENV`, `APP_URL` non HTTPS, SQLite, `QUEUE_CONNECTION=sync`, etc.). Il n'affiche que des noms et des états, jamais de valeur.
+
+**Surveillance continue** : `SendingPolicy::reviewValidated()` (une méthode ajoutée) suspend une entreprise `validated` dont les envois RÉELS de la fenêtre glissante (sans remonter avant le dernier changement de statut) dépassent les seuils de D12 avec un échantillon minimal ; mise à jour conditionnelle (`WHERE sending_status = 'validated'`). Commande `sending:review` (03:00) ; `credits:verify` (03:30) journalise un échec en erreur, sans donnée. Les messages simulés sont exclus ; chaque entreprise est évaluée uniquement sur ses propres messages.
+
+Exploitation : `docs/OPERATIONS.md`.
 
 ## Cible (étapes suivantes)
 

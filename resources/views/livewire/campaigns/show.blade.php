@@ -3,7 +3,7 @@
         <a href="{{ route('campaigns.index') }}" class="text-sm underline">← Campagnes</a>
         <h2 class="mt-1 text-xl font-semibold">{{ $campaign->name }}</h2>
         <p class="mt-1"><span class="rounded bg-slate-100 px-2 py-1 text-sm font-medium">{{ $campaign->status->label() }}</span>
-            @if ($campaign->scheduled_at) <span class="ml-2 text-sm text-slate-600">programmée le {{ $campaign->scheduled_at->timezone(config('app.timezone'))->format('d/m/Y H:i') }}</span>@endif</p>
+            @if ($campaign->started_at) <span class="ml-2 text-sm text-slate-600">lancée le {{ $campaign->started_at->timezone(config('app.timezone'))->format('d/m/Y H:i') }}</span>@elseif ($campaign->scheduled_at) <span class="ml-2 text-sm text-slate-600">programmée le {{ $campaign->scheduled_at->timezone(config('app.timezone'))->format('d/m/Y H:i') }}</span>@endif</p>
     </div>
 
     @if ($live)
@@ -48,6 +48,7 @@
             <div><dt class="text-slate-500">Bloqués à l'envoi</dt><dd class="text-xl font-semibold">{{ $stats['blocked_consent'] }}</dd></div>
             <div><dt class="text-slate-500">Exclus à la préparation</dt><dd class="text-xl font-semibold">{{ $campaign->excluded_count }}</dd></div>
         </dl>
+        <p class="mt-2 text-sm"><a href="{{ route('reports.index', ['campaign' => $campaign->id, 'mode' => $stats['simulated'] ? 'simulated' : 'real', 'from' => $reportFrom, 'to' => $reportTo]) }}" class="underline">Voir le rapport détaillé de cette campagne</a></p>
         <p class="mt-2 text-xs text-slate-500">Chiffres issus du journal des messages. « Délivrés » dépend des accusés de réception du fournisseur (aucun en simulation).</p>
     </section>
     @endunless
