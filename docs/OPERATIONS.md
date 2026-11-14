@@ -21,6 +21,29 @@ Avant la première mise en production et à chaque déploiement :
 11. Planificateur actif (§3) : `php artisan schedule:list` doit montrer `campaigns:dispatch-due`, `sending:review` et `credits:verify`.
 12. Le proxy/serveur web doit transmettre `X-Forwarded-Proto` et `TRUSTED_PROXIES` doit désigner ce proxy, sinon l'application se croit en HTTP (pas de HSTS, URLs en `http://`).
 
+## 1bis. E-mail vérifié et 2FA obligatoires (décision D10)
+
+La vérification de l'adresse e-mail et la 2FA des rôles d'administration sont **obligatoires par défaut**. Avant la première mise en production :
+
+1. **Envoi d'e-mails réel** : configurer `MAIL_MAILER` (SMTP ou service transactionnel), `MAIL_FROM_ADDRESS`, `MAIL_FROM_NAME` et les identifiants **dans le `.env` du serveur uniquement**.
+   Avec `MAIL_MAILER=log` ou `array`, aucun lien n'est reçu : tous les nouveaux comptes seraient bloqués (`php artisan security:check` le signale comme **bloquant**).
+2. **`APP_URL` exact** (schéma et domaine publics, ex. `https://…`) : le lien de vérification est une **URL signée liée à son hôte** ; un `APP_URL` différent de l'adresse réellement utilisée donne « 403 Invalid signature ».
+3. **Premier administrateur de plateforme** (aucune interface web ne l'attribue) :
+   ```bash
+   # le compte existe déjà (inscription normale)
+   php artisan platform:grant-admin admin@exemple.cd
+   php artisan users:verify-email admin@exemple.cd     # seulement si l'envoi d'e-mails n'est pas encore opérationnel (journalisé)
+   ```
+   À la première connexion, l'administrateur est conduit à **activer sa 2FA** (application d'authentification, saisie manuelle du secret) avant tout accès : conserver les codes de secours en lieu sûr.
+4. `users:verify-email` est une voie de **secours** (boîte inaccessible, e-mail en panne) : console uniquement, entrée d'audit `user.email_verified`. Ne jamais l'automatiser.
+5. Démonstration ou développement local **uniquement** : `SECURITY_REQUIRE_EMAIL_VERIFICATION=false` et `SECURITY_REQUIRE_2FA_FOR_ADMINS=false`.
+
+## 1ter. Conformité légale avant tout envoi réel (D4)
+
+1. Chaque entreprise renseigne son identité légale (Entreprise > Identité légale) : sans nom, adresse et e-mail, aucun envoi réel.
+2. `APP_URL` doit être l'URL publique HTTPS : elle figure dans les liens de désinscription.
+3. Hors code, à faire avec un juriste : déclaration/autorisation auprès de l'autorité (art. 186/187-3, y compris pour les numéros), option de délégué à la protection des données (189-4). Le texte lu est une reproduction non officielle.
+
 ## 2. Variables d'environnement (noms uniquement)
 
 | Variable | Rôle | Remarque |

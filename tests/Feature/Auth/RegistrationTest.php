@@ -30,7 +30,7 @@ class RegistrationTest extends TestCase
     public function test_registration_creates_user_company_and_owner_membership(): void
     {
         Livewire::test(Register::class)->set($this->valid())->call('register')
-            ->assertHasNoErrors()->assertRedirect(route('dashboard'));
+            ->assertHasNoErrors()->assertRedirect(route('verification.notice'));
 
         $user = User::firstWhere('email', 'jean@example.test');
         $this->assertNotNull($user);

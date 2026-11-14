@@ -70,7 +70,7 @@ class RateLimitTest extends TestCase
     public function test_registration_still_works_under_the_limit(): void
     {
         Livewire::test(Register::class)->set('name', 'Alice')->set('email', 'alice@example.com')->set('password', 'mot-de-passe-solide-1')
-            ->set('password_confirmation', 'mot-de-passe-solide-1')->set('company_name', 'Alice SARL')->call('register')->assertRedirect(route('dashboard'));
+            ->set('password_confirmation', 'mot-de-passe-solide-1')->set('company_name', 'Alice SARL')->call('register')->assertRedirect(route('verification.notice'));
     }
 
     public function test_forgot_password_is_rate_limited_per_ip_and_email(): void

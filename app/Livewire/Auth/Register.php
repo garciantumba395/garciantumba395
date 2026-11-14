@@ -5,6 +5,7 @@ namespace App\Livewire\Auth;
 use App\Models\Company;
 use App\Models\User;
 use App\Support\Security\Throttle;
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -52,10 +53,12 @@ class Register extends Component
             return $user;
         });
 
+        event(new Registered($user)); // envoie le lien de vérification (listener par défaut, MustVerifyEmail)
+
         Auth::login($user);
         session()->regenerate();
 
-        return $this->redirectRoute('dashboard', navigate: false);
+        return $this->redirectRoute(config('security.require_email_verification') ? 'verification.notice' : 'dashboard', navigate: false);
     }
 
     public function render()

@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\EnsureAccountActive;
 use App\Http\Middleware\EnsureCompany;
+use App\Http\Middleware\EnsureEmailIsVerifiedIfRequired;
 use App\Http\Middleware\EnsurePlatformAdmin;
 use App\Http\Middleware\EnsureTwoFactorForAdmins;
 use App\Http\Middleware\SecurityHeaders;
@@ -17,7 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->alias(['company' => EnsureCompany::class, 'platform.admin' => EnsurePlatformAdmin::class, 'two_factor.admins' => EnsureTwoFactorForAdmins::class]);
+        $middleware->alias(['company' => EnsureCompany::class, 'platform.admin' => EnsurePlatformAdmin::class, 'two_factor.admins' => EnsureTwoFactorForAdmins::class, 'verified.required' => EnsureEmailIsVerifiedIfRequired::class]);
         // Étape 8 : compte désactivé = déconnexion (toutes les requêtes web, Livewire compris).
         $middleware->web(append: [EnsureAccountActive::class]);
         $middleware->redirectGuestsTo(fn () => route('login'));

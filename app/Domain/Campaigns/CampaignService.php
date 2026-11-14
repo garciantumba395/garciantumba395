@@ -5,6 +5,7 @@ namespace App\Domain\Campaigns;
 use App\Domain\Audit\AuditLogger;
 use App\Domain\Credits\CostCalculator;
 use App\Domain\Credits\CreditService;
+use App\Domain\Legal\MessageComposer;
 use App\Jobs\PrepareCampaign;
 use App\Jobs\SendCampaignMessage;
 use App\Models\Campaign;
@@ -23,19 +24,21 @@ use InvalidArgumentException;
  */
 class CampaignService
 {
-    public function __construct(private CostCalculator $costs, private CreditService $credits, private CurrentCompany $current) {}
+    public function __construct(private CostCalculator $costs, private CreditService $credits, private CurrentCompany $current, private MessageComposer $composer) {}
 
     /** Estimation indicative avant lancement : destinataires ciblables MAINTENANT et coût. */
     public function estimate(Campaign $campaign): array
     {
         $rates = $this->costs->loadRates();
+        // Le pied de message légal (art. 66, 72, 348) fait partie du texte envoyé : il compte dans les segments et donc dans le coût.
+        $text = $this->composer->composeForEstimate($campaign->body, $this->current->company());
         $recipients = 0;
         $units = 0;
         $this->targetQuery($campaign)->sendable()->select('contacts.id', 'contacts.phone')
-            ->chunkById(1000, function ($contacts) use (&$recipients, &$units, $campaign, $rates) {
+            ->chunkById(1000, function ($contacts) use (&$recipients, &$units, $text, $rates) {
                 foreach ($contacts as $c) {
                     $recipients++;
-                    $units += $this->costs->forMessage($c->phone, $campaign->body, $rates)->totalUnits();
+                    $units += $this->costs->forMessage($c->phone, $text, $rates)->totalUnits();
                 }
             }, 'contacts.id', 'id');
 

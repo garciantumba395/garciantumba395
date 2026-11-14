@@ -36,6 +36,8 @@ class DemoSeeder extends Seeder
         $member = $this->user('Paul Membre (démo)', 'membre-demo@example.test', $hash);
 
         $company = Company::where('slug', 'like', 'demo-boutique%')->first() ?? Company::createFor($owner, 'Boutique Démo');
+        // Identité légale de l'expéditeur (art. 66 du Code du numérique) : FICTIVE, pour que les messages de démonstration portent un pied légal complet.
+        $company->update(['legal_name' => 'Boutique Démo SARL', 'legal_address' => '12 avenue de la Démonstration, Kinshasa (adresse fictive)', 'legal_email' => 'contact@boutique-demo.example.test']);
         $company->users()->syncWithoutDetaching([$member->id => ['role' => 'member']]);
         $other = Company::where('slug', 'like', 'demo-autre%')->first() ?? Company::createFor($this->user('Autre Entreprise (démo)', 'autre-demo@example.test', $hash), 'Autre Entreprise Démo');
 

@@ -6,11 +6,17 @@
  */
 return [
     /*
-     | D40 — 2FA : optionnelle pour chaque utilisateur (page /profil). Si true, les owners/admins d'entreprise et les
-     | administrateurs de plateforme sans 2FA sont redirigés vers /profil tant qu'ils ne l'ont pas activée.
-     | Défaut false : la décision D10 n'est pas tranchée, rien n'est imposé.
+     | D10 (tranchée : oui) — 2FA OBLIGATOIRE pour les owners/admins d'entreprise et les administrateurs de plateforme : sans 2FA, ils sont
+     | redirigés vers /profil tant qu'ils ne l'ont pas activée. Reste optionnelle pour les simples membres. Désactivable
+     | (SECURITY_REQUIRE_2FA_FOR_ADMINS=false) uniquement pour le développement local ou la démonstration.
      */
-    'require_2fa_for_admins' => (bool) env('SECURITY_REQUIRE_2FA_FOR_ADMINS', false),
+    'require_2fa_for_admins' => (bool) env('SECURITY_REQUIRE_2FA_FOR_ADMINS', true),
+
+    /*
+     | D10 (tranchée : oui) — adresse e-mail VÉRIFIÉE obligatoire : un compte non vérifié ne peut accéder à rien d'autre qu'à la page de vérification
+     | (renvoi du lien, déconnexion). Nécessite un envoi d'e-mails réel en production (MAIL_MAILER, voir docs/OPERATIONS.md).
+     */
+    'require_email_verification' => (bool) env('SECURITY_REQUIRE_EMAIL_VERIFICATION', true),
 
     // TOTP (RFC 6238, HMAC-SHA1 : seul algorithme universellement géré par les applications d'authentification).
     'totp' => [
@@ -27,6 +33,7 @@ return [
      | Une limite atteinte renvoie une erreur de formulaire (Livewire) ou HTTP 429 (plafond global).
      */
     'rate_limits' => [
+        'email_verification' => ['max' => 3, 'decay' => 60],                                       // renvoi du lien (utilisateur)
         'login' => ['max' => 5, 'decay' => 60],                                                  // (e-mail + IP) historique
         'register' => ['max' => (int) env('RATE_REGISTER_MAX', 5), 'decay' => 600],              // (IP)
         'password_forgot' => ['max' => (int) env('RATE_PASSWORD_FORGOT_MAX', 5), 'decay' => 600], // (IP + e-mail)

@@ -6,6 +6,8 @@ use App\Domain\Campaigns\CampaignService;
 use App\Domain\Campaigns\CampaignStatus;
 use App\Domain\Consent\ConsentService;
 use App\Domain\Credits\CreditService;
+use App\Domain\Credits\SegmentCalculator;
+use App\Domain\Legal\MessageComposer;
 use App\Enums\CompanyRole;
 use App\Livewire\Campaigns\Form;
 use App\Livewire\Campaigns\Index;
@@ -76,10 +78,16 @@ class CampaignUiTest extends TestCase
         });
     }
 
+    /** Segments du texte FINAL (corps + pied légal) : calculés par les mêmes services que l'application, donc indépendants de la longueur d'APP_URL. */
+    private function expectedSegments(string $body, Company $company): int
+    {
+        return app(SegmentCalculator::class)->analyze(app(MessageComposer::class)->composeForEstimate($body, $company))['segments'];
+    }
+
     public function test_member_can_create_a_draft_with_live_segment_count(): void
     {
         Livewire::actingAs($this->member)->test(Form::class)
-            ->set('name', 'Soldes')->set('body', str_repeat('ç', 71))->assertSee('2 segment(s)')
+            ->set('name', 'Soldes')->set('body', str_repeat('ç', 71))->assertSee($this->expectedSegments(str_repeat('ç', 71), $this->a).' segment(s)')->assertSee('pied légal')
             ->call('save')->assertHasNoErrors();
 
         $c = $this->in($this->a, fn () => Campaign::first());

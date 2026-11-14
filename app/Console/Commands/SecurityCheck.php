@@ -124,7 +124,14 @@ class SecurityCheck extends Command
 
     private function checkAccountSecurity(): void
     {
-        $this->add(config('security.require_2fa_for_admins') ? 'ok' : 'info', 'SECURITY_REQUIRE_2FA_FOR_ADMINS', config('security.require_2fa_for_admins') ? '2FA obligatoire pour les administrateurs' : '2FA non imposée aux administrateurs (décision D10/D40 à prendre)');
+        $this->add(config('security.require_2fa_for_admins') ? 'ok' : 'warn', 'SECURITY_REQUIRE_2FA_FOR_ADMINS', config('security.require_2fa_for_admins') ? '2FA obligatoire pour les administrateurs' : '2FA NON imposée aux administrateurs (décision D10 : obligatoire)');
+        $this->add(config('security.require_email_verification') ? 'ok' : 'warn', 'SECURITY_REQUIRE_EMAIL_VERIFICATION', config('security.require_email_verification') ? 'vérification de l\'e-mail obligatoire' : 'vérification de l\'e-mail NON imposée (décision D10 : obligatoire)');
+        // D4 : le pied de message légal (publicité identifiée, lien de désabonnement : art. 66, 72, 348) ne doit jamais être désactivé en production.
+        $this->add(config('legal.enforce') ? 'ok' : (config('app.env') === 'production' ? 'error' : 'warn'), 'LEGAL_ENFORCE', config('legal.enforce') ? 'pied de message légal et lien de désabonnement actifs' : 'pied de message légal DÉSACTIVÉ : messages publicitaires non conformes (art. 66, 72, 348)');
+        // Une vérification obligatoire sans envoi d'e-mails réel enferme tous les nouveaux comptes (hors commande users:verify-email).
+        if (config('security.require_email_verification') && config('app.env') === 'production' && in_array(config('mail.default'), ['log', 'array'], true)) {
+            $this->add('error', 'MAIL_MAILER', 'vérification d\'e-mail obligatoire mais MAIL_MAILER=log/array : aucun lien ne sera reçu (configurez un envoi réel)');
+        }
         $this->add(config('security.headers.hsts') ? 'ok' : 'warn', 'SECURITY_HSTS', config('security.headers.hsts') ? 'activé (appliqué uniquement en HTTPS)' : 'désactivé');
     }
 
