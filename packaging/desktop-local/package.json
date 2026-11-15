@@ -1,0 +1,49 @@
+{
+  "name": "solisend-recette",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Solisend - version de recette autonome (PHP et base SQLite embarqués, données fictives, SMS simulés)",
+  "main": "main.js",
+  "author": "Solisend",
+  "scripts": {
+    "dist": "electron-builder --win nsis portable --x64"
+  },
+  "devDependencies": {
+    "electron": "33.2.1",
+    "electron-builder": "25.1.8"
+  },
+  "build": {
+    "appId": "com.example.solisend.recette",
+    "productName": "Solisend Recette",
+    "files": [
+      "main.js",
+      "preload.js",
+      "icon.ico"
+    ],
+    "extraResources": [
+      {
+        "from": "stage/php",
+        "to": "php"
+      },
+      {
+        "from": "stage/app",
+        "to": "app"
+      }
+    ],
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "icon": "icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "artifactName": "Solisend-Recette-Installateur-${version}.${ext}"
+    },
+    "portable": {
+      "artifactName": "Solisend-Recette-Portable-${version}.${ext}"
+    }
+  }
+}
