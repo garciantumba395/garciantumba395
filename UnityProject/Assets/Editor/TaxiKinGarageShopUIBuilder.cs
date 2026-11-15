@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEditor.Events;
+using UnityEventTools = UnityEditor.Events.UnityEventTools;   // évite l'ambiguïté avec UnityEngine.Events
 using TaxiKin.Economy;
 using TaxiKin.Player;
 using TaxiKin.Purchases;

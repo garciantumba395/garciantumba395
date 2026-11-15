@@ -1,5 +1,6 @@
 using UnityEditor;
 using UnityEditor.Events;
+using UnityEventTools = UnityEditor.Events.UnityEventTools;   // évite l'ambiguïté avec UnityEngine.Events
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;

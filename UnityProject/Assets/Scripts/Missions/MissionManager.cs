@@ -75,7 +75,6 @@ namespace TaxiKin.Missions
         private VehicleController watched;
         private bool completedLoaded;
         private bool headingToDestination = true;
-        private float lastReverseCheck;
 
         public IReadOnlyList<MissionData> Missions => missions;
         public MissionData Current { get; private set; }

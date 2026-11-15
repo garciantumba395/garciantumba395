@@ -113,3 +113,10 @@ Voir `Docs/PERFORMANCE.md` (budgets, ce qui est en place, procédure de test sur
   si la cadence reste sous 80 % de la cible pendant 8 s ; le niveau atteint est mémorisé. Si le joueur choisit Basse, Moyenne
   ou Haute à la main, la qualité reste fixe (aucune baisse automatique).
 - Aucun fichier audio fourni : les clips (klaxon, musique) restent à ajouter.
+
+## Vérification de compilation (hors Unity)
+`bash Tools/verify/check_compile.sh` compile les 78 fichiers C# en C# 9 contre l'API Unity 2021.3 (assemblages de référence NuGet non officiels, téléchargés dans un dossier temporaire, non versionnés) avec des substituts pour Unity UI et UnityEditor.
+- **Résultat : 0 erreur, 0 avertissement.** Une erreur volontaire est bien détectée (test de sensibilité).
+- **Défauts trouvés et corrigés grâce à cet outil** : ambiguïté `UnityEventTools` (UnityEngine.Events / UnityEditor.Events) dans 4 fichiers Editor ; champ inutilisé dans `MissionManager`.
+- **Ce que ça ne prouve pas** : compatibilité exacte avec l'API d'Unity 2022.3 (la référence est 2021.3) ; exactitude de mes substituts Unity UI / UnityEditor (écrits de mémoire) ; code sous `#if UNITY_6000_0_OR_NEWER` et `#if UNITY_PURCHASING` ; tout le comportement à l'exécution (le jeu n'a jamais été lancé).
+- La compilation dans Unity 2022.3 reste la vraie référence : ouvrir le projet et relever les erreurs de la console.

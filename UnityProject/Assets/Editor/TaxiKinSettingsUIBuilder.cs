@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEditor.Events;
+using UnityEventTools = UnityEditor.Events.UnityEventTools;   // évite l'ambiguïté avec UnityEngine.Events
 using TaxiKin.Core;
 using TaxiKin.UI;
 using UiButton = UnityEngine.UI.Button;
