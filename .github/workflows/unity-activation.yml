@@ -1,0 +1,18 @@
+# Taxi Kin — étape UNIQUE : produit le fichier d'activation (.alf) à envoyer à Unity pour obtenir la licence gratuite (Personal).
+name: Taxi Kin - fichier d'activation Unity
+on:
+  workflow_dispatch:
+  push:
+    paths: ['UnityProject/CI_ACTIVATION_TRIGGER']
+jobs:
+  activation:
+    runs-on: ubuntu-latest
+    steps:
+      - id: alf
+        uses: game-ci/unity-request-activation-file@v2
+        with:
+          unityVersion: 2022.3.50f1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Manual-Activation-File
+          path: ${{ steps.alf.outputs.filePath }}

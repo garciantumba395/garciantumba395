@@ -53,6 +53,7 @@ namespace UnityEditor
         public static bool stripEngineCode, gcIncremental, allowedAutorotateToPortrait, allowedAutorotateToPortraitUpsideDown, allowedAutorotateToLandscapeLeft, allowedAutorotateToLandscapeRight;
         public static void SetUseDefaultGraphicsAPIs(BuildTarget t, bool b) { }
         public static void SetGraphicsAPIs(BuildTarget t, GraphicsDeviceType[] a) { }
+        public static string productName, companyName; public static void SetApplicationIdentifier(BuildTargetGroup g, string id) { }
         public static ColorSpace colorSpace; public static UIOrientation defaultInterfaceOrientation;
         public static void SetStackTraceLogType(LogType l, StackTraceLogType s) { }
     }
@@ -80,4 +81,17 @@ namespace UnityEditor
 {
     public class EditorBuildSettingsScene { public EditorBuildSettingsScene(string p, bool e) { } }
     public static class EditorBuildSettings { public static EditorBuildSettingsScene[] scenes; }
+}
+namespace UnityEditor
+{
+    public struct BuildPlayerOptions { public string[] scenes; public string locationPathName; public BuildTarget target; public BuildOptions options; }
+    public enum BuildOptions { None }
+    public static class BuildPipeline { public static UnityEditor.Build.Reporting.BuildReport BuildPlayer(BuildPlayerOptions o) => null; }
+    public static class EditorApplication { public static void Exit(int code) { } }
+}
+namespace UnityEditor.Build.Reporting
+{
+    public enum BuildResult { Unknown, Succeeded, Failed, Cancelled }
+    public class BuildSummary { public BuildResult result; public ulong totalSize; }
+    public class BuildReport { public BuildSummary summary; }
 }

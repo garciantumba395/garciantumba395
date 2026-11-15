@@ -19,7 +19,7 @@ PKG_VERSION="2021.3.33"
 mkdir -p "$WORK"
 
 # --- Compilateur Roslyn et assemblages .NET de référence ---
-SDK_LINE="$(dotnet --list-sdks | tail -1)"
+SDK_LINE="$(dotnet --list-sdks | grep -E "^8\." | tail -1)"; [ -n "$SDK_LINE" ] || SDK_LINE="$(dotnet --list-sdks | tail -1)"
 SDK_VERSION="$(echo "$SDK_LINE" | awk '{print $1}')"
 SDK_ROOT="$(echo "$SDK_LINE" | sed -E 's/^[^[]*\[(.*)\]$/\1/')"
 CSC="$SDK_ROOT/$SDK_VERSION/Roslyn/bincore/csc.dll"
