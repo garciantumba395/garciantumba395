@@ -20,3 +20,8 @@ Le cahier des charges complet est la référence produit. Points arbitrés par r
 - Wewa : pas de marche arrière (commandes simples) ; les 4 caméras sont disponibles sur tous les véhicules.
 - Lingala : infrastructure prête (`Loc`), traductions volontairement quasi vides → à faire valider par un locuteur natif.
 - Inclinaison : le signe (gauche/droite) est à calibrer sur un vrai appareil.
+
+## Carte de Kinshasa (approche C : OSM + retouches manuelles)
+- Centres des 5 zones géocodés (Nominatim), voir `Tools/zones.json` — à valider visuellement.
+- L'accès réseau à Overpass depuis l'environnement cloud échoue (connexion coupée) : les données OSM doivent être exportées à la main (Tools/README.md).
+- **Échelle** : Gare centrale → aéroport de N'djili ≈ 17 km à vol d'oiseau (≈ 12 min en Wewa à 90 km/h). Les missions chronométrées (ex. « avant 4 minutes ») sont impossibles à l'échelle réelle → décision requise : corridor compressé entre zones ou mission raccourcie.

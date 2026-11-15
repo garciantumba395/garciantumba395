@@ -157,7 +157,7 @@ namespace TaxiKin.EditorTools
             return go;
         }
 
-        private static Material GetMaterial(string name, Color color)
+        internal static Material GetMaterial(string name, Color color)
         {
             string path = $"Assets/Materials/{name}.mat";
             var mat = AssetDatabase.LoadAssetAtPath<Material>(path);

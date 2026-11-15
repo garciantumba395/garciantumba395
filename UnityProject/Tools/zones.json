@@ -1,0 +1,11 @@
+{
+  "_note": "Centres géocodés via Nominatim (© contributeurs OpenStreetMap, ODbL). À valider visuellement sur la carte avant de figer les zones.",
+  "origin": { "name": "Gare centrale", "lat": -4.3011330, "lon": 15.3179376 },
+  "zones": [
+    { "id": "gare_centrale", "name": "Gare centrale",           "lat": -4.3011330, "lon": 15.3179376, "radius": 1000 },
+    { "id": "matonge",       "name": "Matonge",                 "lat": -4.3402188, "lon": 15.3159944, "radius": 1000 },
+    { "id": "kintambo",      "name": "Kintambo",                "lat": -4.3393852, "lon": 15.2661853, "radius": 1000 },
+    { "id": "limete",        "name": "Limete",                  "lat": -4.3549072, "lon": 15.3349810, "radius": 1000 },
+    { "id": "ndjili",        "name": "Aéroport de N'djili",     "lat": -4.3840685, "lon": 15.4508775, "radius": 1200 }
+  ]
+}
