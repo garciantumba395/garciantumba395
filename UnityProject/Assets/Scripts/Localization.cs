@@ -49,6 +49,19 @@ namespace TaxiKin.Core
             ["mission_success"] = "Mission réussie !", ["mission_failed"] = "Mission échouée",
             ["mission_vehicle"] = "Véhicule", ["mission_route"] = "Trajet", ["mission_reward"] = "Récompense",
             ["mission_time"] = "Temps", ["mission_any"] = "Au choix", ["mission_menu"] = "Mission",
+            ["tuto_title"] = "Tutoriel", ["tuto_skip"] = "Passer", ["tuto_next"] = "Suivant", ["tuto_start"] = "Commencer",
+            ["tuto_offer"] = "Veux-tu apprendre les commandes en une minute ? Tu pourras le refaire dans les Réglages.",
+            ["tuto_steer"] = "Tourne le volant avec ton pouce gauche.",
+            ["tuto_steer_arrows"] = "Appuie sur les flèches à gauche pour tourner.",
+            ["tuto_steer_tilt"] = "Incline ton téléphone à gauche et à droite pour tourner.",
+            ["tuto_gas"] = "Appuie sur l'accélérateur (en bas à droite) pour avancer.",
+            ["tuto_brake"] = "Relâche, puis appuie sur le frein rouge pour t'arrêter.",
+            ["tuto_horn"] = "Klaxonne : appuie sur le bouton Klaxon.",
+            ["tuto_camera"] = "Change de point de vue avec le bouton Caméra.",
+            ["tuto_passenger"] = "Appuie sur le bouton pour prendre un client. Appuie encore à destination pour le déposer.",
+            ["tuto_hud"] = "En haut : minimap, flèche de direction orange, chrono, argent, passagers, carburant et dommages.",
+            ["tuto_menu"] = "Prêt ! Ouvre le Menu, puis choisis Jouer pour ta première mission.",
+            ["tuto_done"] = "Tutoriel terminé. Bonne route, chauffeur !",
         };
 
         // Volontairement minimal : beaucoup de termes techniques sont des emprunts au français en lingala.

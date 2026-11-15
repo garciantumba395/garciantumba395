@@ -1,5 +1,6 @@
 using UnityEngine;
 using TaxiKin.Map;
+using TaxiKin.UI;
 using TaxiKin.Missions;
 using TaxiKin.Vehicles;
 
@@ -50,10 +51,22 @@ namespace TaxiKin.Player
             missions?.ReportBoarded(n, bus != null && bus.DoorsOpen);
         }
 
+        /// <summary>
+        /// Bouton « Passager » du Wewa (un seul bouton) : prend un client s'il n'y en a pas à bord, sinon le dépose.
+        /// </summary>
+        public void TogglePassenger()
+        {
+            if (passengers != null && passengers.OnBoard > 0) DropPassengers(); else PickupPassengers();
+        }
+
         /// <summary>En mission : dépose les clients seulement près de la destination. Hors mission : dépose librement.</summary>
         public void DropPassengers()
         {
-            if (missions != null && missions.IsRunning) missions.TryDeliver();
+            if (missions != null && missions.IsRunning)
+            {
+                if (!missions.TryDeliver() && passengers != null && passengers.OnBoard > 0)
+                    ToastManager.Show("Rends-toi à la destination (la flèche) pour déposer ton client.");
+            }
             else passengers?.DropAll();
         }
 

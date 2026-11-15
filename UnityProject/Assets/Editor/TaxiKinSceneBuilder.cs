@@ -247,6 +247,22 @@ namespace TaxiKin.EditorTools
             if (cam != null) Assign(quality, "mainCamera", cam);
             Assign(quality, "traffic", managers.GetComponent<TrafficManager>());
 
+            // --- Météo : soleil atténué sous la pluie, pluie visible qui suit la caméra ---
+            Assign(managers.GetComponent<WeatherManager>(), "sun", sunLight);
+            var rainShader = Shader.Find("Mobile/Particles/Alpha Blended");
+            if (rainShader == null) rainShader = Shader.Find("Particles/Standard Unlit");
+            if (rainShader == null) rainShader = Shader.Find("Sprites/Default");
+            var rainMat = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/Mat_Rain.mat");
+            if (rainMat == null)
+            {
+                rainMat = new Material(rainShader) { color = Color.white };
+                AssetDatabase.CreateAsset(rainMat, "Assets/Materials/Mat_Rain.mat");
+            }
+            var rainGo = new GameObject("Pluie");
+            var rain = rainGo.AddComponent<RainEffect>();
+            if (cam != null) Assign(rain, "followCamera", cam);
+            Assign(rain, "rainMaterial", rainMat);
+
             var audio = managers.GetComponent<TaxiKin.Audio.AudioManager>();
             var musicGo = new GameObject("Musique", typeof(AudioSource));
             var sfxGo = new GameObject("Effets", typeof(AudioSource));
@@ -278,7 +294,8 @@ namespace TaxiKin.EditorTools
             TaxiKinGarageShopUIBuilder.Build(GameObject.Find("Canvas/ZoneSure").transform, managers, pc, vStage);
             TaxiKinSettingsUIBuilder.Build(GameObject.Find("Canvas/ZoneSure").transform, managers);
             Assign(managers.GetComponent<ControlActions>(), "world", worldMgr);
-            TaxiKinMenuUIBuilder.Build(GameObject.Find("Canvas/ZoneSure").transform, managers, stage);   // en dernier : place le menu sous les autres écrans
+            TaxiKinMenuUIBuilder.Build(GameObject.Find("Canvas/ZoneSure").transform, managers, stage);   // place le menu sous les autres écrans
+            TaxiKinTutorialUIBuilder.Build(GameObject.Find("Canvas/ZoneSure").transform, managers, pc, rig);   // en tout dernier : au-dessus de tout
 
             // --- Sauvegarde de la scène ---
             const string path = "Assets/Scenes/Main.unity";

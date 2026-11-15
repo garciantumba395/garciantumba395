@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using TaxiKin.Map;
 using TaxiKin.Vehicles;
+using TaxiKin.Weather;
 
 namespace TaxiKin.Traffic
 {
@@ -133,8 +134,9 @@ namespace TaxiKin.Traffic
             float turn = Mathf.Abs(Mathf.DeltaAngle(path.HeadingAt(Progress + 3f), path.HeadingAt(Progress + ahead)));
             float cornerFactor = 1f - (1f - CornerMinFactor) * Mathf.Clamp01((turn - CornerFromDeg) / (CornerToDeg - CornerFromDeg));
 
-            float limit = vehicle.Stats.maxSpeedKmh / 3.6f * skill;
-            if (useLimits) limit = Mathf.Min(limit, RoadGraph.SpeedLimit(path.KindAt(segment)) * skill);
+            float rain = WeatherManager.Instance != null ? WeatherManager.Instance.AiSpeedFactor : 1f;     // sous la pluie : -10 % à -20 %
+            float limit = vehicle.Stats.maxSpeedKmh / 3.6f * skill * rain;
+            if (useLimits) limit = Mathf.Min(limit, RoadGraph.SpeedLimit(path.KindAt(segment)) * skill * rain);
             float targetSpeed = limit * cornerFactor * ObstacleFactor(pos);
 
             float e = targetSpeed - speed;

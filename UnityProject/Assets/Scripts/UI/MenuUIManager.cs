@@ -127,6 +127,14 @@ namespace TaxiKin.UI
             GameManager.Instance?.SetState(stateBefore == GameState.MainMenu ? GameState.Playing : stateBefore);
         }
 
+        /// <summary>Ferme le menu et passe en conduite libre (début du tutoriel).</summary>
+        public void CloseToPlay()
+        {
+            HidePanels();
+            avatarStage?.SetActive(false);
+            GameManager.Instance?.SetState(GameState.Playing);
+        }
+
         public void OnMissions()
         {
             menuPanel.SetActive(false);

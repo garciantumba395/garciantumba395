@@ -6,6 +6,7 @@ using TaxiKin.Player;
 using TaxiKin.Traffic;
 using TaxiKin.UI;
 using TaxiKin.Vehicles;
+using TaxiKin.Weather;
 
 namespace TaxiKin.Missions
 {
@@ -169,7 +170,8 @@ namespace TaxiKin.Missions
                 }
                 else
                 {
-                    r.progress += dt * r.vmax * r.skill * VirtualSpeedFactor;
+                    float rain = WeatherManager.Instance != null ? WeatherManager.Instance.AiSpeedFactor : 1f;
+                    r.progress += dt * r.vmax * r.skill * VirtualSpeedFactor * rain;
                     if (Mathf.Abs(r.progress - playerS) < MaterializeDistance) TryMaterialize(r);
                 }
 

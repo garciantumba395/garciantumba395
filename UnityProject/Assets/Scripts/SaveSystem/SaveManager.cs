@@ -45,6 +45,7 @@ namespace TaxiKin.SaveSystem
         public bool adsRemoved;
         public int bonusDoubleCoins;     // missions restantes avec récompense en pièces doublée
         public int fuelTokens;           // pleins gratuits
+        public bool tutorialDone;        // tutoriel terminé OU passé : on ne le repropose plus (rejouable dans les réglages)
     }
 
     /// <summary>

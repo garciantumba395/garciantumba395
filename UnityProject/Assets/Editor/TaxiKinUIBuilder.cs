@@ -127,7 +127,12 @@ namespace TaxiKin.EditorTools
             // Passagers (Wewa : un bouton ; taxi : client ; bus : passagers, portes, arrêt)
             var pass = Button(root, "Passager", "passenger", null, BR, new Vector2(-40f, 520f), new Vector2(200f, 90f), Btn);
             layout.Register(ControlId.PassengerAction, (RectTransform)pass.transform);
-            On(pass, actions.PickupPassengers);
+            On(pass, actions.TogglePassenger);     // prend le client, puis le dépose (un seul bouton pour le Wewa)
+            var passLabel = pass.GetComponentInChildren<Text>();
+            Object.DestroyImmediate(passLabel.GetComponent<LocalizedText>());
+            var passDynamic = pass.gameObject.AddComponent<PassengerButtonLabel>();
+            TaxiKinSceneBuilder.Assign(passDynamic, "label", passLabel);
+            TaxiKinSceneBuilder.Assign(passDynamic, "passengers", passengers);
 
             var pickup = Button(root, "PrendreClient", "pickup", null, BR, new Vector2(-40f, 520f), new Vector2(200f, 90f), Btn);
             var dropoff = Button(root, "DeposerClient", "dropoff", null, BR, new Vector2(-40f, 620f), new Vector2(200f, 90f), Btn);

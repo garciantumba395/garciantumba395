@@ -104,13 +104,22 @@ class Path:
 def angle_diff(a, b): return (b - a + 180.0) % 360.0 - 180.0
 
 
-def simulate(path, veh, limit_factor, use_limits, dt=0.02, max_t=3000.0):
+# Adhérence : wet = 0 (sec), 0,5 (pluie légère), 1 (pluie forte). Mêmes formules que VehicleController.cs / WeatherManager.cs.
+def road_grip(wet): return 1.0 - 0.4 * wet                     # 1,0 / 0,8 / 0,6
+
+
+def simulate(path, veh, limit_factor, use_limits, wet=0.0, dt=0.02, max_t=3000.0):
     v = VEH[veh]; pos = path.p[0]; heading = path.heading_at(0.0)
-    speed, t, idx = 0.0, 0.0, 0
+    grip_road = road_grip(wet)
+    lat_grip = 30.0 * grip_road * grip_road                    # m/s² d'adhérence latérale
+    fwd_speed, lat_speed, t, idx = 0.0, 0.0, 0.0, 0
+    vx_w = vz_w = 0.0
     max_err, sum_v, n, off_road = 0.0, 0.0, 0, 0
+    rain_factor = 0.5 + 0.5 * grip_road                        # l'IA ralentit sous la pluie
     while t < max_t:
         err, idx, s = path.project(pos, idx)
         if s >= path.total - 8.0: break
+        speed = abs(fwd_speed)
         L = min(max(LOOK_BASE + LOOK_GAIN * speed, LOOK_MIN), LOOK_MAX)
         tgt, _ = path.point_at(s + L)
         dx, dz = tgt[0] - pos[0], tgt[1] - pos[1]
@@ -118,17 +127,28 @@ def simulate(path, veh, limit_factor, use_limits, dt=0.02, max_t=3000.0):
         ahead = CORNER_AHEAD_BASE + CORNER_AHEAD_GAIN * speed
         turn = abs(angle_diff(path.heading_at(s + 3.0), path.heading_at(s + ahead)))
         f = 1.0 - (1.0 - CORNER_MIN_FACTOR) * max(0.0, min(1.0, (turn - CORNER_FROM_DEG) / (CORNER_TO_DEG - CORNER_FROM_DEG)))
-        vlimit = v["vmax"] * limit_factor
+        vlimit = v["vmax"] * limit_factor * rain_factor
         if use_limits:
-            _, i = path.point_at(s); k = path.k[min(i, len(path.k) - 1)]; vlimit = min(vlimit, LIMIT.get(k, 6.0) * limit_factor)
-        vt = vlimit * f
-        e = vt - speed
-        if e > 0: speed = min(speed + min(e / THROTTLE_RANGE, 1.0) * v["acc"] * dt, v["vmax"])
-        else: speed = max(0.0, speed - min(-e / BRAKE_RANGE, 1.0) * v["brk"] * dt)
-        yaw_rate = steer * v["turn"] * min(speed / 4.0, 1.0)
+            _, i = path.point_at(s); k = path.k[min(i, len(path.k) - 1)]; vlimit = min(vlimit, LIMIT.get(k, 6.0) * limit_factor * rain_factor)
+        e = vlimit * f - speed
+        throttle = min(e / THROTTLE_RANGE, 1.0) if e > 0 else 0.0
+        brake = min(-e / BRAKE_RANGE, 1.0) if e < 0 else 0.0
+        # --- VehicleController : vitesse portée, adhérence latérale limitée ---
+        hr = math.radians(heading)
+        fx, fz = math.sin(hr), math.cos(hr); rx, rz = math.cos(hr), -math.sin(hr)
+        # composantes actuelles de la vitesse monde par rapport au cap
+        fwd_speed = fwd_speed * 0 + (vx_w * fx + vz_w * fz) if t > 0 else fwd_speed
+        lat_speed = (vx_w * rx + vz_w * rz) if t > 0 else 0.0
+        fwd_speed += throttle * v["acc"] * (0.5 + 0.5 * grip_road) * dt
+        if brake > 0: fwd_speed = math.copysign(max(0.0, abs(fwd_speed) - brake * v["brk"] * grip_road * dt), fwd_speed)
+        if throttle <= 0 and brake <= 0: fwd_speed = math.copysign(max(0.0, abs(fwd_speed) - 1.5 * dt), fwd_speed)
+        fwd_speed = max(-v["vmax"] * 0.4, min(v["vmax"], fwd_speed))
+        lat_speed = math.copysign(max(0.0, abs(lat_speed) - lat_grip * dt), lat_speed)
+        vx_w, vz_w = fx * fwd_speed + rx * lat_speed, fz * fwd_speed + rz * lat_speed
+        yaw_rate = steer * v["turn"] * (0.7 + 0.3 * grip_road) * min(abs(fwd_speed) / 4.0, 1.0)
         heading += yaw_rate * dt
-        pos = (pos[0] + math.sin(math.radians(heading)) * speed * dt, pos[1] + math.cos(math.radians(heading)) * speed * dt)
-        max_err = max(max_err, err); sum_v += speed; n += 1; t += dt
+        pos = (pos[0] + vx_w * dt, pos[1] + vz_w * dt)
+        max_err = max(max_err, err); sum_v += abs(fwd_speed); n += 1; t += dt
         if err > 4.0: off_road += 1
     return dict(time=t, dist=path.total, mean=sum_v / max(n, 1), max_err=max_err, off_ratio=off_road / max(n, 1), finished=t < max_t)
 
@@ -144,15 +164,16 @@ if __name__ == "__main__":
     routes = [("Mission 9 : Gare → Matonge", poi("gare_centrale", "station"), poi("matonge", "")),
               ("Mission 2 : Gare → Kintambo", poi("gare_centrale", ""), poi("kintambo", ""))]
     bad = False
-    print(f"{'trajet':30} {'véhicule':9} {'longueur':>9} {'durée':>7} {'v. moy.':>8} {'écart max':>10} {'hors route':>10}")
+    print(f"{'trajet':28} {'véhicule':12} {'météo':13} {'durée':>6} {'v. moy.':>9} {'écart max':>10} {'hors route':>10}")
     for name, a, b in routes:
         pts, kinds, widths = astar(pos, adj, nearest(*a), nearest(*b))
         racing = Path(pts, kinds)                                   # course : on suit l'axe de la route
         traffic = Path(offset_polyline(pts, LANE_OFFSET), kinds)    # trafic : voie de droite
         for label, path, veh, skill, lim in [("course", racing, "wewa", 0.90, False), ("course", racing, "taxi", 0.90, False),
                                               ("trafic", traffic, "taxi", 0.90, True)]:
-            r = simulate(path, veh, skill, lim)
-            ok = r["finished"] and r["max_err"] < 9.0 and r["off_ratio"] < 0.03
-            bad |= not ok
-            print(f"{name:30} {veh+'/'+label:9} {r['dist']/1000:7.2f}km {r['time']:6.0f}s {r['mean']*3.6:6.1f}km/h {r['max_err']:8.1f} m {r['off_ratio']*100:9.1f}% {'OK' if ok else 'À VÉRIFIER'}")
+            for wname, wet in (("sec", 0.0), ("pluie légère", 0.5), ("pluie forte", 1.0)):
+                r = simulate(path, veh, skill, lim, wet)
+                ok = r["finished"] and r["max_err"] < 9.0 and r["off_ratio"] < 0.03
+                bad |= not ok
+                print(f"{name:28} {veh+'/'+label:12} {wname:13} {r['time']:5.0f}s {r['mean']*3.6:6.1f}km/h {r['max_err']:8.1f} m {r['off_ratio']*100:9.1f}% {'OK' if ok else 'À VÉRIFIER'}")
     sys.exit(1 if bad else 0)

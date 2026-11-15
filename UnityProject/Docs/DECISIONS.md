@@ -160,3 +160,17 @@ Voir `Docs/PERFORMANCE.md` (budgets, ce qui est en place, procédure de test sur
 **Missions** : durées recalculées sur les distances routières réelles (mission 2 : 4 min 30 ; 4 : 8 min ; 6 et 10 : 14 min ; 7 : 15 min). Mission 9 a maintenant un vrai trajet (Gare centrale → Matonge). `availableFeatures` inclut TrafficAvoidance, DenseTraffic, RaceAI, CorridorMap : seules la pluie (mission 3) et le stationnement restent « Bientôt » quand le verrouillage est actif.
 
 **Limites** : pas de dépassement actif (un coureur ralentit derrière un véhicule), pas de feux ni de piétons ni de nids-de-poule ni de zones inondées ni de contrôles de police (V1 : « trafic simple »), sens uniques ignorés, modèles en cubes, aucun test en jeu. Le coût CPU de 20 véhicules physiques + IA est à mesurer sur le téléphone de test.
+
+## Pluie et tutoriel (itération 6)
+**Pluie** (`WeatherManager`, `RainEffect`) : soleil, pluie légère, pluie forte, avec transition douce de 4 s.
+- **Adhérence** 1,0 / 0,8 / 0,6 : sous la pluie forte, accélération −20 %, freinage −40 %, direction −12 %, adhérence latérale ÷ 2,8 (la voiture dérape davantage). Formules dans `VehicleController`.
+- **Visibilité** : brouillard exponentiel² (≈ 90 % à 150 m par pluie forte) et soleil à 55 % ; aucune lumière dynamique ajoutée.
+- **Pluie visible** : un seul système de particules (traînées) qui suit la caméra, 900 particules max, matériau transparent sans éclairage (`Mobile/Particles/Alpha Blended`), densité 40 / 70 / 100 % selon la qualité. Créé par code.
+- **IA** : trafic et coureurs ralentissent de 10 % (pluie légère) à 20 % (pluie forte).
+- **Validation hors Unity** (`Tools/verify/sim_ai.py` étendu au glissement latéral) : sur 18 simulations (2 trajets × 3 véhicules/modes × 3 météos), écart maximal à la route **3,8 m**, **0 %** hors route ; trajets +10 % de durée (légère) et +20 % (forte).
+- Missions : la météo d'une mission s'applique au départ avec un message (« Pluie forte : la route est glissante ! ») et le beau temps revient à la fin. La mission 3 est maintenant jouable (`Rain` ajouté aux fonctionnalités disponibles).
+- **Pas encore** : nuit, zones inondées, essuie-glaces visibles (le bouton agit sur l'état, sans effet visuel), bruit de pluie. Le shader de la pluie (`Mobile/Particles/Alpha Blended`) est à vérifier visuellement sous URP.
+
+**Tutoriel** (`TutorialManager`) : 8 étapes en conduite libre qui détectent la vraie action (direction, accélération ≥ 20 km/h, arrêt après ≥ 15 km/h, klaxon, changement de caméra, client à bord), anneau pulsant sur la commande, texte adapté au mode de contrôle (volant / flèches / inclinaison). Proposé une seule fois après la création du chauffeur (ou au démarrage pour un profil existant) ; « Passer » est définitif ; « Revoir le tutoriel » dans les Réglages. Démarrer une mission l'interrompt. Sauvegardé (`tutorialDone`), remis à zéro par la réinitialisation. Textes dans `Loc` (français ; lingala à traduire).
+
+**Défaut trouvé en préparant le tutoriel et corrigé** : le Wewa n'avait qu'un bouton « Passager » qui ne faisait que **prendre** le client, jamais le déposer : la mission 1 était impossible. Le bouton alterne maintenant prendre/déposer (libellé dynamique) et affiche un message si on tente de déposer avant la destination. Le vérificateur de compilation a aussi trouvé une ambiguïté `QualityLevel` (type existant aussi dans Unity), levée par un alias.

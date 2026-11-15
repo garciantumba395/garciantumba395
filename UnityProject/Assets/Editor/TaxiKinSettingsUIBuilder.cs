@@ -72,6 +72,8 @@ namespace TaxiKin.EditorTools
             L(panel, "TitreProgression", TL, new Vector2(60f, -730f), new Vector2(800f, 50f), "Progression", 34, TextAnchor.MiddleLeft, Gold, TL);
             var reset = S(panel, "Reinitialiser", "Réinitialiser ma progression", TL, new Vector2(60f, -790f), new Vector2(640f, 90f), TaxiKinUIBuilder.Red, 28);
             UnityEventTools.AddPersistentListener(reset.onClick, ui.OnAskReset);
+            var replay = S(panel, "RevoirTutoriel", "Revoir le tutoriel", TL, new Vector2(720f, -790f), new Vector2(220f, 90f), Neutral, 22);
+            UnityEventTools.AddPersistentListener(replay.onClick, ui.OnReplayTutorial);
 
             // =================== COLONNE DROITE (x = 1000) ===================
             L(panel, "TitreGraphismes", TL, new Vector2(1000f, -115f), new Vector2(800f, 50f), "Qualité graphique", 34, TextAnchor.MiddleLeft, Gold, TL);

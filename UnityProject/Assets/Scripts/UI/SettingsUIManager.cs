@@ -26,6 +26,10 @@ namespace TaxiKin.UI
         [SerializeField] private Slider soundSlider, musicSlider, uiScaleSlider;
         [SerializeField] private Text soundValue, musicValue, uiScaleValue, vibrationLabel, deviceInfo;
 
+        [Header("Tutoriel")]
+        [SerializeField] private TutorialManager tutorial;
+        [SerializeField] private MenuUIManager menu;
+
         [Header("Confirmation de réinitialisation")]
         [SerializeField] private GameObject confirmPanel;
         [SerializeField] private Button confirmButton;
@@ -97,6 +101,14 @@ namespace TaxiKin.UI
         // ---------- Langue ----------
 
         public void OnLanguage(int language) { Loc.Current = (Language)Mathf.Clamp(language, 0, 1); RefreshAll(); }
+
+        /// <summary>« Revoir le tutoriel » : ferme les réglages et le menu, puis relance le tutoriel en conduite libre.</summary>
+        public void OnReplayTutorial()
+        {
+            Close();
+            menu?.CloseToPlay();
+            tutorial?.StartTutorial();
+        }
 
         // ---------- Réinitialisation (deux étapes) ----------
 

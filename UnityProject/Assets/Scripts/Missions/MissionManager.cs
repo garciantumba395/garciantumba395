@@ -67,7 +67,7 @@ namespace TaxiKin.Missions
         [Header("Disponibilité")]
         [Tooltip("Systèmes déjà développés. Les missions qui en exigent d'autres sont verrouillées (« Bientôt »).")]
         [SerializeField] private MissionFeature availableFeatures =
-            MissionFeature.CorridorMap | MissionFeature.TrafficAvoidance | MissionFeature.DenseTraffic | MissionFeature.RaceAI;
+            MissionFeature.CorridorMap | MissionFeature.TrafficAvoidance | MissionFeature.DenseTraffic | MissionFeature.RaceAI | MissionFeature.Rain;
         [Tooltip("Pour tester : ignore le verrouillage par fonctionnalités et utilise les points de repli.")]
         [SerializeField] private bool ignoreFeatureGating = true;
         [SerializeField] private float deliveryRadius = 25f;
@@ -159,6 +159,7 @@ namespace TaxiKin.Missions
         private void OnProgressReset()
         {
             race?.Stop();
+            weather?.SetWeather(WeatherType.Clear);
             completed.Clear();
             unlocked.Clear();
             completedLoaded = false;
@@ -269,6 +270,8 @@ namespace TaxiKin.Missions
             passengers?.Reset();
             racePlaceReported = false;
             weather?.SetWeather(c.weather);
+            if (c.weather == WeatherType.HeavyRain) ToastManager.Show("Pluie forte : la route est glissante !");
+            else if (c.weather == WeatherType.LightRain) ToastManager.Show("Il pleut : attention à l'adhérence.");
             traffic?.SetMaxVehicles(c.denseTraffic ? 30 : 12);
 
             Progress = new MissionProgress
@@ -451,6 +454,7 @@ namespace TaxiKin.Missions
         {
             if (State != MissionState.Running) return;
             race?.Stop();
+            weather?.SetWeather(WeatherType.Clear);      // le beau temps revient après la mission
             State = MissionState.Ended;
             var m = Current;
             var res = new MissionResult { mission = m, success = success, time = Progress.elapsed, objectives = Evaluate() };

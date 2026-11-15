@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using TaxiKin.Weather;
 
 namespace TaxiKin.Vehicles
 {
@@ -142,12 +143,14 @@ namespace TaxiKin.Vehicles
             float forward = Vector3.Dot(vel, fwd);
             float lateral = Vector3.Dot(vel, right);
             float maxMs = stats.maxSpeedKmh / 3.6f;
+            // Route mouillée : adhérence 1,0 (sec) → 0,6 (pluie forte)
+            float road = WeatherManager.Instance != null ? WeatherManager.Instance.RoadGrip : 1f;
             bool driving = Gear != GearPosition.N && Throttle > 0f && Fuel > 0f;
 
             if (driving)
             {
                 float dir = Reverse ? -1f : 1f;
-                forward += dir * Throttle * stats.acceleration * dt;
+                forward += dir * Throttle * stats.acceleration * (0.5f + 0.5f * road) * dt;     // patinage
             }
             else
             {
@@ -156,12 +159,12 @@ namespace TaxiKin.Vehicles
 
             float brakeAmount = HandBrake ? 1f : Brake;
             if (brakeAmount > 0f)
-                forward = Mathf.MoveTowards(forward, 0f, brakeAmount * stats.brakeForce * dt);
+                forward = Mathf.MoveTowards(forward, 0f, brakeAmount * stats.brakeForce * road * dt);     // freinage plus long
 
             forward = Mathf.Clamp(forward, -maxMs * 0.4f, maxMs);      // Marche arrière plus lente
 
             // Adhérence latérale : le frein à main fait déraper
-            float grip = HandBrake ? 6f : 30f;
+            float grip = (HandBrake ? 6f : 30f) * road * road;        // la voiture dérape plus facilement
             lateral = Mathf.MoveTowards(lateral, 0f, grip * dt);
 
             Vector3 newVel = fwd * forward + right * lateral;
@@ -171,7 +174,7 @@ namespace TaxiKin.Vehicles
 
             // Direction : proportionnelle à la vitesse, inversée en marche arrière
             float speedFactor = Mathf.Clamp01(Mathf.Abs(forward) / 4f);
-            float yaw = Steer * stats.turnRate * speedFactor * Mathf.Sign(forward == 0f ? 1f : forward) * dt;
+            float yaw = Steer * stats.turnRate * (0.7f + 0.3f * road) * speedFactor * Mathf.Sign(forward == 0f ? 1f : forward) * dt;
             rb.MoveRotation(rb.rotation * Quaternion.Euler(0f, yaw, 0f));
 
             if (driving) Fuel = Mathf.Max(0f, Fuel - (Mathf.Abs(forward) * dt / 1000f) * stats.fuelPerKm);

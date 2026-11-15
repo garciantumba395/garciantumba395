@@ -63,6 +63,14 @@ namespace TaxiKin.UI
 
         private void Start() => Apply();   // les réglages sauvegardés sont lus une fois tous les managers prêts
 
+        /// <summary>Premier élément visible de ce type (null s'il est masqué pour le véhicule actuel).</summary>
+        public RectTransform Get(ControlId id)
+        {
+            foreach (var e in entries)
+                if (e.id == id && e.rect != null && e.rect.gameObject.activeInHierarchy) return e.rect;
+            return null;
+        }
+
         public void Apply()
         {
             var allowed = PerVehicle[current];
