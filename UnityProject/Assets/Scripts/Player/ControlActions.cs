@@ -15,7 +15,7 @@ namespace TaxiKin.Player
         [SerializeField] private PassengerManager passengers;
         [SerializeField] private CameraRig cameraRig;
         [SerializeField] private MissionManager missions;
-        [SerializeField] private ZoneLoader zone;
+        [SerializeField] private WorldManager world;
 
         public bool StopRequested { get; private set; }
 
@@ -73,7 +73,7 @@ namespace TaxiKin.Player
         /// <summary>Un arrêt est respecté si le bus ouvre ses portes près d'un arrêt de la carte, ou après avoir demandé l'arrêt.</summary>
         private void CountStop(Vector3 position)
         {
-            bool atStop = zone != null && zone.IsLoaded && zone.NearestPoi("arret", position, 25f) != null;
+            bool atStop = world != null && world.NearestPoi("arret", position, 25f) != null;
             if (!atStop && !StopRequested) return;
             StopRequested = false;
             missions?.ReportStop();

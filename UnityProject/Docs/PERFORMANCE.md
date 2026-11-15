@@ -50,6 +50,7 @@ pour le nombre de triangles : on pourra le relever (à tester : temps de chargem
 - **Carte par blocs de 250 m** (`ZoneLoader`) : blocs lointains non dessinés, collision des immeubles créée à la demande
   (une par passage) près du joueur, chargement étalé (6 ms par image), mémoire libérée au déchargement d'une zone.
   Plafond de 1 500 immeubles par zone (`osm_to_zone.py`). Aucune ombre projetée par les immeubles.
+- **Monde en plusieurs zones** (`WorldManager`) : une zone se charge à moins de 450 m de son sol et se décharge au-delà de 700 m (hystérésis). Une zone en général ; deux au milieu d'un corridor (budget mémoire à vérifier sur appareil). Les corridors sont construits une seule fois (3 maillages et 3 collisions chacun).
 - **Chargement à la demande** : vêtements (prefab chargé à l'équipement), véhicule d'aperçu du garage (un seul à la fois),
   fichier de zone libéré après lecture.
 - **Mémoire** : trafic en réserve d'objets (pas d'Instantiate/Destroy en jeu), HUD rafraîchi 5 fois/s, contrôle des

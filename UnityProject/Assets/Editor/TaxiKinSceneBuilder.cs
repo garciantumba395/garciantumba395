@@ -1,3 +1,4 @@
+using System.IO;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -52,6 +53,8 @@ namespace TaxiKin.EditorTools
             managers.AddComponent<AdManager>();
             managers.AddComponent<PurchaseManager>();
             managers.AddComponent<ShopManager>();
+            managers.AddComponent<WorldManager>();
+            managers.AddComponent<OutOfBoundsGuard>();
             managers.AddComponent<QualityManager>();
             managers.AddComponent<PerformanceMonitor>();
             managers.AddComponent<TaxiKin.Audio.AudioManager>();
@@ -74,6 +77,14 @@ namespace TaxiKin.EditorTools
             roadGo.transform.localScale = new Vector3(2f, 1f, 10f);
             roadGo.GetComponent<Renderer>().sharedMaterial = road;
             Object.DestroyImmediate(roadGo.GetComponent<Collider>()); // Un seul collider de sol suffit
+
+            // --- Monde de Kinshasa : si world.json existe, le sol de test est inutile (les zones et corridors fournissent le sol) ---
+            bool hasWorld = File.Exists("Assets/Resources/Zones/world.json");
+            if (hasWorld)
+            {
+                Object.DestroyImmediate(groundGo);
+                Object.DestroyImmediate(roadGo);
+            }
 
             // --- Véhicules : racine physique non déformée + carrosserie, jantes, autocollants, plaque ---
             var wewa = TaxiKinVehicleBuilder.Make<WewaController>("Wewa", new Vector3(-6f, 0.6f, 0f), new Vector3(0.5f, 0.9f, 1.8f), wewaMat, false);
@@ -206,6 +217,17 @@ namespace TaxiKin.EditorTools
                 Assign(rig, "player", pc);
             }
 
+            // --- Monde : zones chargées par proximité, corridors, guidage ---
+            var worldMgr = managers.GetComponent<WorldManager>();
+            Assign(worldMgr, "player", pc);
+            Assign(worldMgr, "roadMaterial", road);
+            Assign(worldMgr, "buildingMaterial", GetMaterial("Mat_Building", new Color(0.78f, 0.7f, 0.58f)));
+            Assign(worldMgr, "groundMaterial", ground);
+            Assign(worldMgr, "corridorGroundMaterial", GetMaterial("Mat_CorridorGround", new Color(0.42f, 0.5f, 0.34f)));
+            Assign(worldMgr, "decorMaterial", GetMaterial("Mat_Barrier", new Color(0.9f, 0.9f, 0.88f)));
+            Assign(managers.GetComponent<MissionManager>(), "world", worldMgr);
+            Assign(managers.GetComponent<OutOfBoundsGuard>(), "player", pc);
+
             // --- Qualité graphique, son, vibrations ---
             var sunLight = Object.FindObjectOfType<Light>();
             var quality = managers.GetComponent<QualityManager>();
@@ -243,6 +265,7 @@ namespace TaxiKin.EditorTools
             TaxiKinCustomizationUIBuilder.Build(GameObject.Find("Canvas/ZoneSure").transform, managers, pc, stage);
             TaxiKinGarageShopUIBuilder.Build(GameObject.Find("Canvas/ZoneSure").transform, managers, pc, vStage);
             TaxiKinSettingsUIBuilder.Build(GameObject.Find("Canvas/ZoneSure").transform, managers);
+            Assign(managers.GetComponent<ControlActions>(), "world", worldMgr);
             TaxiKinMenuUIBuilder.Build(GameObject.Find("Canvas/ZoneSure").transform, managers, stage);   // en dernier : place le menu sous les autres écrans
 
             // --- Sauvegarde de la scène ---

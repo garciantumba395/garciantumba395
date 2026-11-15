@@ -89,6 +89,22 @@ def building_height(way):
     return 6.0 + h
 
 
+def clip_polyline(pts, half):
+    """Découpe une polyligne : on ne garde que les tronçons dont le milieu est dans le carré (centre 0,0 ; demi-côté 'half').
+    Retourne une liste de polylignes (une route qui sort puis rentre donne plusieurs morceaux)."""
+    out, cur = [], []
+    for i in range(len(pts) - 1):
+        a, b = pts[i], pts[i + 1]
+        mx, mz = (a[0] + b[0]) / 2, (a[1] + b[1]) / 2
+        if abs(mx) <= half and abs(mz) <= half:
+            if not cur: cur = [a]
+            cur.append(b)
+        elif cur:
+            out.append(cur); cur = []
+    if cur: out.append(cur)
+    return out
+
+
 def flat(pts):
     out = []
     for x, z in pts: out += [round(x, 1), round(z, 1)]
@@ -116,12 +132,14 @@ def convert(args):
         tags = w["tags"]
         hw = tags.get("highway")
         if hw in ROAD_WIDTH:
-            roads.append({"kind": ROAD_KIND[hw], "width": ROAD_WIDTH[hw], "pts": flat(pts)})
+            for piece in clip_polyline(pts, radius + 80.0):      # aucune route ne flotte au-delà du sol de la zone
+                roads.append({"kind": ROAD_KIND[hw], "width": ROAD_WIDTH[hw], "pts": flat(piece)})
         elif "building" in tags and len(pts) >= 4 and w["nodes"][0] == w["nodes"][-1]:
             poly = pts[:-1]
             if abs(polygon_area(poly)) < 15: continue          # trop petit : inutile en jeu
             if polygon_area(poly) < 0: poly.reverse()          # toujours anti-horaire
             cx = sum(p[0] for p in poly) / len(poly); cz = sum(p[1] for p in poly) / len(poly)
+            if abs(cx) > radius + 80.0 or abs(cz) > radius + 80.0: continue
             buildings.append((cx * cx + cz * cz, {"h": round(building_height(w), 1), "pts": flat(poly)}))
 
     buildings.sort(key=lambda b: b[0])                           # garde les plus proches du centre
@@ -139,6 +157,12 @@ def convert(args):
 
     # Repères posés à la main dans zones.json (approche hybride) : ex. un aéroport cartographié comme une zone dans OSM
     for e in z.get("extra_pois", []):
+        snap = e.get("snap_to")
+        if snap:
+            target = next((q for q in pois if q["kind"] == snap), None)
+            if target is None: continue
+            pois.append({"name": e.get("name", ""), "kind": e["kind"], "x": target["x"], "z": target["z"]})
+            continue
         x, zz = proj.xz(e["lat"], e["lon"])
         if abs(x) <= radius and abs(zz) <= radius:
             pois.append({"name": e.get("name", ""), "kind": e["kind"], "x": round(x, 1), "z": round(zz, 1)})

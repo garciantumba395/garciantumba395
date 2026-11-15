@@ -19,6 +19,15 @@ quatre), convertit avec `osm_to_zone.py` et écrit `Assets/Resources/Zones/<zone
 (Sur openstreetmap.org, le bouton « Exporter » ne propose qu'une petite zone ; l'adresse ci-dessus est plus simple. Si le navigateur
 répond « trop de points », réduire la zone en rapprochant les quatre nombres de `bbox=ouest,sud,est,nord`.)
 
+## Disposition du monde et corridors
+```
+python3 Tools/build_world.py --report
+```
+Lit `zones.json` (liens entre zones et longueur des corridors) et les fichiers de zone, puis écrit `Assets/Resources/Zones/world.json` :
+position de chaque zone dans le repère global « compressé » (directions réelles conservées, distances raccourcies) et corridors qui relient
+l'extrémité d'une route principale d'une zone à celle de la zone voisine. À relancer après tout changement des zones. `--report` donne la
+longueur des trajets de mission et une durée conseillée.
+
 ## Règles appliquées à la conversion
 - Routes carrossables uniquement (pas de chemins piétons) ; immeubles de plus de 15 m², plafond de 1 500 par zone (`--max-buildings`).
 - **Aucun nom d'entreprise** : le nom d'un point d'intérêt n'est conservé que pour les gares, aéroports et marchés ; hôtels,

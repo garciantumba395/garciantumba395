@@ -22,6 +22,9 @@ namespace TaxiKin.UI
         [SerializeField] private Transform destination;
         public Transform Destination { get => destination; set => destination = value; }
 
+        /// <summary>Distance restante le long du vrai chemin (corridors compris). Négatif = inconnue : on affiche la distance à vol d'oiseau.</summary>
+        public float RemainingMeters { get; set; } = -1f;
+
         private float next;
         private readonly StringBuilder sb = new StringBuilder(32);
 
@@ -31,6 +34,8 @@ namespace TaxiKin.UI
             next = Time.unscaledTime + refreshInterval;
             Refresh();
         }
+
+        private static string FormatDistance(float m) => m >= 1000f ? $"{m / 1000f:0.0} km" : Mathf.RoundToInt(m) + " m";
 
         private void Refresh()
         {
@@ -44,8 +49,8 @@ namespace TaxiKin.UI
             if (speed != null) speed.text = Mathf.RoundToInt(v.SpeedKmh) + " km/h";
 
             if (distance != null)
-                distance.text = Destination != null
-                    ? Mathf.RoundToInt(Vector3.Distance(v.transform.position, Destination.position)) + " m" : "--";
+                distance.text = Destination == null ? "--"
+                    : FormatDistance(RemainingMeters >= 0f ? RemainingMeters : Vector3.Distance(v.transform.position, Destination.position));
 
             if (timer != null)
             {

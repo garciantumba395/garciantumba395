@@ -1,6 +1,6 @@
 # Taxi Kin: Wewa, Taxi & 207 — Plan de projet
 
-*Mis à jour le 2026-11-15 (itération 3). Chef de projet : Claude. Propriétaire du produit : le client.*
+*Mis à jour le 2026-11-15 (itération 4). Chef de projet : Claude. Propriétaire du produit : le client.*
 
 ## 1. Statut en une phrase
 Les **fondations des 7 étapes sont écrites** (commandes, missions, personnage, économie, boutique, sauvegarde, optimisation) et
@@ -26,7 +26,7 @@ Effort : S (≤ 1 itération), M (2-3), L (4+). Risque : B/M/H.
 | 2 | Menu principal et enchaînement des écrans (remplace les boutons de test) | Critique | M | B | ✅ Écrit et vérifié par compilation (itération 2) ; à tester en jeu |
 | 3 | Import OSM de la Gare centrale + vérification visuelle | Critique | M | M | ✅ Données importées (itération 3), géométrie vérifiée hors Unity ; à voir dans Unity |
 | 4 | Test sur téléphone d'entrée de gamme (11 tests de `PERFORMANCE.md`) | Critique | S | H | **Client** : téléphone + build |
-| 5 | Corridors compressés entre zones + chargement de la zone suivante | Haute | L | M | Après 1 et 3 |
+| 5 | Corridors compressés entre zones + chargement de la zone suivante | Haute | L | M | ✅ Écrit et vérifié (compilation + logique de guidage simulée, itération 4) ; à tester en jeu |
 | 6 | Trafic : IA de circulation et détection des véhicules évités | Haute | L | M | Après 3 (réseau routier réel) |
 | 7 | Chauffeurs virtuels (courses, missions 9 et 10) | Haute | L | H | Après 6 |
 | 8 | Pluie, route glissante, nuit | Moyenne | M | B | Après 1 |
@@ -51,7 +51,7 @@ Effort : S (≤ 1 itération), M (2-3), L (4+). Risque : B/M/H.
 | D4 | Publicités : récompensées et facultatives uniquement | Cahier des charges ; jamais pendant la conduite |
 | D5 | Prix en Kin Gold et paquets = **provisoires**, gelés pour la bêta puis ajustés avec les retours | Aucune donnée réelle avant la bêta |
 | D6 | Vérification de compilation hors Unity à chaque modification (`Tools/verify`) | Seul filet disponible sans Unity |
-| D7 | Ne pas ajouter de nouveau gros système avant que M1 soit validé en jeu | Éviter d'empiler du code jamais exécuté |
+| D7 | ~~Ne pas ajouter de nouveau gros système avant M1~~ **Levée le 2026-11-15 sur demande du client** (corridors) ; chaque ajout reste vérifié par compilation et simulation | Le client préfère avancer ; le risque est assumé |
 | D8 | Retours joueurs : bouton dans le jeu + avis du magasin + mesure anonyme **sur consentement** | Boucle d'amélioration demandée, sans collecte cachée |
 | D9 | Wewa gratuit ; taxi et 207 débloquables en jouant (missions 5 et 7) | Cahier des charges |
 

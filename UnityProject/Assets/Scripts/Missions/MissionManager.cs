@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using TaxiKin.Core;
@@ -53,7 +54,7 @@ namespace TaxiKin.Missions
         [SerializeField] private PassengerManager passengers;
         [SerializeField] private WeatherManager weather;
         [SerializeField] private TrafficManager traffic;
-        [SerializeField] private ZoneLoader zone;
+        [SerializeField] private WorldManager world;
         [SerializeField] private CameraRig cameraRig;
         [SerializeField] private HudManager hud;
         [SerializeField] private DirectionArrow directionArrow;
@@ -74,6 +75,10 @@ namespace TaxiKin.Missions
         private readonly HashSet<string> unlocked = new HashSet<string>();
         private VehicleController watched;
         private bool completedLoaded;
+        private bool starting;
+        private Transform guidance;
+        private string destinationZone;
+        private float nextGuidance;
         private bool headingToDestination = true;
 
         public IReadOnlyList<MissionData> Missions => missions;
@@ -202,7 +207,39 @@ namespace TaxiKin.Missions
         public void BriefFollowing() => Brief(FindNext(Current));
 
         /// <summary>Bouton « Commencer » : prépare le véhicule, le lieu et la météo, puis lance le chrono.</summary>
+        /// <summary>
+        /// Bouton « Commencer » : si le départ est dans une zone pas encore chargée, on la charge d'abord
+        /// (le sol doit exister avant de poser le véhicule), puis la mission démarre.
+        /// </summary>
         public void Begin()
+        {
+            if (State != MissionState.Briefing || Current == null || starting) return;
+            StartCoroutine(BeginRoutine());
+        }
+
+        private IEnumerator BeginRoutine()
+        {
+            starting = true;
+            var place = Current.start;
+            string zoneId = place != null && !place.IsEmpty ? place.zoneId : null;
+            if (world != null && world.IsReady && world.HasZone(zoneId))
+            {
+                world.Pin(zoneId);
+                world.RequestZone(zoneId);
+                float waited = 0f; bool announced = false;
+                while (!world.IsGroundReady(zoneId) && waited < 20f)
+                {
+                    if (!announced && waited > 0.3f) { ToastManager.Show("Chargement de la zone…"); announced = true; }
+                    waited += Time.unscaledDeltaTime;
+                    yield return null;
+                }
+            }
+            if (State == MissionState.Briefing) BeginNow();     // l'état peut avoir changé (réinitialisation, retour au menu)
+            if (world != null && world.HasZone(zoneId)) world.Unpin(zoneId);   // le véhicule y est : la proximité la garde chargée
+            starting = false;
+        }
+
+        private void BeginNow()
         {
             if (State != MissionState.Briefing || Current == null) return;
             var m = Current;
@@ -257,6 +294,7 @@ namespace TaxiKin.Missions
                 }
             }
             if (cameraRig != null && cameraRig.Current == CameraView.Rear) Progress.rearCameraUsed = true;
+            UpdateGuidance();
 
             CheckCompletion();
         }
@@ -438,19 +476,52 @@ namespace TaxiKin.Missions
 
         private Transform ResolvePlace(MissionPlace place, Transform fallback)
         {
-            if (place != null && !place.IsEmpty && zone != null && zone.IsLoaded && zone.Data.id == place.zoneId)
+            // Les repères existent pour toutes les zones, même non chargées : une destination lointaine est donc possible
+            if (place != null && !place.IsEmpty && world != null && world.IsReady && world.HasZone(place.zoneId))
             {
-                var poi = string.IsNullOrEmpty(place.poiKind) ? null : zone.FindPoi(place.poiKind);
-                if (poi != null) return poi;
+                var poi = string.IsNullOrEmpty(place.poiKind) ? null : world.GetPoi(place.zoneId, place.poiKind);
+                return poi != null ? poi : world.ZoneCenter(place.zoneId);   // sans type de repère (ou introuvable) : centre de la zone
             }
-            return fallback;   // zone non chargée ou point introuvable : repli
+            return fallback;   // pas de monde (scène de test) : points de repli
+        }
+
+        /// <summary>Point mobile que la flèche du HUD vise : la prochaine porte de corridor, puis la destination.</summary>
+        private Transform Guidance
+        {
+            get
+            {
+                if (guidance == null) { guidance = new GameObject("PointDeGuidage").transform; guidance.SetParent(transform, false); }
+                return guidance;
+            }
         }
 
         private void SetDestination(Transform t)
         {
             Destination = t;
-            if (hud != null) hud.Destination = t;
-            directionArrow?.SetDestination(t);
+            destinationZone = t != null && world != null && world.IsReady ? world.ZoneAt(t.position) : null;
+            if (hud != null) { hud.Destination = t; hud.RemainingMeters = -1f; }
+            // Avec le monde chargé : la flèche suit le chemin (corridors) ; sinon elle vise directement la destination
+            if (t != null && destinationZone != null) Guidance.position = t.position;
+            directionArrow?.SetDestination(t != null && destinationZone != null ? Guidance : t);
+        }
+
+        /// <summary>Met à jour 4 fois par seconde le point de guidage et la distance restante réelle.</summary>
+        private void UpdateGuidance()
+        {
+            if (destinationZone == null || Destination == null || world == null || Time.unscaledTime < nextGuidance) return;
+            nextGuidance = Time.unscaledTime + 0.25f;
+            var v = player != null ? player.Vehicle : null;
+            if (v == null) return;
+            if (world.GetGuidance(v.transform.position, destinationZone, Destination.position, out var target, out var remaining))
+            {
+                Guidance.position = target;
+                if (hud != null) hud.RemainingMeters = remaining;
+            }
+            else
+            {
+                Guidance.position = Destination.position;
+                if (hud != null) hud.RemainingMeters = -1f;
+            }
         }
 
         public static string FormatTime(float seconds) => $"{(int)(seconds / 60f)}:{(int)seconds % 60:00}";

@@ -35,6 +35,9 @@ namespace TaxiKin.Map
 
         public ZoneData Data { get; private set; }
         public bool IsLoaded { get; private set; }
+        /// <summary>Le sol existe déjà (avant la fin du chargement des immeubles) : on peut y poser un véhicule.</summary>
+        public bool GroundReady { get; private set; }
+        public string ZoneId => Data != null ? Data.id : null;
         public bool IsLoading { get; private set; }
         public string Attribution => Data != null ? Data.attribution : string.Empty;
         public event Action OnLoaded;
@@ -46,15 +49,29 @@ namespace TaxiKin.Map
         private Coroutine loading;
         private float nextCull;
 
+        private Vector3 origin;
+
+        /// <summary>Réglages donnés par WorldManager (une instance par zone) ; désactive le chargement automatique.</summary>
+        public void Configure(Material road, Material building, Material ground, PlayerController playerRef, bool colliders)
+        {
+            roadMaterial = road; buildingMaterial = building; groundMaterial = ground; player = playerRef;
+            buildingColliders = colliders;
+            autoLoadZoneId = "";
+        }
+
         private void Start()
         {
             if (!string.IsNullOrEmpty(autoLoadZoneId)) Load(autoLoadZoneId);
         }
 
         /// <summary>Lance le chargement (asynchrone). Termine par OnLoaded.</summary>
-        public void Load(string zoneId)
+        public void Load(string zoneId) => Load(zoneId, Vector3.zero);
+
+        /// <summary>Charge la zone en la plaçant à 'worldOrigin' (position de son centre dans le monde).</summary>
+        public void Load(string zoneId, Vector3 worldOrigin)
         {
             Unload();
+            origin = worldOrigin;
             loading = StartCoroutine(LoadRoutine(zoneId));
         }
 
@@ -66,7 +83,7 @@ namespace TaxiKin.Map
             bool hadZone = IsLoaded || IsLoading;
             meshes.Clear(); pois.Clear(); chunks.Clear();
             root = null; Data = null;
-            IsLoaded = false; IsLoading = false;
+            IsLoaded = false; IsLoading = false; GroundReady = false;
             if (hadZone) Resources.UnloadUnusedAssets();    // libère la mémoire de la zone quittée
         }
 
@@ -109,6 +126,7 @@ namespace TaxiKin.Map
 
             root = new GameObject("Zone_" + Data.id);
             root.transform.SetParent(transform, false);
+            root.transform.position = origin;
 
             var ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
             ground.name = "Sol";
@@ -116,6 +134,7 @@ namespace TaxiKin.Map
             float size = (Data.radius * 2f + 200f) / 10f;   // un Plane Unity fait 10 m
             ground.transform.localScale = new Vector3(size, 1f, size);
             if (groundMaterial != null) ground.GetComponent<Renderer>().sharedMaterial = groundMaterial;
+            GroundReady = true;
 
             // Répartition des routes (par tronçon) et des immeubles (par centre) dans la grille de blocs
             var roadCells = new Dictionary<long, List<ZoneMeshBuilder.RoadSegment>>();

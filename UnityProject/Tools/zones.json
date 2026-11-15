@@ -44,11 +44,37 @@
         {
           "kind": "aeroport",
           "name": "Aéroport de N'djili",
-          "lat": -4.3840685,
-          "lon": 15.4508775,
-          "_note": "Position de l'aérodrome (Nominatim) ; à vérifier visuellement : le terminal réel peut être à quelques centaines de mètres"
+          "snap_to": "station",
+          "_note": "Posé sur la gare « Ndjili Aéroport » (sur la grande artère). Le point de l'aérodrome donné par Nominatim tombe dans un quartier sans route ; à vérifier visuellement."
         }
       ]
     }
-  ]
+  ],
+  "_world": "Disposition compressée : les zones gardent leur direction réelle mais sont reliées par des corridors courts (longueur en mètres).",
+  "links": [
+    {
+      "a": "gare_centrale",
+      "b": "matonge",
+      "length": 900
+    },
+    {
+      "a": "gare_centrale",
+      "b": "kintambo",
+      "length": 900
+    },
+    {
+      "a": "matonge",
+      "b": "limete",
+      "length": 900
+    },
+    {
+      "a": "limete",
+      "b": "ndjili",
+      "length": 1200
+    }
+  ],
+  "corridor": {
+    "roadWidth": 16,
+    "stripHalfWidth": 35
+  }
 }
