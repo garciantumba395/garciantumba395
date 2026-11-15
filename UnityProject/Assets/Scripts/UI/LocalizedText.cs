@@ -15,6 +15,9 @@ namespace TaxiKin.UI
         private void OnEnable() { Loc.Changed += Refresh; Refresh(); }
         private void OnDisable() => Loc.Changed -= Refresh;
 
+        // La langue sauvegardée n'est connue qu'une fois SaveManager initialisé
+        private void Start() => Refresh();
+
         private void Refresh()
         {
             var t = GetComponent<Text>();

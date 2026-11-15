@@ -34,6 +34,18 @@ namespace TaxiKin.Player
             Instance = this;
         }
 
+        private void OnEnable() => SaveManager.ProgressReset += OnProgressReset;
+        private void OnDisable() => SaveManager.ProgressReset -= OnProgressReset;
+
+        private void OnProgressReset()
+        {
+            avatar = new AvatarData();
+            level = 1; xp = 0;
+            hasProfile = false;
+            loaded = false;
+            OnProfileChanged?.Invoke();
+        }
+
         private void Start() { if (missions != null) missions.OnUnlock += Unlock; }
         private void OnDestroy() { if (missions != null) missions.OnUnlock -= Unlock; }
 

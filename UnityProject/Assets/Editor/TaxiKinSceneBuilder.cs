@@ -217,6 +217,7 @@ namespace TaxiKin.EditorTools
                 managers.GetComponent<MissionManager>(), rig, miniCam, dest.transform);
             TaxiKinCustomizationUIBuilder.Build(GameObject.Find("Canvas").transform, managers, pc, stage);
             TaxiKinGarageShopUIBuilder.Build(GameObject.Find("Canvas").transform, managers, pc, vStage);
+            TaxiKinSettingsUIBuilder.Build(GameObject.Find("Canvas").transform);
 
             // --- Sauvegarde de la scène ---
             const string path = "Assets/Scenes/Main.unity";

@@ -90,3 +90,16 @@ Le Pack complet = tous les véhicules + sans publicités + autocollant exclusif 
 **Sauvegarde** : soldes, véhicules débloqués, véhicule choisi, jetons de carburant, bonus et état (carburant, dommages) de chaque véhicule sont sauvegardés (fin de mission, achat, mise en pause). L'Étape 6 couvrira le reste (missions terminées, paramètres, réinitialisation).
 
 **Limites connues** : aucune mission ne donne de Kin Gold pour l'instant (« récompenses rares ») ; libellés des écrans en français uniquement ; l'aperçu garage utilise des cubes.
+
+## Étape 6 — sauvegarde automatique
+**Contenu sauvegardé** (`taxikin_save.json`, `Application.persistentDataPath`) : nom du joueur et avatar, niveau, XP, Kin Coins, Kin Gold, véhicules débloqués, véhicule sélectionné, améliorations et couleurs/jantes/autocollants/plaque de chaque véhicule, carburant et dommages, objets débloqués, jetons et bonus, missions terminées, paramètres de contrôle (mode, taille des boutons, sensibilité, inversion), langue, suppression des publicités.
+
+**Quand** : après chaque mission (réussie ou non), chaque achat, chaque amélioration, chaque changement de personnalisation, à la fermeture des réglages, à la mise en pause (le plus fiable sur Android) et à la fermeture de l'appli. Les réglages à curseur passent par `SaveSoon()` : au plus une écriture par seconde.
+
+**Robustesse** : écriture atomique (fichier `.tmp` puis remplacement) ; si l'appli est coupée en plein remplacement, le `.tmp` complet est repris au démarrage ; un fichier illisible est copié en `.corrupt` avant de repartir de zéro (jamais écrasé en silence).
+
+**Réinitialisation** : bouton « Réinitialiser ma progression » dans les réglages → fenêtre de confirmation explicite listant ce qui est effacé, bouton rouge bloqué 3 s, bouton « Non, garder ma progression » mis en avant. `SaveManager.ResetProgress()` vide la sauvegarde puis déclenche `SaveManager.ProgressReset` : chaque manager (économie, profil, missions, véhicules, garage, quêtes) se remet à zéro en mémoire **sans recharger la scène**, puis l'écran « Mon chauffeur » se rouvre comme au premier lancement. Les achats en argent réel (non consommables) restent récupérables via le magasin ; la monnaie déjà dépensée ne l'est pas (indiqué dans la confirmation).
+
+**Migration** : `PlayerPrefs` n'est plus utilisé (réglages et langue sont dans la sauvegarde). Aucune migration : le jeu n'a pas encore été publié.
+
+**Limites** : les réglages d'Étape 7 (qualité graphique, son, musique, vibrations, ombres) ne sont pas encore dans `SettingsData` ; pas de sauvegarde dans le cloud ; pas de chiffrement (le fichier est modifiable par un joueur sur appareil rooté : sans importance tant qu'il n'y a pas de classement en ligne).

@@ -1,5 +1,6 @@
 using UnityEngine;
 using TaxiKin.Player;
+using TaxiKin.SaveSystem;
 using TaxiKin.UI;
 using TaxiKin.Vehicles;
 
@@ -19,6 +20,10 @@ namespace TaxiKin.Missions
         [SerializeField] private VehicleCustomizer taxiCustomizer;
 
         private bool yellowChosen;
+
+        private void OnEnable() => SaveManager.ProgressReset += OnProgressReset;
+        private void OnDisable() => SaveManager.ProgressReset -= OnProgressReset;
+        private void OnProgressReset() => yellowChosen = false;
 
         private void Start()
         {

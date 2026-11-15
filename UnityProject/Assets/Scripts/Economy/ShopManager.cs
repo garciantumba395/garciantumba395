@@ -46,6 +46,10 @@ namespace TaxiKin.Economy
             Instance = this;
         }
 
+        private void OnEnable() => SaveManager.ProgressReset += RaiseChanged;
+        private void OnDisable() => SaveManager.ProgressReset -= RaiseChanged;
+        private void RaiseChanged() => OnChanged?.Invoke();
+
         private void Start()
         {
             if (purchases != null) { purchases.OnPurchaseCompleted += OnMoneyPurchase; purchases.OnPurchaseFailed += OnMoneyFailed; }

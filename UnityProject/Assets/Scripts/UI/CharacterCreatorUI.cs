@@ -2,7 +2,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TaxiKin.Core;
+using System.Collections;
 using TaxiKin.Player;
+using TaxiKin.SaveSystem;
 
 namespace TaxiKin.UI
 {
@@ -30,6 +32,13 @@ namespace TaxiKin.UI
         private ClothingSlot tab = ClothingSlot.Face;
         private bool firstLaunch;
         private GameState stateBefore = GameState.Playing;
+
+        private void OnEnable() => SaveManager.ProgressReset += OnProgressReset;
+        private void OnDisable() => SaveManager.ProgressReset -= OnProgressReset;
+
+        // Attend une image pour que le profil soit déjà réinitialisé, quel que soit l'ordre des abonnés
+        private void OnProgressReset() { StartCoroutine(OpenNextFrame()); }
+        private IEnumerator OpenNextFrame() { yield return null; Open(true); }
 
         private void Start()
         {

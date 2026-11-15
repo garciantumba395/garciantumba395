@@ -5,6 +5,7 @@ using TaxiKin.Core;
 using TaxiKin.Economy;
 using TaxiKin.Map;
 using TaxiKin.Player;
+using TaxiKin.SaveSystem;
 using TaxiKin.Traffic;
 using TaxiKin.UI;
 using TaxiKin.Vehicles;
@@ -72,6 +73,7 @@ namespace TaxiKin.Missions
         private readonly HashSet<string> completed = new HashSet<string>();
         private readonly HashSet<string> unlocked = new HashSet<string>();
         private VehicleController watched;
+        private bool completedLoaded;
         private bool headingToDestination = true;
         private float lastReverseCheck;
 
@@ -98,9 +100,15 @@ namespace TaxiKin.Missions
             missions.Sort((a, b) => a.order.CompareTo(b.order));
         }
 
-        private void OnEnable() { if (player != null) player.OnVehicleChanged += OnVehicleChanged; }
+        private void OnEnable()
+        {
+            if (player != null) player.OnVehicleChanged += OnVehicleChanged;
+            SaveManager.ProgressReset += OnProgressReset;
+        }
+
         private void OnDisable()
         {
+            SaveManager.ProgressReset -= OnProgressReset;
             if (player != null) player.OnVehicleChanged -= OnVehicleChanged;
             if (watched != null) watched.OnImpact -= OnImpact;
         }
@@ -114,7 +122,45 @@ namespace TaxiKin.Missions
 
         // ---------- Disponibilité ----------
 
-        public bool IsCompleted(string id) => completed.Contains(id);
+        // ---------- Missions terminées (sauvegardées) ----------
+
+        /// <summary>Charge la liste des missions terminées dès que SaveManager existe (chargement paresseux).</summary>
+        private void LoadCompleted()
+        {
+            if (completedLoaded) return;
+            var sm = SaveManager.Instance;
+            if (sm == null) return;
+            completedLoaded = true;
+            foreach (var id in sm.Data.completedMissions) completed.Add(id);
+        }
+
+        /// <summary>Marque la mission comme terminée et sauvegarde. Retourne vrai s'il s'agit de la PREMIÈRE réussite.</summary>
+        private bool MarkCompleted(string id)
+        {
+            LoadCompleted();
+            if (!completed.Add(id)) return false;
+            var sm = SaveManager.Instance;
+            if (sm != null && !sm.Data.completedMissions.Contains(id))
+            {
+                sm.Data.completedMissions.Add(id);
+                sm.Save();   // sauvegarde automatique après chaque mission
+            }
+            return true;
+        }
+
+        /// <summary>Remise à zéro de la progression : on oublie missions terminées et déblocages, on arrête la mission en cours.</summary>
+        private void OnProgressReset()
+        {
+            completed.Clear();
+            unlocked.Clear();
+            completedLoaded = false;
+            State = MissionState.Idle;
+            Current = null;
+            Progress = new MissionProgress();
+            SetDestination(null);
+        }
+
+        public bool IsCompleted(string id) { LoadCompleted(); return completed.Contains(id); }
 
         public bool IsPlayable(MissionData m)
         {
@@ -126,7 +172,7 @@ namespace TaxiKin.Missions
         /// <summary>Première mission jouable non terminée (ou la première jouable si tout est fini).</summary>
         public MissionData NextSuggested()
         {
-            foreach (var m in missions) if (IsPlayable(m) && !completed.Contains(m.id)) return m;
+            foreach (var m in missions) if (IsPlayable(m) && !IsCompleted(m.id)) return m;
             foreach (var m in missions) if (IsPlayable(m)) return m;
             return null;
         }
@@ -352,7 +398,7 @@ namespace TaxiKin.Missions
 
             if (success)
             {
-                res.firstCompletion = completed.Add(m.id);
+                res.firstCompletion = MarkCompleted(m.id);
                 float mult = res.firstCompletion ? 1f : 0.25f;
                 // Bonus « pièces x2 » : consommé seulement si la mission rapporte des pièces
                 int bonus = (m.rewards.kinCoins > 0 && EconomyManager.Instance != null) ? EconomyManager.Instance.ConsumeDoubleCoins() : 1;
@@ -379,7 +425,7 @@ namespace TaxiKin.Missions
         {
             MissionData m = null;
             foreach (var x in missions) if (x.id == missionId) { m = x; break; }
-            if (m == null || !completed.Add(m.id)) return false;
+            if (m == null || !MarkCompleted(m.id)) return false;
 
             EconomyManager.Instance?.AddCoins(m.rewards.kinCoins);
             ProfileManager.Instance?.AddXp(m.rewards.xp);

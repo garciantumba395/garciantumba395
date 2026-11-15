@@ -27,6 +27,16 @@ namespace TaxiKin.Economy
             Instance = this;
         }
 
+        private void OnEnable() => SaveManager.ProgressReset += OnProgressReset;
+        private void OnDisable() => SaveManager.ProgressReset -= OnProgressReset;
+
+        private void OnProgressReset()
+        {
+            coins = gold = doubleCharges = 0;
+            loaded = false;   // sera relu depuis la sauvegarde neuve
+            OnBalanceChanged?.Invoke();
+        }
+
         /// <summary>Chargement paresseux : l'ordre d'initialisation des managers n'a pas d'importance.</summary>
         private void Ensure()
         {

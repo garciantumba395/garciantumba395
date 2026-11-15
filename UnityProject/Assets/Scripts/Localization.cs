@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using TaxiKin.SaveSystem;
 
 namespace TaxiKin.Core
 {
@@ -12,23 +13,28 @@ namespace TaxiKin.Core
     /// </summary>
     public static class Loc
     {
-        private const string KLang = "lang";
-        private static bool loaded;
-        private static Language current = Language.Fr;
         public static event Action Changed;
 
+        /// <summary>Langue choisie, stockée dans la sauvegarde (français par défaut).</summary>
         public static Language Current
         {
-            get { Ensure(); return current; }
-            set { Ensure(); current = value; PlayerPrefs.SetInt(KLang, (int)value); Changed?.Invoke(); }
+            get
+            {
+                var sm = SaveManager.Instance;
+                return sm == null ? Language.Fr : (Language)Mathf.Clamp(sm.Data.settings.language, 0, 1);
+            }
+            set
+            {
+                var sm = SaveManager.Instance;
+                if (sm == null) return;
+                sm.Data.settings.language = (int)value;
+                sm.SaveSoon();
+                Changed?.Invoke();
+            }
         }
 
-        private static void Ensure()
-        {
-            if (loaded) return;
-            loaded = true;
-            current = (Language)Mathf.Clamp(PlayerPrefs.GetInt(KLang, 0), 0, 1);
-        }
+        /// <summary>À appeler après un chargement ou une réinitialisation pour rafraîchir les textes.</summary>
+        public static void NotifyChanged() => Changed?.Invoke();
 
         private static readonly Dictionary<string, string> Fr = new Dictionary<string, string>
         {
@@ -53,8 +59,7 @@ namespace TaxiKin.Core
 
         public static string T(string key)
         {
-            Ensure();
-            if (current == Language.Ln && Ln.TryGetValue(key, out var ln)) return ln;
+            if (Current == Language.Ln && Ln.TryGetValue(key, out var ln)) return ln;
             return Fr.TryGetValue(key, out var fr) ? fr : key;
         }
     }

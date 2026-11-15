@@ -62,7 +62,23 @@ namespace TaxiKin.Vehicles
         /// <summary>Déclenché après chaque changement (sauvegarde, missions de personnalisation).</summary>
         public event Action<VehicleCustomization> OnChanged;
 
-        private void Awake() => Current = DefaultFor(Kind);
+        private void Awake()
+        {
+            Current = DefaultFor(Kind);
+            SaveManager.ProgressReset += OnProgressReset;   // abonné même quand le véhicule est désactivé
+        }
+
+        private void OnDestroy() => SaveManager.ProgressReset -= OnProgressReset;
+
+        /// <summary>Réinitialisation : couleurs d'origine, aucune amélioration, plein et véhicule neuf.</summary>
+        private void OnProgressReset()
+        {
+            Current = DefaultFor(Kind);
+            VariantBonus = 0;
+            conditionLoaded = false;
+            if (vehicle != null) vehicle.SetCondition(vehicle.Stats.fuelCapacity, 0f);
+            ApplyAll();
+        }
 
         private void OnEnable()
         {
@@ -77,15 +93,18 @@ namespace TaxiKin.Vehicles
         private void LoadFromSave()
         {
             var sm = SaveManager.Instance;
+            bool found = false;
             if (sm != null)
                 foreach (var e in sm.Data.vehicleCustomizations)
                 {
                     if (e.vehicleKey != Key || e.data == null) continue;
+                    found = true;
                     Current = e.data;
                     // L'état (carburant, dommages) n'est restauré qu'une fois, pour le vrai véhicule
                     if (!conditionLoaded && vehicle != null && e.fuel >= 0f) { vehicle.SetCondition(e.fuel, e.damage); }
                     break;
                 }
+            if (sm != null && !found) Current = DefaultFor(Kind);
             if (vehicle != null) conditionLoaded = true;
             ApplyAll();
         }

@@ -61,6 +61,8 @@ namespace TaxiKin.UI
 
         private void OnVehicleChanged(VehicleController v) { current = v.Kind; Apply(); }
 
+        private void Start() => Apply();   // les réglages sauvegardés sont lus une fois tous les managers prêts
+
         public void Apply()
         {
             var allowed = PerVehicle[current];

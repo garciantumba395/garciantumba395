@@ -40,6 +40,16 @@ namespace TaxiKin.Vehicles
 
         private GameObject currentPreview;
 
+        private void OnEnable() => SaveManager.ProgressReset += OnProgressReset;
+        private void OnDisable() => SaveManager.ProgressReset -= OnProgressReset;
+
+        /// <summary>Réinitialisation : retour au Wewa de base.</summary>
+        private void OnProgressReset()
+        {
+            SelectedIndex = 0;
+            if (vehicles.Count > 0) ApplyToWorld(vehicles[0]);
+        }
+
         private void Start()
         {
             // Retrouve le véhicule utilisé à la dernière session
