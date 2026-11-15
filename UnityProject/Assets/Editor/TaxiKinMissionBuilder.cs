@@ -7,7 +7,7 @@ using TaxiKin.Weather;
 namespace TaxiKin.EditorTools
 {
     /// <summary>
-    /// Génère les 14 missions en assets (Assets/Resources/Missions). Un asset existant n'est JAMAIS écrasé :
+    /// Génère les 16 missions (14 de conduite + 2 de personnalisation) en assets (Assets/Resources/Missions). Un asset existant n'est JAMAIS écrasé :
     /// les réglages faits à la main sont conservés. Pour régénérer une mission, supprimer son asset.
     /// Arbitrages de carte (zones V1) : Gombe → zone Gare centrale ; Ngaliema → Kintambo ; Masina → Limete.
     /// </summary>
@@ -15,7 +15,7 @@ namespace TaxiKin.EditorTools
     {
         private const string Folder = "Assets/Resources/Missions";
 
-        [MenuItem("Taxi Kin/Missions/Générer les 14 missions")]
+        [MenuItem("Taxi Kin/Missions/Générer les missions")]
         public static void Generate()
         {
             if (!AssetDatabase.IsValidFolder("Assets/Resources")) AssetDatabase.CreateFolder("Assets", "Resources");
@@ -100,6 +100,17 @@ namespace TaxiKin.EditorTools
                 "Sors du garage sans toucher les murs, en utilisant la caméra arrière.",
                 Any(), P("Garage", "gare_centrale"), P("Sortie du garage", "gare_centrale"), 0,
                 new MissionConditions { requireReachDestination = true, requireRearCamera = true, maxCollisions = 0 }, Rw(800, 0), MissionFeature.Parking, "", v1: false);
+
+            // ---------- 2 missions de personnalisation (terminées automatiquement, sans conduite) ----------
+            Make(15, "cree_ton_identite", MissionType.Customization, "Crée ton identité",
+                "Crée ton avatar, choisis ta tenue et enregistre ton profil.",
+                Any(), P(), P(), 0, new MissionConditions(),
+                new MissionRewards { kinCoins = 500, clothingId = "yellow_start" }, MissionFeature.None, "le_jaune_de_kin");
+
+            Make(16, "le_jaune_de_kin", MissionType.Customization, "Le jaune de Kin",
+                "Personnalise ton taxi-voiture en jaune dans le garage, puis termine une course.",
+                Taxi(), P(), P(), 0, new MissionConditions(),
+                new MissionRewards { kinCoins = 1000, stickerId = "sticker_kin_exclusive" }, MissionFeature.None, "");
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();

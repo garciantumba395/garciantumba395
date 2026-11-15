@@ -21,6 +21,8 @@ namespace TaxiKin.Vehicles
         public float fuelCapacity = 20f;
         public float fuelPerKm = 0.08f;
         public float fragility = 1f;      // multiplicateur de dégâts
+
+        public VehicleStats Clone() => (VehicleStats)MemberwiseClone();
     }
 
     /// <summary>
@@ -62,6 +64,7 @@ namespace TaxiKin.Vehicles
         public VehicleStats Stats => stats;
 
         private Rigidbody rb;
+        private VehicleStats baseStats;   // Caractéristiques sans améliorations
         private float ignoreImpactsUntil;   // évite les « collisions » fantômes juste après une téléportation
 
         // Compatibilité Unity 2022 (velocity) / Unity 6 (linearVelocity)
@@ -91,6 +94,7 @@ namespace TaxiKin.Vehicles
             if (!statsInitialized) { stats = CreateDefaultStats(); statsInitialized = true; }
             rb.centerOfMass = new Vector3(0f, -0.4f, 0f);
             rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
+            baseStats = stats.Clone();
             Fuel = stats.fuelCapacity;
             ApplyFrictionlessMaterial();
         }
@@ -182,6 +186,20 @@ namespace TaxiKin.Vehicles
             Velocity = Vector3.zero;
             rb.angularVelocity = Vector3.zero;
             ignoreImpactsUntil = Time.time + 1f;
+        }
+
+        /// <summary>Applique les améliorations (niveaux 0 à 3) aux caractéristiques de base.</summary>
+        public void SetUpgrades(int engine, int brakes, int tires, int armor)
+        {
+            if (baseStats == null) return;   // Awake pas encore passé : sera réappliqué par VehicleCustomizer
+            engine = Mathf.Clamp(engine, 0, 3); brakes = Mathf.Clamp(brakes, 0, 3);
+            tires = Mathf.Clamp(tires, 0, 3); armor = Mathf.Clamp(armor, 0, 3);
+            stats = baseStats.Clone();
+            stats.acceleration *= 1f + 0.08f * engine;
+            stats.maxSpeedKmh *= 1f + 0.05f * engine;
+            stats.brakeForce *= 1f + 0.10f * brakes;
+            stats.turnRate *= 1f + 0.05f * tires;
+            stats.fragility *= 1f - 0.12f * armor;
         }
 
         public void Refuel(float amount) => Fuel = Mathf.Min(stats.fuelCapacity, Fuel + amount);

@@ -16,10 +16,10 @@ namespace TaxiKin.EditorTools
     /// </summary>
     public static class TaxiKinUIBuilder
     {
-        private static Font font;
-        private static readonly Color Btn = new Color(0.1f, 0.1f, 0.12f, 0.65f);
-        private static readonly Color Gas = new Color(0.15f, 0.6f, 0.25f, 0.8f);
-        private static readonly Color Red = new Color(0.75f, 0.15f, 0.15f, 0.8f);
+        internal static Font font;
+        internal static readonly Color Btn = new Color(0.1f, 0.1f, 0.12f, 0.65f);
+        internal static readonly Color Gas = new Color(0.15f, 0.6f, 0.25f, 0.8f);
+        internal static readonly Color Red = new Color(0.75f, 0.15f, 0.15f, 0.8f);
 
         public static void Build(GameObject managers, PlayerController player, PassengerManager passengers,
                                  MissionManager missions, CameraRig rig, Camera minimapCam, Transform destination)
@@ -271,9 +271,9 @@ namespace TaxiKin.EditorTools
 
         // ---------- Aides de construction ----------
 
-        private static void On(HoldButton b, UnityAction action) => UnityEventTools.AddPersistentListener(b.onPressed, action);
+        internal static void On(HoldButton b, UnityAction action) => UnityEventTools.AddPersistentListener(b.onPressed, action);
 
-        private static RectTransform Place(RectTransform rt, Vector2 anchor, Vector2 pos, Vector2 size, Vector2 pivot)
+        internal static RectTransform Place(RectTransform rt, Vector2 anchor, Vector2 pos, Vector2 size, Vector2 pivot)
         {
             rt.anchorMin = rt.anchorMax = anchor;
             rt.pivot = pivot;
@@ -283,7 +283,7 @@ namespace TaxiKin.EditorTools
         }
 
         /// <summary>Bouton tactile avec libellé localisé (locKey) ou texte fixe (raw).</summary>
-        private static HoldButton Button(Transform parent, string name, string locKey, string raw,
+        internal static HoldButton Button(Transform parent, string name, string locKey, string raw,
                                          Vector2 anchor, Vector2 pos, Vector2 size, Color color)
         {
             var go = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(HoldButton));
@@ -309,7 +309,7 @@ namespace TaxiKin.EditorTools
         }
 
         /// <summary>Panneau plein écran semi-transparent (bloque les touches derrière lui).</summary>
-        private static RectTransform MissionPanel(Transform parent, string name)
+        internal static RectTransform MissionPanel(Transform parent, string name)
         {
             var go = new GameObject(name, typeof(RectTransform), typeof(Image));
             go.transform.SetParent(parent, false);

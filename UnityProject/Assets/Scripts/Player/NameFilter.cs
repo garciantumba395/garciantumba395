@@ -16,6 +16,13 @@ namespace TaxiKin.Player
 
         public static string Clean(string raw) => Regex.Replace((raw ?? string.Empty).Trim(), @"\s+", " ");
 
+        public static bool ContainsBanned(string text)
+        {
+            string lower = (text ?? string.Empty).ToLowerInvariant();
+            foreach (var word in Banned) if (lower.Contains(word)) return true;
+            return false;
+        }
+
         /// <summary>Retourne true si le nom est valide ; sinon, error contient le message à afficher.</summary>
         public static bool IsValid(string raw, out string error)
         {

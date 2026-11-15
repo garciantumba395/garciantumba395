@@ -36,3 +36,16 @@ Le cahier des charges complet est la référence produit. Points arbitrés par r
 - **Hors périmètre de cette étape** : IA des chauffeurs virtuels (missions 9, 10), détection des véhicules évités par le trafic, effets visuels de pluie, corridor entre zones, création des places de stationnement dans la carte.
 - Les textes des missions ont des champs lingala (`titleLn`, `descriptionLn`) vides : à faire traduire.
 - « Sans tomber » (mission 3) est approximé par un plafond de dommages (40 %), car les véhicules ne basculent pas.
+
+## Étape 4 — personnage et personnalisation
+- **Chargement à la demande** : `ClothingItem` ne contient qu'un chemin Resources (`prefabPath`). `AvatarCatalog` charge uniquement les fiches ; le prefab d'un vêtement n'est chargé qu'à l'équipement (`AvatarCustomizer`). Aucun catalogue 3D en mémoire.
+- **Contenu de test** : le menu *Taxi Kin → Avatar → Générer le contenu de test* crée 18 articles (visage, cheveux, haut, bas, chaussures, accessoires) et le prefab `Avatar` en formes simples. Les vrais modèles remplaceront les prefabs sans changer le code. Un seul accessoire à la fois pour l'instant.
+- **Aperçu 3D** : petite scène à (1000, 0, 1000) filmée vers une texture 512×768 ; la caméra n'est active que pendant l'écran « Mon chauffeur ». Rotation au doigt (`AvatarPreviewDrag`).
+- **Premier lancement** : `CharacterCreatorUI` s'ouvre si `ProfileManager.HasProfile` est faux ; l'annulation est alors désactivée.
+- **Avatar partout** : `AvatarDisplay` (menu, garage, missions, courses, victoire, classements) suit le profil. Seule l'instance du monde est en place ; les écrans de menu/garage/victoire/classements l'utiliseront quand ils existeront.
+- **Véhicules** : couleur de carrosserie et de toit (5 jaunes en tête de palette + 7 autres), 3 jantes, 3 autocollants (dont 1 exclusif), plaque (3 à 10 caractères, filtrée), 4 améliorations niveaux 0-3 (moteur, freins, pneus, carrosserie). Taxi jaune #FFD400 par défaut ; Wewa rouge, bus bleu.
+- **Améliorations** : bonus de +8 % d'accélération et +5 % de vitesse max par niveau de moteur, +10 % de freinage, +5 % de maniabilité, −12 % de dégâts par niveau. Valeurs d'essai à équilibrer. **Gratuites tant que la boutique n'existe pas (Étape 5).**
+- **Sauvegarde** : le profil, l'avatar, les objets débloqués et la personnalisation de chaque véhicule passent par `SaveManager` (chargement paresseux, sauvegarde à chaque changement). L'Étape 6 complètera (missions terminées, paramètres, langue, réinitialisation).
+- **Quêtes** (`CustomizationQuests`) : « Crée ton identité » se termine à l'enregistrement du profil (500 Kin Coins + tenue jaune de départ) ; « Le jaune de Kin » exige un choix de jaune pour le taxi dans le garage puis une course réussie (1 000 Kin Coins + autocollant exclusif).
+- **Limite connue** : les libellés des écrans « Mon chauffeur » et « Garage » sont en français uniquement (lingala à l'Étape 7). Le garage actuel personnalise le véhicule actif ; l'aperçu 3D de showroom viendra avec la scène garage (Étape 5).
+- Les missions de personnalisation ne sont jamais proposées comme courses (`IsPlayable` les exclut).

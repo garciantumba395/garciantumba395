@@ -40,7 +40,7 @@ namespace TaxiKin.Core
         {
             if (State == newState) return;
             State = newState;
-            Time.timeScale = (newState == GameState.Paused || newState == GameState.MissionEnd) ? 0f : 1f;
+            Time.timeScale = (newState == GameState.Paused || newState == GameState.MissionEnd || newState == GameState.CharacterCreation) ? 0f : 1f;
             OnStateChanged?.Invoke(newState);
         }
 

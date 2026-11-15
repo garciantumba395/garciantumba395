@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using TaxiKin.Player;
+using TaxiKin.Vehicles;
 
 namespace TaxiKin.SaveSystem
 {
-    /// <summary>Contenu de la sauvegarde locale (JSON). Complété à l'Étape 6.</summary>
+    /// <summary>Contenu de la sauvegarde locale (JSON). L'Étape 6 la complétera (paramètres, langue, véhicules…).</summary>
     [Serializable]
     public class SaveData
     {
@@ -19,43 +20,61 @@ namespace TaxiKin.SaveSystem
         public List<string> unlockedVehicles = new List<string>();
         public string selectedVehicle;
         public List<string> completedMissions = new List<string>();
+        public List<string> unlockedItems = new List<string>();      // vêtements, autocollants, trophées…
+        public List<VehicleCustomizationEntry> vehicleCustomizations = new List<VehicleCustomizationEntry>();
         public AvatarData avatar = new AvatarData();
         public string language = "fr";
     }
 
     /// <summary>
     /// Lecture/écriture de la sauvegarde dans Application.persistentDataPath.
-    /// Sauvegarde automatique à la mise en pause et à la fermeture (Android peut tuer l'appli sans prévenir).
+    /// Chargement paresseux (au premier accès) : l'ordre d'initialisation des managers n'a pas d'importance.
+    /// Sauvegarde aussi à la mise en pause et à la fermeture (Android peut tuer l'appli sans prévenir).
     /// </summary>
     public class SaveManager : MonoBehaviour
     {
+        public static SaveManager Instance { get; private set; }
+
         private const string FileName = "taxikin_save.json";
         private string FilePath => Path.Combine(Application.persistentDataPath, FileName);
 
-        public SaveData Data { get; private set; } = new SaveData();
+        private SaveData data = new SaveData();
+        private bool loaded;
+
+        public SaveData Data { get { EnsureLoaded(); return data; } }
+
+        private void Awake()
+        {
+            if (Instance != null && Instance != this) { Destroy(this); return; }
+            Instance = this;
+        }
 
         public bool HasSave() => File.Exists(FilePath);
 
-        public void Save()
+        private void EnsureLoaded()
         {
-            try { File.WriteAllText(FilePath, JsonUtility.ToJson(Data)); }
-            catch (Exception e) { Debug.LogError($"[SaveManager] Échec de la sauvegarde : {e.Message}"); }
+            if (loaded) return;
+            loaded = true;
+            if (!HasSave()) return;
+            try { data = JsonUtility.FromJson<SaveData>(File.ReadAllText(FilePath)) ?? new SaveData(); }
+            catch (Exception e) { Debug.LogError($"[SaveManager] Sauvegarde illisible : {e.Message}"); data = new SaveData(); }
         }
 
-        public void Load()
+        public void Save()
         {
-            if (!HasSave()) return;
-            try { Data = JsonUtility.FromJson<SaveData>(File.ReadAllText(FilePath)) ?? new SaveData(); }
-            catch (Exception e) { Debug.LogError($"[SaveManager] Sauvegarde illisible : {e.Message}"); Data = new SaveData(); }
+            EnsureLoaded();
+            try { File.WriteAllText(FilePath, JsonUtility.ToJson(data)); }
+            catch (Exception e) { Debug.LogError($"[SaveManager] Échec de la sauvegarde : {e.Message}"); }
         }
 
         public void ResetProgress()
         {
-            Data = new SaveData();
+            data = new SaveData();
+            loaded = true;
             if (File.Exists(FilePath)) File.Delete(FilePath);
         }
 
-        private void OnApplicationPause(bool paused) { if (paused) Save(); }
-        private void OnApplicationQuit() => Save();
+        private void OnApplicationPause(bool paused) { if (paused && loaded) Save(); }
+        private void OnApplicationQuit() { if (loaded) Save(); }
     }
 }

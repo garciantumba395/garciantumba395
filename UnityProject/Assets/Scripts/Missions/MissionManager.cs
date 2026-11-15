@@ -86,6 +86,7 @@ namespace TaxiKin.Missions
         public event Action<MissionData> OnBriefing;
         public event Action<MissionData> OnMissionStarted;
         public event Action<MissionResult> OnMissionEnded;
+        public event Action<MissionData> OnQuestCompleted;   // Quête de personnalisation terminée (bandeau à l'écran)
         public event Action<string> OnUnlock;     // identifiant débloqué (véhicule, trophée…) → Garage / sauvegarde
 
         // ---------- Initialisation ----------
@@ -118,6 +119,7 @@ namespace TaxiKin.Missions
         public bool IsPlayable(MissionData m)
         {
             if (m == null || !m.availableInV1) return false;
+            if (m.type == MissionType.Customization) return false;   // Quêtes automatiques : jamais proposées comme course
             return ignoreFeatureGating || (m.requiredFeatures & ~availableFeatures) == MissionFeature.None;
         }
 
@@ -365,6 +367,23 @@ namespace TaxiKin.Missions
             SetDestination(null);
             GameManager.Instance?.SetState(GameState.MissionEnd);
             OnMissionEnded?.Invoke(res);
+        }
+
+        /// <summary>
+        /// Termine une quête sans conduite (missions de personnalisation) : récompense complète, une seule fois.
+        /// </summary>
+        public bool GrantQuest(string missionId)
+        {
+            MissionData m = null;
+            foreach (var x in missions) if (x.id == missionId) { m = x; break; }
+            if (m == null || !completed.Add(m.id)) return false;
+
+            EconomyManager.Instance?.AddCoins(m.rewards.kinCoins);
+            ProfileManager.Instance?.AddXp(m.rewards.xp);
+            foreach (var u in new[] { m.rewards.unlocksVehicle, m.rewards.trophyId, m.rewards.rareVehicleId, m.rewards.stickerId, m.rewards.clothingId })
+                if (!string.IsNullOrEmpty(u) && unlocked.Add(u)) OnUnlock?.Invoke(u);
+            OnQuestCompleted?.Invoke(m);
+            return true;
         }
 
         // ---------- Utilitaires ----------

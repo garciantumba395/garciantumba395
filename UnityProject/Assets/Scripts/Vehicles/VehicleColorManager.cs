@@ -30,7 +30,18 @@ namespace TaxiKin.Vehicles
             new NamedColor { name = "Jaune-or",       hex = "#E6A700" },
             new NamedColor { name = "Jaune néon",     hex = "#FFE600" },
             new NamedColor { name = "Jaune sale",     hex = "#D9B300" },
+            // Autres couleurs au choix : le jaune reste la couleur principale des taxis (les 5 premières entrées)
+            new NamedColor { name = "Blanc",  hex = "#F2F2F2" },
+            new NamedColor { name = "Noir",   hex = "#1A1A1A" },
+            new NamedColor { name = "Rouge",  hex = "#C62828" },
+            new NamedColor { name = "Bleu",   hex = "#1E5AA8" },
+            new NamedColor { name = "Vert",   hex = "#2E7D32" },
+            new NamedColor { name = "Gris",   hex = "#8A8F98" },
+            new NamedColor { name = "Orange", hex = "#EF6C00" },
         };
+
+        /// <summary>Nombre de jaunes en tête de palette.</summary>
+        public const int YellowCount = 5;
 
         public IReadOnlyList<NamedColor> Palette => palette;
 
