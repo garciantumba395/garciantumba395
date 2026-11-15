@@ -24,6 +24,7 @@ namespace TaxiKin.UI
         [SerializeField] private GameObject endPanel;
         [SerializeField] private Text endTitle, endObjectives, endReward;
         [SerializeField] private GameObject nextButton;
+        [SerializeField] private MenuUIManager menu;
 
         private readonly StringBuilder sb = new StringBuilder(256);
 
@@ -48,6 +49,7 @@ namespace TaxiKin.UI
         public void OnRetry() { HideAll(null); missions.Retry(); }
         public void OnNext() { HideAll(null); missions.BriefFollowing(); }
         public void OnOpenMenu() { if (missions.State != MissionState.Running) missions.BriefNext(); }
+        public void OnMenu() { HideAll(null); menu?.Open(); }
 
         // ---------- Affichage ----------
         private void HideAll(MissionData _)

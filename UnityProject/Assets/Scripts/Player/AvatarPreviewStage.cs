@@ -15,6 +15,7 @@ namespace TaxiKin.Player
         [SerializeField] private RawImage target;               // Image de l'interface qui affiche l'aperçu
 
         public AvatarCustomizer Avatar => avatar;
+        public Texture Texture => texture;     // le menu principal réutilise la même image
         private RenderTexture texture;
 
         private void Awake()

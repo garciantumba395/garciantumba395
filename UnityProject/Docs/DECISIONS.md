@@ -120,3 +120,11 @@ Voir `Docs/PERFORMANCE.md` (budgets, ce qui est en place, procédure de test sur
 - **Défauts trouvés et corrigés grâce à cet outil** : ambiguïté `UnityEventTools` (UnityEngine.Events / UnityEditor.Events) dans 4 fichiers Editor ; champ inutilisé dans `MissionManager`.
 - **Ce que ça ne prouve pas** : compatibilité exacte avec l'API d'Unity 2022.3 (la référence est 2021.3) ; exactitude de mes substituts Unity UI / UnityEditor (écrits de mémoire) ; code sous `#if UNITY_6000_0_OR_NEWER` et `#if UNITY_PURCHASING` ; tout le comportement à l'exécution (le jeu n'a jamais été lancé).
 - La compilation dans Unity 2022.3 reste la vraie référence : ouvrir le projet et relever les erreurs de la console.
+
+## Menu principal (itération 2)
+- Écrans : menu (Jouer, Missions, Garage, Boutique, Mon chauffeur, Réglages, Reprendre), liste des missions (terminée / jouable / « Bientôt »), bouton « Menu » du HUD, bouton « Menu » de l'écran de fin de mission.
+- L'avatar du joueur s'affiche en 3D dans le menu (même aperçu que « Mon chauffeur », caméra active seulement quand un de ces écrans est ouvert).
+- Ouvrir le menu en pleine mission met le jeu en pause ; « Reprendre » restaure l'état exact d'avant. Premier lancement : « Mon chauffeur » d'abord, puis le menu.
+- Les boutons de test (véhicule, mode de contrôle) sont rangés dans `OutilsDev`, **désactivé dans les versions de production** (`DevOnly`).
+- L'attribution OpenStreetMap figure en bas du menu.
+- Ordre d'affichage : le menu est sous les écrans qu'il ouvre (créateur, garage, boutique, réglages) ; le générateur de scène doit l'appeler en dernier.

@@ -28,6 +28,9 @@ namespace TaxiKin.UI
         private static readonly Color Selected = new Color(0.15f, 0.55f, 0.25f, 0.95f);
         private static readonly Color Locked = new Color(0.12f, 0.12f, 0.12f, 0.8f);
 
+        /// <summary>Déclenché à la fermeture (enregistrement ou annulation) : le menu rafraîchit alors son avatar.</summary>
+        public event System.Action OnClosed;
+
         private readonly List<GameObject> spawned = new List<GameObject>();
         private ClothingSlot tab = ClothingSlot.Face;
         private bool firstLaunch;
@@ -69,7 +72,8 @@ namespace TaxiKin.UI
         {
             stage.SetActive(false);
             panel.SetActive(false);
-            GameManager.Instance?.SetState(stateBefore == GameState.Paused || stateBefore == GameState.CharacterCreation ? GameState.Playing : stateBefore);
+            GameManager.Instance?.SetState(stateBefore == GameState.CharacterCreation ? GameState.MainMenu : stateBefore);   // état exact d'avant (menu, pause…)
+            OnClosed?.Invoke();
         }
 
         // ---------- Boutons ----------

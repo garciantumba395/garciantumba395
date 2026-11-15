@@ -243,6 +243,7 @@ namespace TaxiKin.EditorTools
             TaxiKinCustomizationUIBuilder.Build(GameObject.Find("Canvas/ZoneSure").transform, managers, pc, stage);
             TaxiKinGarageShopUIBuilder.Build(GameObject.Find("Canvas/ZoneSure").transform, managers, pc, vStage);
             TaxiKinSettingsUIBuilder.Build(GameObject.Find("Canvas/ZoneSure").transform, managers);
+            TaxiKinMenuUIBuilder.Build(GameObject.Find("Canvas/ZoneSure").transform, managers, stage);   // en dernier : place le menu sous les autres écrans
 
             // --- Sauvegarde de la scène ---
             const string path = "Assets/Scenes/Main.unity";
