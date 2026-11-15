@@ -49,6 +49,7 @@ namespace TaxiKin.Missions
         public bool requireFirstPlace;
         [Header("Environnement")]
         public int raceOpponents;
+        [Range(0.5f, 1f)] public float raceSkill = 0.8f;   // niveau moyen des chauffeurs virtuels (part de la vitesse max)
         public WeatherType weather = WeatherType.Clear;
         public bool denseTraffic;
     }

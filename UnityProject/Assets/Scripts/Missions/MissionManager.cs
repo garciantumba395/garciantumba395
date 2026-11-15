@@ -55,6 +55,7 @@ namespace TaxiKin.Missions
         [SerializeField] private WeatherManager weather;
         [SerializeField] private TrafficManager traffic;
         [SerializeField] private WorldManager world;
+        [SerializeField] private RaceManager race;
         [SerializeField] private CameraRig cameraRig;
         [SerializeField] private HudManager hud;
         [SerializeField] private DirectionArrow directionArrow;
@@ -65,7 +66,8 @@ namespace TaxiKin.Missions
 
         [Header("Disponibilité")]
         [Tooltip("Systèmes déjà développés. Les missions qui en exigent d'autres sont verrouillées (« Bientôt »).")]
-        [SerializeField] private MissionFeature availableFeatures = MissionFeature.None;
+        [SerializeField] private MissionFeature availableFeatures =
+            MissionFeature.CorridorMap | MissionFeature.TrafficAvoidance | MissionFeature.DenseTraffic | MissionFeature.RaceAI;
         [Tooltip("Pour tester : ignore le verrouillage par fonctionnalités et utilise les points de repli.")]
         [SerializeField] private bool ignoreFeatureGating = true;
         [SerializeField] private float deliveryRadius = 25f;
@@ -76,6 +78,7 @@ namespace TaxiKin.Missions
         private VehicleController watched;
         private bool completedLoaded;
         private bool starting;
+        private bool racePlaceReported;
         private Transform guidance;
         private string destinationZone;
         private float nextGuidance;
@@ -155,6 +158,7 @@ namespace TaxiKin.Missions
         /// <summary>Remise à zéro de la progression : on oublie missions terminées et déblocages, on arrête la mission en cours.</summary>
         private void OnProgressReset()
         {
+            race?.Stop();
             completed.Clear();
             unlocked.Clear();
             completedLoaded = false;
@@ -263,6 +267,7 @@ namespace TaxiKin.Missions
             }
 
             passengers?.Reset();
+            racePlaceReported = false;
             weather?.SetWeather(c.weather);
             traffic?.SetMaxVehicles(c.denseTraffic ? 30 : 12);
 
@@ -273,6 +278,11 @@ namespace TaxiKin.Missions
             };
             State = MissionState.Running;
             GameManager.Instance?.SetState(GameState.Playing);
+
+            // Course : chauffeurs virtuels sur le plus court chemin routier jusqu'à l'arrivée
+            if (c.raceOpponents > 0 && race != null && v != null && start != null && dest != null)
+                race.StartRace(start.position, dest.position, v.Kind, c.raceOpponents, c.raceSkill);
+
             OnMissionStarted?.Invoke(m);
         }
 
@@ -295,6 +305,7 @@ namespace TaxiKin.Missions
             }
             if (cameraRig != null && cameraRig.Current == CameraView.Rear) Progress.rearCameraUsed = true;
             UpdateGuidance();
+            CheckRaceArrival(v);
 
             CheckCompletion();
         }
@@ -426,9 +437,20 @@ namespace TaxiKin.Missions
             if (needed > 0 && done == needed) Finish(true);
         }
 
+        /// <summary>Arrivée du joueur à destination en course : sa place est fixée à ce moment-là.</summary>
+        private void CheckRaceArrival(VehicleController v)
+        {
+            if (race == null || !race.IsRacing || racePlaceReported || Destination == null || v == null) return;
+            Vector3 d = Destination.position - v.transform.position; d.y = 0f;
+            if (d.magnitude > deliveryRadius + 10f) return;
+            racePlaceReported = true;
+            ReportRaceFinish(race.PlayerArrived());
+        }
+
         private void Finish(bool success)
         {
             if (State != MissionState.Running) return;
+            race?.Stop();
             State = MissionState.Ended;
             var m = Current;
             var res = new MissionResult { mission = m, success = success, time = Progress.elapsed, objectives = Evaluate() };

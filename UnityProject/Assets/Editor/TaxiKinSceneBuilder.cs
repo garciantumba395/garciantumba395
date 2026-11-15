@@ -55,6 +55,7 @@ namespace TaxiKin.EditorTools
             managers.AddComponent<ShopManager>();
             managers.AddComponent<WorldManager>();
             managers.AddComponent<OutOfBoundsGuard>();
+            managers.AddComponent<RaceManager>();
             managers.AddComponent<QualityManager>();
             managers.AddComponent<PerformanceMonitor>();
             managers.AddComponent<TaxiKin.Audio.AudioManager>();
@@ -217,6 +218,11 @@ namespace TaxiKin.EditorTools
                 Assign(rig, "player", pc);
             }
 
+            // --- Trafic et chauffeurs de course : modèles d'IA (Resources) + câblage ---
+            TaxiKinAiPrefabBuilder.Generate();
+            var trafficMgr = managers.GetComponent<TrafficManager>();
+            var raceMgr = managers.GetComponent<RaceManager>();
+
             // --- Monde : zones chargées par proximité, corridors, guidage ---
             var worldMgr = managers.GetComponent<WorldManager>();
             Assign(worldMgr, "player", pc);
@@ -226,6 +232,12 @@ namespace TaxiKin.EditorTools
             Assign(worldMgr, "corridorGroundMaterial", GetMaterial("Mat_CorridorGround", new Color(0.42f, 0.5f, 0.34f)));
             Assign(worldMgr, "decorMaterial", GetMaterial("Mat_Barrier", new Color(0.9f, 0.9f, 0.88f)));
             Assign(managers.GetComponent<MissionManager>(), "world", worldMgr);
+            Assign(managers.GetComponent<MissionManager>(), "race", raceMgr);
+            Assign(trafficMgr, "player", pc);
+            Assign(trafficMgr, "world", worldMgr);
+            Assign(trafficMgr, "missions", managers.GetComponent<MissionManager>());
+            Assign(raceMgr, "player", pc);
+            Assign(raceMgr, "world", worldMgr);
             Assign(managers.GetComponent<OutOfBoundsGuard>(), "player", pc);
 
             // --- Qualité graphique, son, vibrations ---

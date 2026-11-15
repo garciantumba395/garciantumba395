@@ -31,7 +31,7 @@ namespace TaxiKin.EditorTools
 
             Make(2, "evite_embouteillages", MissionType.Urgent, "Évite les embouteillages",
                 "Faufile-toi dans la circulation : arrive à Kintambo avant 2 min 30 en évitant au moins 10 véhicules.",
-                Wewa(), P("Boulevard du 30 Juin", "gare_centrale"), P("Kintambo", "kintambo"), 240,
+                Wewa(), P("Boulevard du 30 Juin", "gare_centrale"), P("Kintambo", "kintambo"), 270,
                 new MissionConditions { passengersToDeliver = 1, minAvoidedVehicles = 10 }, Rw(350, 80),
                 Cor | MissionFeature.TrafficAvoidance | MissionFeature.DenseTraffic, "course_pluie");
 
@@ -43,7 +43,7 @@ namespace TaxiKin.EditorTools
 
             Make(4, "client_presse", MissionType.Urgent, "Le client pressé",
                 "Ton client a un avion à prendre ! Matonge → aéroport de N'djili en moins de 4 minutes, 3 collisions maximum.",
-                Wewa(), P("Matonge", "matonge"), P("Aéroport de N'djili", "ndjili", "aeroport"), 450,
+                Wewa(), P("Matonge", "matonge"), P("Aéroport de N'djili", "ndjili", "aeroport"), 480,
                 new MissionConditions { passengersToDeliver = 1, maxCollisions = 3 }, Rw(800, 150), Cor, "debloque_taxi");
 
             Make(5, "debloque_taxi", MissionType.SimpleRide, "Débloque le taxi",
@@ -53,7 +53,7 @@ namespace TaxiKin.EditorTools
 
             Make(6, "client_vip", MissionType.Vip, "Client VIP",
                 "Un client important de Gombe va à l'aéroport. Conduis sans accroc et arrive à l'heure : aucune collision.",
-                Taxi(), P("Gombe", "gare_centrale"), P("Aéroport de N'djili", "ndjili", "aeroport"), 750,
+                Taxi(), P("Gombe", "gare_centrale"), P("Aéroport de N'djili", "ndjili", "aeroport"), 840,
                 new MissionConditions { passengersToDeliver = 1, maxCollisions = 0 }, Rw(2000, 300), Cor, "roi_207");
 
             Make(7, "roi_207", MissionType.Bus207, "Le roi du 207",
@@ -67,15 +67,15 @@ namespace TaxiKin.EditorTools
                 new MissionConditions { roundTrips = 3 }, Rw(5000, 600), Cor, "course_wewa");
 
             Make(9, "course_wewa", MissionType.Race, "Course de wewa",
-                "Arrive premier contre 4 chauffeurs virtuels, avec au moins un passager à bord.",
-                Wewa(), P(), P(), 0,
-                new MissionConditions { raceOpponents = 4, requireFirstPlace = true, passengersToDeliver = 1 },
+                "Gare centrale → Matonge : arrive premier contre 4 chauffeurs virtuels, avec un passager à bord (dépose-le à l'arrivée).",
+                Wewa(), P("Gare centrale", "gare_centrale", "station"), P("Matonge", "matonge"), 0,
+                new MissionConditions { raceOpponents = 4, raceSkill = 0.70f, requireFirstPlace = true, passengersToDeliver = 1 },
                 Rw(2500, 0, trophy: "trophy_wewa_race"), MissionFeature.RaceAI, "grande_course");
 
             Make(10, "grande_course", MissionType.Race, "La grande course",
                 "Gare centrale → aéroport de N'djili sous la pluie, dans un trafic dense, chrono serré : arrive premier avec un client.",
-                Any(), P("Gare centrale", "gare_centrale", "station"), P("Aéroport de N'djili", "ndjili", "aeroport"), 750,
-                new MissionConditions { raceOpponents = 4, requireFirstPlace = true, passengersToDeliver = 1,
+                Any(), P("Gare centrale", "gare_centrale", "station"), P("Aéroport de N'djili", "ndjili", "aeroport"), 840,
+                new MissionConditions { raceOpponents = 4, raceSkill = 0.70f, requireFirstPlace = true, passengersToDeliver = 1,
                                         weather = WeatherType.HeavyRain, denseTraffic = true },
                 Rw(10000, 0, rare: "rare_vehicle_01"),
                 Cor | MissionFeature.RaceAI | MissionFeature.Rain | MissionFeature.DenseTraffic, "");

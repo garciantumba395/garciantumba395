@@ -173,6 +173,9 @@ namespace TaxiKin.EditorTools
                 values[i] = Value(root, "Valeur" + i, new Vector2(x, -50f));
             }
             var speed = Value(root, "Vitesse", new Vector2(240f, -120f));
+            var raceText = Value(root, "Classement", new Vector2(720f, -120f));    // « 2e / 5 » en course
+            raceText.color = new Color(1f, 0.83f, 0f);
+            raceText.text = "";
 
             // Flèche de direction
             var arrowGo = new GameObject("FlecheDirection", typeof(RectTransform), typeof(Image));
@@ -244,6 +247,7 @@ namespace TaxiKin.EditorTools
             TaxiKinSceneBuilder.Assign(missions, "traffic", managers.GetComponent<TaxiKin.Traffic.TrafficManager>());
             if (rig != null) TaxiKinSceneBuilder.Assign(missions, "cameraRig", rig);
             TaxiKinSceneBuilder.Assign(missions, "hud", hud);
+            TaxiKinSceneBuilder.Assign(managers.GetComponent<RaceManager>(), "hud", hud);
             TaxiKinSceneBuilder.Assign(missions, "directionArrow", arrowComp);
             TaxiKinSceneBuilder.Assign(missions, "fallbackDestination", destination);
             TaxiKinSceneBuilder.Assign(actions, "missions", missions);
@@ -267,6 +271,7 @@ namespace TaxiKin.EditorTools
             TaxiKinSceneBuilder.Assign(hud, "timer", values[4]);
             TaxiKinSceneBuilder.Assign(hud, "distance", values[5]);
             TaxiKinSceneBuilder.Assign(hud, "speed", speed);
+            TaxiKinSceneBuilder.Assign(hud, "raceText", raceText);
             TaxiKinSceneBuilder.Assign(hud, "destination", destination);
 
             TaxiKinSceneBuilder.Assign(arrowComp, "player", player);

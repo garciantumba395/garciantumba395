@@ -23,6 +23,7 @@ MISSIONS = [
     (5, "Débloque le taxi", "taxi", ("gare_centrale", "station"), ("kintambo", "")),
     (6, "Client VIP", "taxi", ("gare_centrale", ""), ("ndjili", "aeroport")),
     (7, "Le roi du 207", "bus", ("gare_centrale", "station"), ("limete", "")),
+    (9, "Course de wewa", "wewa", ("gare_centrale", "station"), ("matonge", "")),
     (10, "La grande course", "taxi", ("gare_centrale", "station"), ("ndjili", "aeroport")),
 ]
 VMAX = {"wewa": 25.0, "taxi": 20.8, "bus": 13.9}   # m/s : 90, 75 et 50 km/h
@@ -122,11 +123,13 @@ def build(zones_file, report):
                    "radius": zinfo[zid]["radius"], "half": placed[zid]["half"], "pois": data[zid]["pois"]} for zid in placed],
         "corridors": corridors,
     }
+    graph, moved = snap_to_roads(world, data)
+    print(f"graphe routier : {len(graph.pos)} noeuds, {len(graph.sizes)} composantes (principale : {graph.sizes[graph.main] / len(graph.pos):.0%}) ; {moved} repères recalés sur la route")
     out = os.path.join(ZONES_DIR, "world.json")
     json.dump(world, open(out, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
     print(f"world.json : {len(world['zones'])} zones, {len(corridors)} corridors -> {out}")
     for c in corridors: print(f"  {c['a']} <-> {c['b']} : {c['length']:.0f} m (murs de {c['wallStart']:.0f} à {c['wallEnd']:.0f} m)")
-    if report: print_report(world, data)
+    if report: print_report(world, data, graph)
     return world
 
 
@@ -134,12 +137,97 @@ def build(zones_file, report):
 def zone_by_id(world): return {z["id"]: z for z in world["zones"]}
 
 
+# ---------------- Graphe routier : composantes connexes, recalage des repères, plus courts chemins ----------------
+import heapq
+
+SNAP_MAX_KIND = 6          # on recale sur des routes « résidentielles » ou mieux (pas les ruelles de service)
+SNAP_MAX_DIST = 150.0
+
+
+class RoadGraph:
+    def __init__(self, world, data):
+        self.keys, self.pos, self.zone, self.kind, self.adj = {}, [], [], [], []
+        for z in world["zones"]:
+            for r in data[z["id"]]["roads"]:
+                p = r["pts"]
+                for i in range(0, len(p) - 2, 2):
+                    a = self._node(z["originX"] + p[i], z["originZ"] + p[i + 1], z["id"], r["kind"])
+                    b = self._node(z["originX"] + p[i + 2], z["originZ"] + p[i + 3], z["id"], r["kind"])
+                    if a != b: self._link(a, b, r["kind"])
+        for c in world["corridors"]:
+            a, b = self.nearest(c["ax"], c["az"])[0], self.nearest(c["bx"], c["bz"])[0]
+            self._link(a, b, -1, c["length"])
+        self._components()
+
+    def _node(self, x, z, zid, kind):
+        k = (round(x * 10), round(z * 10))
+        if k not in self.keys:
+            self.keys[k] = len(self.pos); self.pos.append((x, z)); self.zone.append(zid); self.kind.append(kind); self.adj.append([])
+        else:
+            i = self.keys[k]; self.kind[i] = min(self.kind[i], kind)    # un carrefour prend la meilleure classe
+        return self.keys[k]
+
+    def _link(self, a, b, kind, length=None):
+        L = length if length else math.dist(self.pos[a], self.pos[b])
+        self.adj[a].append((b, L)); self.adj[b].append((a, L))
+
+    def _components(self):
+        self.comp = [-1] * len(self.pos); sizes = []
+        for s in range(len(self.pos)):
+            if self.comp[s] != -1: continue
+            q, n = [s], 0; self.comp[s] = len(sizes)
+            while q:
+                u = q.pop(); n += 1
+                for v, _ in self.adj[u]:
+                    if self.comp[v] == -1: self.comp[v] = self.comp[s]; q.append(v)
+            sizes.append(n)
+        self.main = max(range(len(sizes)), key=lambda i: sizes[i]); self.sizes = sizes
+
+    def nearest(self, x, z, main_only=False, max_kind=99):
+        best, bd = None, 1e18
+        for i, (px, pz) in enumerate(self.pos):
+            if main_only and self.comp[i] != self.main: continue
+            if self.kind[i] > max_kind: continue
+            d = (px - x) ** 2 + (pz - z) ** 2
+            if d < bd: bd, best = d, i
+        return best, math.sqrt(bd) if best is not None else 1e18
+
+    def path_length(self, s, t):
+        dist, pq = {s: 0.0}, [(0.0, s)]
+        while pq:
+            d, u = heapq.heappop(pq)
+            if u == t: return d
+            if d > dist[u]: continue
+            for v, L in self.adj[u]:
+                nd = d + L
+                if nd < dist.get(v, 1e18): dist[v] = nd; heapq.heappush(pq, (nd, v))
+        return None
+
+
+def snap_to_roads(world, data):
+    """Recale les repères et le centre de chaque zone sur la route la plus proche de la composante principale
+    (un repère qu'on ne peut pas atteindre en voiture ne sert à rien comme départ ou destination de mission)."""
+    graph = RoadGraph(world, data)
+    moved = 0
+    for z in world["zones"]:
+        def snap(local_x, local_z):
+            i, d = graph.nearest(z["originX"] + local_x, z["originZ"] + local_z, True, SNAP_MAX_KIND)
+            if i is None or d > SNAP_MAX_DIST:
+                i, d = graph.nearest(z["originX"] + local_x, z["originZ"] + local_z, True)
+            return round(graph.pos[i][0] - z["originX"], 1), round(graph.pos[i][1] - z["originZ"], 1), d
+        z["centerX"], z["centerZ"], _ = snap(0.0, 0.0)
+        for p in z["pois"]:
+            nx, nz, d = snap(p["x"], p["z"])
+            if d <= SNAP_MAX_DIST: p["x"], p["z"] = nx, nz; moved += 1
+    return RoadGraph(world, data), moved
+
+
 def poi_pos(world, zid, kind):
     z = zone_by_id(world)[zid]
     if kind:
         for p in z["pois"]:
             if p["kind"] == kind: return (z["originX"] + p["x"], z["originZ"] + p["z"])
-    return (z["originX"], z["originZ"])
+    return (z["originX"] + z.get("centerX", 0.0), z["originZ"] + z.get("centerZ", 0.0))
 
 
 def zone_path(world, za, zb):
@@ -168,10 +256,11 @@ def route_length(world, start, goal):
     return total + math.dist(cur, p1)
 
 
-def print_report(world, data):
-    print("\nTrajets de mission (longueur à vol d'oiseau sur le chemin zone-corridor-zone ; durée conseillée = longueur / (60 % de la vitesse max), arrondie à 30 s) :")
+def print_report(world, data, graph):
+    print("\nTrajets de mission, DISTANCE ROUTIÈRE réelle (plus court chemin sur le réseau OSM) ; durée conseillée = longueur / (60 % de la vitesse max), arrondie à 30 s :")
     for num, title, veh, a, b in MISSIONS:
-        L = route_length(world, a, b)
+        pa, pb = poi_pos(world, *a), poi_pos(world, *b)
+        L = graph.path_length(graph.nearest(*pa, True)[0], graph.nearest(*pb, True)[0])
         sec = L / (0.6 * VMAX[veh])
         print(f"  Mission {num:2d} {title:26s} {veh:5s} {L/1000:5.2f} km  -> {int(math.ceil(sec/30.0)*30):4d} s conseillées")
 

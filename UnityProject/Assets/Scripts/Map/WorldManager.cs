@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using TaxiKin.Player;
@@ -42,6 +43,9 @@ namespace TaxiKin.Map
         private float nextStream;
 
         public bool IsReady { get; private set; }
+        /// <summary>Réseau routier de toutes les zones (trafic et course). Prêt quelques images après le démarrage.</summary>
+        public RoadGraph Graph { get; private set; }
+        public bool GraphReady { get; private set; }
         public string Attribution { get; private set; } = "";
 
         private void Awake()
@@ -68,7 +72,7 @@ namespace TaxiKin.Map
                 slot.loader = holder.AddComponent<ZoneLoader>();
                 slot.loader.Configure(roadMaterial, buildingMaterial, groundMaterial, player, buildingColliders);   // avant Start : pas de chargement automatique
 
-                slot.center = Marker(markers, "Centre_" + z.id, slot.Origin);
+                slot.center = Marker(markers, "Centre_" + z.id, slot.Origin + new Vector3(z.centerX, 0f, z.centerZ));   // centre recalé sur la route
                 if (z.pois != null)
                     foreach (var p in z.pois)
                         slot.pois.Add(Marker(markers, $"POI_{p.kind}_{z.id}", slot.Origin + new Vector3(p.x, 0f, p.z)));
@@ -84,6 +88,34 @@ namespace TaxiKin.Map
                 CorridorBuilder.Build(c, corridorGroundMaterial, roadMaterial, decorMaterial, corridorRoot, meshes);
             }
             IsReady = true;
+            worldData = world;
+        }
+
+        private WorldData worldData;
+
+        private void Start()
+        {
+            if (IsReady) StartCoroutine(BuildGraphRoutine());
+        }
+
+        /// <summary>Construit le réseau routier en étalant le travail : une zone par image.</summary>
+        private IEnumerator BuildGraphRoutine()
+        {
+            var g = new RoadGraph();
+            foreach (var z in worldData.zones)
+            {
+                var asset = Resources.Load<TextAsset>("Zones/" + z.id);
+                if (asset != null)
+                {
+                    g.AddZone(z, JsonUtility.FromJson<ZoneData>(asset.text));
+                    Resources.UnloadAsset(asset);
+                }
+                yield return null;
+            }
+            foreach (var c in worldData.corridors) g.AddCorridor(c);
+            g.Finish();
+            Graph = g;
+            GraphReady = true;
         }
 
         private static Transform Marker(Transform parent, string name, Vector3 position)
@@ -135,6 +167,29 @@ namespace TaxiKin.Map
         public void Unpin(string zoneId) => pinned.Remove(zoneId);
         public bool HasZone(string zoneId) => !string.IsNullOrEmpty(zoneId) && slots.ContainsKey(zoneId);
         public bool IsGroundReady(string zoneId) => slots.TryGetValue(zoneId, out var s) && s.loader.GroundReady;
+
+        /// <summary>Le sol existe sous ce point (zone chargée ou corridor) : on peut y poser un véhicule.</summary>
+        public bool IsGroundReadyAt(Vector3 p)
+        {
+            string zone = ZoneAt(p);
+            return zone != null ? IsGroundReady(zone) : IsInCorridor(p);
+        }
+
+        private bool IsInCorridor(Vector3 p)
+        {
+            foreach (var c in corridors)
+            {
+                Vector3 a = new Vector3(c.ax, 0f, c.az), b = new Vector3(c.bx, 0f, c.bz);
+                Vector3 dir = (b - a).normalized;
+                Vector3 rel = new Vector3(p.x - a.x, 0f, p.z - a.z);
+                float s = Vector3.Dot(rel, dir);
+                float lateral = Mathf.Abs(rel.x * dir.z - rel.z * dir.x);
+                if (s >= -20f && s <= c.length + 20f && lateral <= c.stripHalfWidth) return true;
+            }
+            return false;
+        }
+
+
 
         /// <summary>Zones actuellement en mémoire (pour les mesures et le débogage).</summary>
         public int LoadedZoneCount { get { int n = 0; foreach (var s in slots.Values) if (s.loader.IsLoaded || s.loader.IsLoading) n++; return n; } }

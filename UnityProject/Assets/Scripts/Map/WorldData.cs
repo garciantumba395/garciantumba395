@@ -9,6 +9,7 @@ namespace TaxiKin.Map
         public string id, name;
         public float originX, originZ;     // position du centre de la zone dans le monde
         public float radius, half;         // rayon de la carte ; demi-côté du sol (rayon + 100 m)
+        public float centerX, centerZ;     // centre de la zone recalé sur la route la plus proche (coordonnées locales)
         public ZonePoi[] pois;             // repères en coordonnées LOCALES de la zone
     }
 

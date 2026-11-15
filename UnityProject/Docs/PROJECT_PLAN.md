@@ -1,6 +1,6 @@
 # Taxi Kin: Wewa, Taxi & 207 — Plan de projet
 
-*Mis à jour le 2026-11-15 (itération 4). Chef de projet : Claude. Propriétaire du produit : le client.*
+*Mis à jour le 2026-11-15 (itération 5). Chef de projet : Claude. Propriétaire du produit : le client.*
 
 ## 1. Statut en une phrase
 Les **fondations des 7 étapes sont écrites** (commandes, missions, personnage, économie, boutique, sauvegarde, optimisation) et
@@ -27,8 +27,8 @@ Effort : S (≤ 1 itération), M (2-3), L (4+). Risque : B/M/H.
 | 3 | Import OSM de la Gare centrale + vérification visuelle | Critique | M | M | ✅ Données importées (itération 3), géométrie vérifiée hors Unity ; à voir dans Unity |
 | 4 | Test sur téléphone d'entrée de gamme (11 tests de `PERFORMANCE.md`) | Critique | S | H | **Client** : téléphone + build |
 | 5 | Corridors compressés entre zones + chargement de la zone suivante | Haute | L | M | ✅ Écrit et vérifié (compilation + logique de guidage simulée, itération 4) ; à tester en jeu |
-| 6 | Trafic : IA de circulation et détection des véhicules évités | Haute | L | M | Après 3 (réseau routier réel) |
-| 7 | Chauffeurs virtuels (courses, missions 9 et 10) | Haute | L | H | Après 6 |
+| 6 | Trafic : IA de circulation et détection des véhicules évités | Haute | L | M | ✅ Écrit et validé hors Unity (itération 5) ; à tester en jeu. Reste : piétons, feux, nids-de-poule, zones inondées, contrôles de police |
+| 7 | Chauffeurs virtuels (courses, missions 9 et 10) | Haute | L | H | ✅ Écrit et validé hors Unity (itération 5) ; à tester en jeu |
 | 8 | Pluie, route glissante, nuit | Moyenne | M | B | Après 1 |
 | 9 | Autres zones (Matonge, Kintambo, Limete, N'djili) | Haute | M | M | ✅ Données importées (itération 3) ; reste à les voir dans Unity et à vérifier les repères |
 | 10 | Tutoriel de première partie | Haute | M | B | Après 2 |

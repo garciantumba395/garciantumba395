@@ -45,6 +45,8 @@ namespace TaxiKin.Vehicles
         public float Brake { get; private set; }      // 0 .. 1
         public bool HandBrake { get; private set; }
         public GearPosition Gear { get; set; } = GearPosition.D;
+        /// <summary>Véhicule immobilisé (compte à rebours d'une course) : aucune vitesse horizontale.</summary>
+        public bool Frozen { get; set; }
         public bool Reverse => Gear == GearPosition.R;
 
         // --- Équipements ---
@@ -129,6 +131,13 @@ namespace TaxiKin.Vehicles
             Vector3 fwd = transform.forward;
             Vector3 right = transform.right;
             float vertical = vel.y;
+
+            if (Frozen)
+            {
+                Velocity = new Vector3(0f, vertical, 0f);
+                SpeedKmh = 0f;
+                return;
+            }
 
             float forward = Vector3.Dot(vel, fwd);
             float lateral = Vector3.Dot(vel, right);

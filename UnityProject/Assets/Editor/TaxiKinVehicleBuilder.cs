@@ -23,6 +23,24 @@ namespace TaxiKin.EditorTools
             return root;
         }
 
+        /// <summary>Véhicule d'IA léger (trafic, coureurs) : collision + contrôleur + pilote, sans jantes ni personnalisation.</summary>
+        public static GameObject MakeAi<T>(string name, Vector3 size, Material bodyMat, bool withRoof, float obstacleRange) where T : VehicleController
+        {
+            var root = new GameObject(name);
+            root.AddComponent<BoxCollider>().size = size;
+            root.AddComponent<T>();                                  // ajoute aussi le Rigidbody
+            Prim(PrimitiveType.Cube, "Carrosserie", root.transform, Vector3.zero, size, bodyMat);
+            if (withRoof)
+                Prim(PrimitiveType.Cube, "Toit", root.transform, new Vector3(0f, size.y * 0.5f + 0.02f, 0f),
+                     new Vector3(size.x * 0.9f, 0.24f, size.z * 0.5f), bodyMat);
+            var ai = root.AddComponent<TaxiKin.Traffic.VehicleAI>();
+            var so = new SerializedObject(ai);
+            so.FindProperty("groundOffset").floatValue = size.y * 0.5f + 0.05f;
+            so.FindProperty("obstacleRange").floatValue = obstacleRange;
+            so.ApplyModifiedPropertiesWithoutUndo();
+            return root;
+        }
+
         /// <summary>Copie visuelle d'un véhicule (aperçu du garage) : aucune physique, aucun contrôleur.</summary>
         public static GameObject MakePreview(string name, VehicleType kind, Vector3 size, Material bodyMat, bool withRoof) =>
             Build(name, Vector3.zero, size, bodyMat, withRoof, kind, false, out _);

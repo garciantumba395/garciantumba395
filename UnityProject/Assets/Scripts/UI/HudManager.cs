@@ -17,6 +17,7 @@ namespace TaxiKin.UI
         [SerializeField] private PassengerManager passengers;
         [SerializeField] private MissionManager missions;
         [SerializeField] private Text money, passengersText, fuel, damage, timer, distance, speed;
+        [SerializeField] private Text raceText;
         [SerializeField] private float refreshInterval = 0.2f;
 
         [SerializeField] private Transform destination;
@@ -33,6 +34,13 @@ namespace TaxiKin.UI
             if (Time.unscaledTime < next) return;
             next = Time.unscaledTime + refreshInterval;
             Refresh();
+        }
+
+        /// <summary>Classement en course (ex. « 2e / 5 ») ; (0, 0) efface l'affichage.</summary>
+        public void SetRace(int place, int total)
+        {
+            if (raceText == null) return;
+            raceText.text = place <= 0 ? "" : (place == 1 ? "1er" : place + "e") + " / " + total;
         }
 
         private static string FormatDistance(float m) => m >= 1000f ? $"{m / 1000f:0.0} km" : Mathf.RoundToInt(m) + " m";
