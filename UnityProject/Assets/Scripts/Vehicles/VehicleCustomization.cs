@@ -23,5 +23,7 @@ namespace TaxiKin.Vehicles
     {
         public string vehicleKey;
         public VehicleCustomization data;
+        public float fuel = -1f;     // -1 = jamais enregistré (plein au premier lancement)
+        public float damage;
     }
 }

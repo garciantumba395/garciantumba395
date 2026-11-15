@@ -1,28 +1,36 @@
+using System;
 using UnityEngine;
+using TaxiKin.SaveSystem;
 
 namespace TaxiKin.Ads
 {
     /// <summary>
-    /// Point d'entrée unique des publicités. Aucun SDK pour l'instant : les appels sont des stubs.
-    /// Si « Supprimer les publicités » est acheté, aucune pub n'est jamais affichée.
+    /// Publicités : UNIQUEMENT des publicités récompensées, facultatives, déclenchées par le joueur
+    /// (ex. « doubler la récompense ») et jamais pendant la conduite. Aucun SDK pour l'instant : stub.
+    /// « Supprimer les publicités » masque les propositions de publicité ; l'état est sauvegardé.
     /// </summary>
     public class AdManager : MonoBehaviour
     {
-        public bool AdsRemoved { get; private set; }
+        public bool AdsRemoved => SaveManager.Instance != null && SaveManager.Instance.Data.adsRemoved;
 
-        public void SetAdsRemoved(bool removed) => AdsRemoved = removed;
+        public event Action OnAdsRemovedChanged;
 
-        /// <summary>Pub interstitielle (à appeler uniquement entre deux missions, jamais en conduite).</summary>
-        public void ShowInterstitial()
+        public void SetAdsRemoved(bool removed)
         {
-            if (AdsRemoved) return;
-            Debug.Log("[AdManager] Interstitiel (stub) — SDK publicitaire à intégrer.");
+            var sm = SaveManager.Instance;
+            if (sm == null || sm.Data.adsRemoved == removed) return;
+            sm.Data.adsRemoved = removed;
+            sm.Save();
+            OnAdsRemovedChanged?.Invoke();
         }
 
-        /// <summary>Pub récompensée facultative (ex. doubler la récompense).</summary>
-        public void ShowRewarded(System.Action onRewarded)
+        /// <summary>Faut-il proposer le bouton « regarder une pub pour doubler la récompense » ?</summary>
+        public bool CanOfferRewarded => !AdsRemoved;
+
+        /// <summary>Publicité récompensée facultative. À brancher sur un SDK ; l'appelant donne la récompense.</summary>
+        public void ShowRewarded(Action onRewarded)
         {
-            Debug.Log("[AdManager] Pub récompensée (stub).");
+            Debug.Log("[AdManager] Publicité récompensée (stub, SDK à intégrer).");
             onRewarded?.Invoke();
         }
     }

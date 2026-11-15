@@ -33,6 +33,8 @@ namespace TaxiKin.Vehicles
         [Serializable] public struct StickerEntry { public string id; public GameObject visual; }
 
         [SerializeField] private VehicleController vehicle;
+        [Tooltip("Type du véhicule quand il n'y a pas de contrôleur (copie d'aperçu du garage)")]
+        [SerializeField] private VehicleType previewKind;
         [SerializeField] private Renderer bodyRenderer;
         [SerializeField] private Renderer roofRenderer;
         [SerializeField] private Renderer[] rimRenderers;
@@ -45,26 +47,69 @@ namespace TaxiKin.Vehicles
         private static readonly Color[] RimColors =
             { new Color(0.35f, 0.35f, 0.38f), new Color(0.85f, 0.87f, 0.9f), new Color(0.9f, 0.65f, 0f) };
 
+        private static readonly List<VehicleCustomizer> Active = new List<VehicleCustomizer>();
+
         private MaterialPropertyBlock block;
+        private bool conditionLoaded;
 
         public VehicleCustomization Current { get; private set; }
-        public string Key => vehicle != null ? vehicle.Kind.ToString() : name;
+        public VehicleType Kind => vehicle != null ? vehicle.Kind : previewKind;
+        public string Key => Kind.ToString();
+        /// <summary>Niveaux gratuits ajoutés par la variante (Wewa amélioré, Taxi premium : +1).</summary>
+        public int VariantBonus { get; private set; }
         public bool HasYellowBody => IsYellow(Current.bodyColor);
 
         /// <summary>Déclenché après chaque changement (sauvegarde, missions de personnalisation).</summary>
         public event Action<VehicleCustomization> OnChanged;
 
-        private void Awake() => Current = DefaultFor(vehicle != null ? vehicle.Kind : VehicleType.Taxi);
+        private void Awake() => Current = DefaultFor(Kind);
 
-        private void Start()
+        private void OnEnable()
         {
-            // Rechargement de la personnalisation sauvegardée
+            Active.Add(this);
+            LoadFromSave();      // se remet à jour à chaque activation (les copies d'aperçu et les véhicules désactivés)
+        }
+
+        private void OnDisable() => Active.Remove(this);
+
+        private void Start() => LoadFromSave();
+
+        private void LoadFromSave()
+        {
             var sm = SaveManager.Instance;
             if (sm != null)
                 foreach (var e in sm.Data.vehicleCustomizations)
-                    if (e.vehicleKey == Key && e.data != null) { Current = e.data; break; }
+                {
+                    if (e.vehicleKey != Key || e.data == null) continue;
+                    Current = e.data;
+                    // L'état (carburant, dommages) n'est restauré qu'une fois, pour le vrai véhicule
+                    if (!conditionLoaded && vehicle != null && e.fuel >= 0f) { vehicle.SetCondition(e.fuel, e.damage); }
+                    break;
+                }
+            if (vehicle != null) conditionLoaded = true;
             ApplyAll();
         }
+
+        public void SetVariantBonus(int bonus) { VariantBonus = Mathf.Clamp(bonus, 0, 3); ApplyAll(); }
+
+        private void OnApplicationPause(bool paused) { if (paused) SaveCondition(); }
+        private void OnApplicationQuit() => SaveCondition();
+
+        /// <summary>Enregistre carburant et dommages du véhicule (garage, fin de mission, mise en pause).</summary>
+        public void SaveCondition()
+        {
+            var sm = SaveManager.Instance;
+            if (sm == null || vehicle == null) return;
+            VehicleCustomizationEntry entry = null;
+            foreach (var e in sm.Data.vehicleCustomizations) if (e.vehicleKey == Key) { entry = e; break; }
+            if (entry == null) { entry = new VehicleCustomizationEntry { vehicleKey = Key, data = Current }; sm.Data.vehicleCustomizations.Add(entry); }
+            entry.fuel = vehicle.Fuel;
+            entry.damage = vehicle.Damage;
+            sm.Save();
+        }
+
+        /// <summary>Enregistre l'état de tous les véhicules actifs (appelé en fin de mission).</summary>
+        public static void SaveAllConditions() { foreach (var c in Active) c.SaveCondition(); }
 
         /// <summary>Couleurs d'origine : taxi jaune Taxi Kin, Wewa rouge, bus bleu.</summary>
         private static VehicleCustomization DefaultFor(VehicleType kind)
@@ -105,6 +150,8 @@ namespace TaxiKin.Vehicles
         private void Changed()
         {
             ApplyAll();
+            foreach (var other in Active)      // l'aperçu du garage et le véhicule du monde restent identiques
+                if (other != this && other.Key == Key) { other.Current = Current.Clone(); other.ApplyAll(); }
             Persist();
             OnChanged?.Invoke(Current);
         }
@@ -118,7 +165,9 @@ namespace TaxiKin.Vehicles
             if (rimRenderers != null) foreach (var r in rimRenderers) Tint(r, RimColors[Mathf.Clamp(Current.rimIndex, 0, RimColors.Length - 1)]);
             foreach (var s in stickers) if (s.visual != null) s.visual.SetActive(s.id == Current.stickerId);
             if (plateText != null) plateText.text = Current.plate;
-            if (vehicle != null) vehicle.SetUpgrades(Current.engine, Current.brakes, Current.tires, Current.armor);
+            if (vehicle != null)
+                vehicle.SetUpgrades(Mathf.Min(3, Current.engine + VariantBonus), Mathf.Min(3, Current.brakes + VariantBonus),
+                                    Mathf.Min(3, Current.tires + VariantBonus), Mathf.Min(3, Current.armor + VariantBonus));
         }
 
         private void Tint(Renderer target, Color color)
@@ -137,7 +186,7 @@ namespace TaxiKin.Vehicles
             if (sm == null) return;
             var list = sm.Data.vehicleCustomizations;
             foreach (var e in list) if (e.vehicleKey == Key) { e.data = Current; sm.Save(); return; }
-            list.Add(new VehicleCustomizationEntry { vehicleKey = Key, data = Current });
+            list.Add(new VehicleCustomizationEntry { vehicleKey = Key, data = Current, fuel = vehicle != null ? vehicle.Fuel : -1f, damage = vehicle != null ? vehicle.Damage : 0f });
             sm.Save();   // Sauvegarde automatique après chaque changement de personnalisation
         }
 

@@ -26,6 +26,13 @@ namespace TaxiKin.Player
             if (vehicle != null) OnVehicleChanged?.Invoke(vehicle);
         }
 
+        public VehicleController GetVehicle(VehicleType type)
+        {
+            if (availableVehicles == null) return null;
+            foreach (var v in availableVehicles) if (v != null && v.Kind == type) return v;
+            return null;
+        }
+
         public void SetVehicle(VehicleController newVehicle)
         {
             vehicle = newVehicle;

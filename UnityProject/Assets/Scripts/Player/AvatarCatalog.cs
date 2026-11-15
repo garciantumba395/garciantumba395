@@ -44,6 +44,8 @@ namespace TaxiKin.Player
             foreach (var i in all) if (i != null && !string.IsNullOrEmpty(i.id)) byId[i.id] = i;
         }
 
+        public static IReadOnlyList<ClothingItem> All { get { Ensure(); return all; } }
+
         public static ClothingItem Get(string id)
         {
             Ensure();

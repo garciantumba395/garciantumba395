@@ -23,7 +23,8 @@ namespace TaxiKin.Vehicles
             get { ColorUtility.TryParseHtmlString(DefaultTaxiHex, out var c); return c; }
         }
 
-        [SerializeField] private List<NamedColor> palette = new List<NamedColor>
+        /// <summary>Palette d'origine (partagée avec ShopCatalog pour les prix).</summary>
+        public static readonly NamedColor[] Defaults =
         {
             new NamedColor { name = "Jaune Taxi Kin", hex = "#FFD400" },
             new NamedColor { name = "Jaune vif",      hex = "#FFC300" },
@@ -39,6 +40,8 @@ namespace TaxiKin.Vehicles
             new NamedColor { name = "Gris",   hex = "#8A8F98" },
             new NamedColor { name = "Orange", hex = "#EF6C00" },
         };
+
+        [SerializeField] private List<NamedColor> palette = new List<NamedColor>(Defaults);
 
         /// <summary>Nombre de jaunes en tête de palette.</summary>
         public const int YellowCount = 5;

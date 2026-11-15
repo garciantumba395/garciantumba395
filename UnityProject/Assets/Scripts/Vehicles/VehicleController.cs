@@ -202,6 +202,13 @@ namespace TaxiKin.Vehicles
             stats.fragility *= 1f - 0.12f * armor;
         }
 
+        /// <summary>Restaure l'état sauvegardé (carburant, dommages).</summary>
+        public void SetCondition(float fuel, float damage)
+        {
+            Fuel = Mathf.Clamp(fuel, 0f, stats.fuelCapacity);
+            Damage = Mathf.Clamp(damage, 0f, 100f);
+        }
+
         public void Refuel(float amount) => Fuel = Mathf.Min(stats.fuelCapacity, Fuel + amount);
         public void Repair(float amount) => Damage = Mathf.Max(0f, Damage - amount);
     }

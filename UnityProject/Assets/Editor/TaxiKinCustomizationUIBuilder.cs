@@ -103,87 +103,14 @@ namespace TaxiKin.EditorTools
             TaxiKinSceneBuilder.Assign(creatorUi, "cancelButton", cancel.gameObject);
             panel.gameObject.SetActive(false);
 
-            // ---------- Panneau « Garage » (personnalisation du véhicule) ----------
-            var garageUi = managers.GetComponent<GarageUIManager>();
-            var colors = managers.GetComponent<VehicleColorManager>();
-            var gp = new GameObject("PanneauGarage", typeof(RectTransform), typeof(Image));
-            gp.transform.SetParent(root, false);
-            var grt = (RectTransform)gp.transform;
-            grt.anchorMin = new Vector2(1f, 0f); grt.anchorMax = new Vector2(1f, 1f); grt.pivot = new Vector2(1f, 0.5f);
-            grt.sizeDelta = new Vector2(1000f, 0f); grt.anchoredPosition = Vector2.zero;
-            gp.GetComponent<Image>().color = new Color(0.05f, 0.06f, 0.08f, 0.93f);
-
-            // Colonne gauche : carrosserie, toit, jantes, autocollants
-            Label(grt, "TitreCarrosserie", TL, new Vector2(20f, -15f), new Vector2(450f, 45f), "Carrosserie", 30, TextAnchor.MiddleLeft, Gold, TL);
-            Label(grt, "TitreToit", TL, new Vector2(20f, -230f), new Vector2(450f, 45f), "Toit", 30, TextAnchor.MiddleLeft, Gold, TL);
-            for (int i = 0; i < colors.Palette.Count; i++)
-            {
-                Color col = colors.Palette[i].ToColor();
-                float x = 20f + (i % 6) * 70f, row = i / 6 * 70f;
-                var body = Std(grt, "Carrosserie" + i, "", TL, new Vector2(x, -65f - row), new Vector2(60f, 60f), col, 18);
-                var roof = Std(grt, "Toit" + i, "", TL, new Vector2(x, -280f - row), new Vector2(60f, 60f), col, 18);
-                UnityEventTools.AddIntPersistentListener(body.onClick, garageUi.OnBodyColor, i);
-                UnityEventTools.AddIntPersistentListener(roof.onClick, garageUi.OnRoofColor, i);
-            }
-            Label(grt, "NoteJaune", TL, new Vector2(20f, -200f), new Vector2(450f, 28f), "5 jaunes Taxi Kin en tête de palette", 20, TextAnchor.MiddleLeft, new Color(0.8f, 0.8f, 0.8f), TL);
-
-            Label(grt, "TitreJantes", TL, new Vector2(20f, -440f), new Vector2(450f, 45f), "Jantes", 30, TextAnchor.MiddleLeft, Gold, TL);
-            string[] rimNames = { "Standard", "Chrome", "Or" };
-            for (int i = 0; i < 3; i++)
-            {
-                var b = Std(grt, "Jantes" + i, rimNames[i], TL, new Vector2(20f + i * 150f, -490f), new Vector2(140f, 60f), Neutral, 24);
-                UnityEventTools.AddIntPersistentListener(b.onClick, garageUi.OnRims, i);
-            }
-
-            Label(grt, "TitreAutocollants", TL, new Vector2(20f, -580f), new Vector2(450f, 45f), "Autocollants", 30, TextAnchor.MiddleLeft, Gold, TL);
-            string[] stickerNames = { "Aucun", "Kin", "Rayures", "Exclusif" };
-            for (int i = 0; i < 4; i++)
-            {
-                var b = Std(grt, "Autocollant" + i, stickerNames[i], TL, new Vector2(20f + (i % 2) * 220f, -630f - (i / 2) * 70f), new Vector2(210f, 60f), Neutral, 24);
-                UnityEventTools.AddIntPersistentListener(b.onClick, garageUi.OnSticker, i);
-            }
-
-            // Colonne droite : plaque et améliorations
-            Label(grt, "TitrePlaque", TL, new Vector2(520f, -15f), new Vector2(450f, 45f), "Plaque personnalisée", 30, TextAnchor.MiddleLeft, Gold, TL);
-            var plateInput = MakeInput(grt, "ChampPlaque", "KIN 001", TL, new Vector2(520f, -65f), new Vector2(300f, 70f), 10);
-            var plateOk = Std(grt, "ValiderPlaque", "OK", TL, new Vector2(830f, -65f), new Vector2(120f, 70f), TaxiKinUIBuilder.Gas, 28);
-            UnityEventTools.AddPersistentListener(plateOk.onClick, garageUi.OnApplyPlate);
-            var plateMsg = Label(grt, "MessagePlaque", TL, new Vector2(520f, -145f), new Vector2(450f, 90f), "", 22, TextAnchor.UpperLeft, new Color(1f, 0.8f, 0.5f), TL);
-
-            Label(grt, "TitreAmeliorations", TL, new Vector2(520f, -290f), new Vector2(450f, 45f), "Améliorations", 30, TextAnchor.MiddleLeft, Gold, TL);
-            var upgradeLabels = new Text[4];
-            for (int i = 0; i < 4; i++)
-            {
-                upgradeLabels[i] = Label(grt, "Amelioration" + i, TL, new Vector2(520f, -340f - i * 90f), new Vector2(240f, 70f), "", 26, TextAnchor.MiddleLeft, Color.white, TL);
-                var minus = Std(grt, "Moins" + i, "-", TL, new Vector2(770f, -340f - i * 90f), new Vector2(80f, 70f), Neutral, 36);
-                var plus = Std(grt, "Plus" + i, "+", TL, new Vector2(860f, -340f - i * 90f), new Vector2(80f, 70f), Neutral, 36);
-                UnityEventTools.AddIntPersistentListener(minus.onClick, garageUi.OnUpgradeDown, i);
-                UnityEventTools.AddIntPersistentListener(plus.onClick, garageUi.OnUpgradeUp, i);
-            }
-            Label(grt, "NoteTest", TL, new Vector2(520f, -720f), new Vector2(450f, 120f),
-                  "Mode test : changements gratuits. Les prix et la boutique arrivent à l'étape suivante.", 22, TextAnchor.UpperLeft, new Color(0.7f, 0.7f, 0.7f), TL);
-
-            var close = Std(grt, "Fermer", "Fermer", BR, new Vector2(-40f, 40f), new Vector2(300f, 90f), TaxiKinUIBuilder.Red, 32);
-            UnityEventTools.AddPersistentListener(close.onClick, garageUi.Close);
-
-            TaxiKinSceneBuilder.Assign(garageUi, "panel", gp);
-            TaxiKinSceneBuilder.Assign(garageUi, "player", player);
-            TaxiKinSceneBuilder.Assign(garageUi, "colors", colors);
-            TaxiKinSceneBuilder.Assign(garageUi, "plateField", plateInput);
-            TaxiKinSceneBuilder.Assign(garageUi, "plateMessage", plateMsg);
-            TaxiKinSceneBuilder.AssignArray(garageUi, "upgradeLabels", upgradeLabels);
-            gp.SetActive(false);
-
             // ---------- Boutons de TEST (haut-droite) : ouvrent les deux écrans ----------
             var bChar = TaxiKinUIBuilder.Button(root, "TestChauffeur", null, "Chauffeur", TR, new Vector2(-310f, -220f), new Vector2(130f, 60f), TaxiKinUIBuilder.Btn);
-            var bGarage = TaxiKinUIBuilder.Button(root, "TestGarage", null, "Garage", TR, new Vector2(-450f, -220f), new Vector2(130f, 60f), TaxiKinUIBuilder.Btn);
             TaxiKinUIBuilder.On(bChar, creatorUi.OpenFromMenu);
-            TaxiKinUIBuilder.On(bGarage, garageUi.Open);
         }
 
         // ---------- Aides de construction ----------
 
-        private static UiButton Std(Transform parent, string name, string label, Vector2 anchor, Vector2 pos, Vector2 size, Color color, int fontSize)
+        internal static UiButton Std(Transform parent, string name, string label, Vector2 anchor, Vector2 pos, Vector2 size, Color color, int fontSize)
         {
             var go = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(UiButton));
             go.transform.SetParent(parent, false);
@@ -207,7 +134,7 @@ namespace TaxiKin.EditorTools
             return go.GetComponent<UiButton>();
         }
 
-        private static Text Label(Transform parent, string name, Vector2 anchor, Vector2 pos, Vector2 size, string text,
+        internal static Text Label(Transform parent, string name, Vector2 anchor, Vector2 pos, Vector2 size, string text,
                                   int fontSize, TextAnchor align, Color color, Vector2 pivot)
         {
             var go = new GameObject(name, typeof(RectTransform), typeof(Text));
@@ -221,7 +148,7 @@ namespace TaxiKin.EditorTools
             return t;
         }
 
-        private static InputField MakeInput(Transform parent, string name, string placeholder, Vector2 anchor, Vector2 pos, Vector2 size, int maxChars)
+        internal static InputField MakeInput(Transform parent, string name, string placeholder, Vector2 anchor, Vector2 pos, Vector2 size, int maxChars)
         {
             var go = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(InputField));
             go.transform.SetParent(parent, false);

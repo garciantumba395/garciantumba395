@@ -12,12 +12,27 @@ namespace TaxiKin.EditorTools
     /// </summary>
     public static class TaxiKinVehicleBuilder
     {
+        /// <summary>Véhicule jouable : physique (collision + Rigidbody) et contrôleur.</summary>
         public static GameObject Make<T>(string name, Vector3 pos, Vector3 size, Material bodyMat, bool withRoof) where T : VehicleController
+        {
+            var root = Build(name, pos, size, bodyMat, withRoof, VehicleType.Taxi, true, out var cust);
+            var controller = root.AddComponent<T>();   // ajoute aussi le Rigidbody (RequireComponent)
+            var so = new SerializedObject(cust);
+            so.FindProperty("vehicle").objectReferenceValue = controller;
+            so.ApplyModifiedPropertiesWithoutUndo();
+            return root;
+        }
+
+        /// <summary>Copie visuelle d'un véhicule (aperçu du garage) : aucune physique, aucun contrôleur.</summary>
+        public static GameObject MakePreview(string name, VehicleType kind, Vector3 size, Material bodyMat, bool withRoof) =>
+            Build(name, Vector3.zero, size, bodyMat, withRoof, kind, false, out _);
+
+        private static GameObject Build(string name, Vector3 pos, Vector3 size, Material bodyMat, bool withRoof,
+                                        VehicleType previewKind, bool physics, out VehicleCustomizer customizer)
         {
             var root = new GameObject(name);
             root.transform.position = pos;
-            root.AddComponent<BoxCollider>().size = size;
-            var controller = root.AddComponent<T>();   // ajoute aussi le Rigidbody (RequireComponent)
+            if (physics) root.AddComponent<BoxCollider>().size = size;
 
             var body = Prim(PrimitiveType.Cube, "Carrosserie", root.transform, Vector3.zero, size, bodyMat);
 
@@ -85,8 +100,9 @@ namespace TaxiKin.EditorTools
 
             // Câblage de VehicleCustomizer
             var cust = root.AddComponent<VehicleCustomizer>();
+            customizer = cust;
             var so = new SerializedObject(cust);
-            so.FindProperty("vehicle").objectReferenceValue = controller;
+            if (!physics) so.FindProperty("previewKind").enumValueIndex = (int)previewKind;
             so.FindProperty("bodyRenderer").objectReferenceValue = body.GetComponent<Renderer>();
             so.FindProperty("roofRenderer").objectReferenceValue = roofRenderer;
             so.FindProperty("plateText").objectReferenceValue = tm;
@@ -105,6 +121,29 @@ namespace TaxiKin.EditorTools
             }
             so.ApplyModifiedPropertiesWithoutUndo();
             return root;
+        }
+
+        /// <summary>Crée les 5 prefabs d'aperçu du garage (Resources/Vehicles/Preview). Un prefab existant n'est jamais écrasé.</summary>
+        public static void BuildPreviewPrefabs(Material wewaMat, Material taxiMat, Material busMat)
+        {
+            foreach (var f in new[] { "Assets/Resources", "Assets/Resources/Vehicles", "Assets/Resources/Vehicles/Preview" })
+                if (!AssetDatabase.IsValidFolder(f)) AssetDatabase.CreateFolder(f.Substring(0, f.LastIndexOf('/')), f.Substring(f.LastIndexOf('/') + 1));
+
+            SavePreview("wewa_base", VehicleType.Wewa, new Vector3(0.5f, 0.9f, 1.8f), wewaMat, false);
+            SavePreview("wewa_upgraded", VehicleType.Wewa, new Vector3(0.5f, 0.9f, 1.8f), wewaMat, false);
+            SavePreview("taxi", VehicleType.Taxi, new Vector3(1.8f, 1.2f, 4f), taxiMat, true);
+            SavePreview("taxi_premium", VehicleType.Taxi, new Vector3(1.8f, 1.2f, 4f), taxiMat, true);
+            SavePreview("bus207", VehicleType.Bus207, new Vector3(2.5f, 2.8f, 9f), busMat, false);
+        }
+
+        private static void SavePreview(string id, VehicleType kind, Vector3 size, Material mat, bool roof)
+        {
+            string path = $"Assets/Resources/Vehicles/Preview/{id}.prefab";
+            if (AssetDatabase.LoadAssetAtPath<GameObject>(path) != null) return;
+            var go = MakePreview(id, kind, size, mat, roof);
+            foreach (Transform c in go.transform) c.localPosition += Vector3.up * (size.y * 0.5f);   // posé sur le plateau (bas à y = 0)
+            PrefabUtility.SaveAsPrefabAsset(go, path);
+            Object.DestroyImmediate(go);
         }
 
         private static GameObject Prim(PrimitiveType t, string name, Transform parent, Vector3 pos, Vector3 scale, Material m)

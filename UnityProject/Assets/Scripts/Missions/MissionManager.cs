@@ -354,7 +354,9 @@ namespace TaxiKin.Missions
             {
                 res.firstCompletion = completed.Add(m.id);
                 float mult = res.firstCompletion ? 1f : 0.25f;
-                res.coins = Mathf.RoundToInt(m.rewards.kinCoins * mult);
+                // Bonus « pièces x2 » : consommé seulement si la mission rapporte des pièces
+                int bonus = (m.rewards.kinCoins > 0 && EconomyManager.Instance != null) ? EconomyManager.Instance.ConsumeDoubleCoins() : 1;
+                res.coins = Mathf.RoundToInt(m.rewards.kinCoins * mult) * bonus;
                 res.xp = Mathf.RoundToInt(m.rewards.xp * mult);
                 EconomyManager.Instance?.AddCoins(res.coins);
                 ProfileManager.Instance?.AddXp(res.xp);
@@ -365,6 +367,7 @@ namespace TaxiKin.Missions
             }
 
             SetDestination(null);
+            VehicleCustomizer.SaveAllConditions();   // carburant et dommages sauvegardés après chaque mission
             GameManager.Instance?.SetState(GameState.MissionEnd);
             OnMissionEnded?.Invoke(res);
         }

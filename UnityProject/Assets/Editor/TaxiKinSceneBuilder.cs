@@ -51,6 +51,7 @@ namespace TaxiKin.EditorTools
             managers.AddComponent<WeatherManager>();
             managers.AddComponent<AdManager>();
             managers.AddComponent<PurchaseManager>();
+            managers.AddComponent<ShopManager>();
             managers.AddComponent<UIManager>();
             managers.AddComponent<VehicleColorManager>();
             managers.AddComponent<GarageManager>();
@@ -74,6 +75,9 @@ namespace TaxiKin.EditorTools
             var wewa = TaxiKinVehicleBuilder.Make<WewaController>("Wewa", new Vector3(-6f, 0.6f, 0f), new Vector3(0.5f, 0.9f, 1.8f), wewaMat, false);
             var taxi = TaxiKinVehicleBuilder.Make<TaxiController>("Taxi", new Vector3(0f, 0.7f, 0f), new Vector3(1.8f, 1.2f, 4f), yellow, true);
             var bus = TaxiKinVehicleBuilder.Make<Bus207Controller>("Bus207", new Vector3(6f, 1.5f, 0f), new Vector3(2.5f, 2.8f, 9f), busMat, false);
+
+            // --- Prefabs d'aperçu du garage (chargés à la demande depuis Resources) ---
+            TaxiKinVehicleBuilder.BuildPreviewPrefabs(wewaMat, yellow, busMat);
 
             // --- Joueur : commence avec le Wewa, peut passer au taxi et au bus ---
             var player = new GameObject("Player");
@@ -122,6 +126,60 @@ namespace TaxiKin.EditorTools
             Assign(quests, "missions", managers.GetComponent<MissionManager>());
             Assign(quests, "taxiCustomizer", taxi.GetComponent<VehicleCustomizer>());
 
+            // --- Garage : aperçu 3D du véhicule (petite scène loin du monde), liste des véhicules, boutique ---
+            var vStageGo = new GameObject("ScenePreviewVehicule");
+            vStageGo.transform.position = new Vector3(2000f, 0f, 2000f);
+            var vTurn = new GameObject("Plateau");
+            vTurn.transform.SetParent(vStageGo.transform, false);
+            var vAnchor = new GameObject("Ancrage");
+            vAnchor.transform.SetParent(vTurn.transform, false);
+            var vCamGo = new GameObject("CameraApercuVehicule");
+            vCamGo.transform.SetParent(vStageGo.transform, false);
+            vCamGo.transform.localPosition = new Vector3(6f, 2.6f, 9f);
+            vCamGo.transform.LookAt(vStageGo.transform.position + new Vector3(0f, 1.1f, 0f));
+            var vCam = vCamGo.AddComponent<Camera>();
+            vCam.fieldOfView = 30f;
+            vCam.clearFlags = CameraClearFlags.SolidColor;
+            vCam.backgroundColor = new Color(0.12f, 0.13f, 0.16f);
+            var vStage = vStageGo.AddComponent<VehiclePreviewStage>();
+            Assign(vStage, "previewCamera", vCam);
+            Assign(vStage, "turntable", vTurn.transform);
+
+            var garageMgr = managers.GetComponent<GarageManager>();
+            Assign(garageMgr, "previewAnchor", vAnchor.transform);
+            Assign(garageMgr, "stage", vStage);
+            Assign(garageMgr, "player", pc);
+            var garageEntries = new (string id, string title, VehicleType type, float scale, int bonus, bool free)[]
+            {
+                ("wewa_base", "Wewa", VehicleType.Wewa, 2.0f, 0, true),
+                ("wewa_upgraded", "Wewa amélioré", VehicleType.Wewa, 2.0f, 1, false),
+                ("taxi", "Taxi-voiture", VehicleType.Taxi, 1.1f, 0, false),
+                ("taxi_premium", "Taxi premium", VehicleType.Taxi, 1.1f, 1, false),
+                ("bus207", "Bus 207", VehicleType.Bus207, 0.6f, 0, false),
+            };
+            var gso = new SerializedObject(garageMgr);
+            var gArr = gso.FindProperty("vehicles");
+            gArr.arraySize = garageEntries.Length;
+            for (int i = 0; i < garageEntries.Length; i++)
+            {
+                var el = gArr.GetArrayElementAtIndex(i);
+                el.FindPropertyRelative("id").stringValue = garageEntries[i].id;
+                el.FindPropertyRelative("title").stringValue = garageEntries[i].title;
+                el.FindPropertyRelative("type").enumValueIndex = (int)garageEntries[i].type;
+                el.FindPropertyRelative("previewResourcePath").stringValue = "Vehicles/Preview/" + garageEntries[i].id;
+                el.FindPropertyRelative("previewScale").floatValue = garageEntries[i].scale;
+                el.FindPropertyRelative("bonusLevel").intValue = garageEntries[i].bonus;
+                el.FindPropertyRelative("unlockedByDefault").boolValue = garageEntries[i].free;
+            }
+            gso.ApplyModifiedPropertiesWithoutUndo();
+
+            var shopMgr = managers.GetComponent<ShopManager>();
+            Assign(shopMgr, "purchases", managers.GetComponent<PurchaseManager>());
+            Assign(shopMgr, "missions", managers.GetComponent<MissionManager>());
+            Assign(shopMgr, "player", pc);
+            Assign(shopMgr, "ads", managers.GetComponent<AdManager>());
+            Assign(managers.GetComponent<GarageUIManager>(), "player", pc);
+
             // --- Destination de test (cylindre) pour la flèche de direction et la distance ---
             var dest = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
             dest.name = "Destination";
@@ -158,6 +216,7 @@ namespace TaxiKin.EditorTools
             TaxiKinUIBuilder.Build(managers, pc, managers.GetComponent<PassengerManager>(),
                 managers.GetComponent<MissionManager>(), rig, miniCam, dest.transform);
             TaxiKinCustomizationUIBuilder.Build(GameObject.Find("Canvas").transform, managers, pc, stage);
+            TaxiKinGarageShopUIBuilder.Build(GameObject.Find("Canvas").transform, managers, pc, vStage);
 
             // --- Sauvegarde de la scène ---
             const string path = "Assets/Scenes/Main.unity";

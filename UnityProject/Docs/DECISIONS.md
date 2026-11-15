@@ -49,3 +49,44 @@ Le cahier des charges complet est la référence produit. Points arbitrés par r
 - **Quêtes** (`CustomizationQuests`) : « Crée ton identité » se termine à l'enregistrement du profil (500 Kin Coins + tenue jaune de départ) ; « Le jaune de Kin » exige un choix de jaune pour le taxi dans le garage puis une course réussie (1 000 Kin Coins + autocollant exclusif).
 - **Limite connue** : les libellés des écrans « Mon chauffeur » et « Garage » sont en français uniquement (lingala à l'Étape 7). Le garage actuel personnalise le véhicule actif ; l'aperçu 3D de showroom viendra avec la scène garage (Étape 5).
 - Les missions de personnalisation ne sont jamais proposées comme courses (`IsPlayable` les exclut).
+
+## Étape 5 — économie, garage, boutique
+**Principe** : aucun achat n'est obligatoire. Le taxi et le 207 se débloquent en jouant (missions 5 et 7, `OnUnlock` → `ShopManager`). Les fonds manquants sont signalés avec le montant manquant ; aucun écran ne bloque la progression.
+
+**Prix du cahier des charges (repris tels quels)** : Wewa de base gratuit ; Wewa amélioré 5 000 KC / 1,99 USD ; Taxi 15 000 KC / 2,99 USD ; Taxi premium 35 000 KC / 4,99 USD ; Bus 207 50 000 KC / 5,99 USD ; Pack complet 9,99 USD ; Sans publicités 2,99 USD.
+
+**Prix PROVISOIRES à valider/équilibrer** (non fournis dans le cahier des charges) :
+| Article | Prix d'essai |
+|---|---|
+| Vehicules en Kin Gold | Wewa amélioré 40 · Taxi 120 · Taxi premium 250 · Bus 207 350 |
+| Skins (Kin Gold) | Taxi Or 150 · Wewa Néon 80 · 207 Carnaval 120 |
+| Sans publicités (Kin Gold) | 300 |
+| Packs de Kin Gold (consommables) | 100 → 0,99 USD · 550 → 4,99 USD · 1 200 → 9,99 USD |
+| Pack de 3 pleins (consommable) | 0,99 USD ou 30 Kin Gold |
+| Bonus « pièces x2 » (1 mission) | 40 Kin Gold |
+| Couleurs non jaunes | 500 KC (les 5 jaunes sont gratuits) |
+| Jantes chrome / or | 800 / 1 500 KC |
+| Autocollants Kin / rayures | 300 / 500 KC (l'exclusif est une récompense de mission) |
+| Plaque personnalisée | 200 KC par changement |
+| Améliorations (par niveau 1→3) | 1 000 / 2 500 / 5 000 KC |
+| Carburant | 20 KC par litre ; plein gratuit avec un jeton |
+| Réparation | 15 KC par % de dommages (× 0,6 Wewa, × 1 taxi, × 1,8 bus) |
+| Vêtements | Veste 800 · Bottines 600 · Tresses 300 · Casquette 300 · Foulard 400 KC |
+Le Pack complet = tous les véhicules + sans publicités + autocollant exclusif (pas de Kin Gold : un non consommable restauré ne doit pas redonner de la monnaie).
+
+**Véhicules et variantes** : 5 entrées de garage (Wewa, Wewa amélioré, Taxi, Taxi premium, Bus 207). Les variantes « amélioré » et « premium » ajoutent +1 niveau gratuit à chaque amélioration (plafonné à 3). Un seul prefab d'aperçu est chargé à la fois (`Resources/Vehicles/Preview`).
+
+**Achats réels (Unity IAP)** :
+- Non consommables : véhicules, sans publicités, pack complet. Consommables : Kin Gold, pack de carburant.
+- `UnityIapBackend` (compilé seulement si `UNITY_PURCHASING`, c.-à-d. paquet Unity IAP installé) cible l'API classique 4.x et **n'a pas été testé** ; avec IAP 5.x, seul ce fichier est à adapter.
+- Sans le paquet : boutique SIMULÉE uniquement dans l'éditeur / version de développement. Une version de production sans IAP refuse les achats.
+- À faire avant la sortie : validation des reçus côté serveur, « Restaurer les achats » (iOS), identifiants de produits à créer dans Google Play Console.
+- Les prix du magasin remplacent automatiquement les prix indicatifs en USD quand ils sont connus.
+
+**Publicités** : l'interstitiel est supprimé ; il ne reste que la publicité récompensée facultative (stub, SDK à choisir). « Sans publicités » est sauvegardé.
+
+**Confirmation anti-erreur** : tout achat en Kin Coins / Kin Gold demande une seconde touche dans les 4-5 s.
+
+**Sauvegarde** : soldes, véhicules débloqués, véhicule choisi, jetons de carburant, bonus et état (carburant, dommages) de chaque véhicule sont sauvegardés (fin de mission, achat, mise en pause). L'Étape 6 couvrira le reste (missions terminées, paramètres, réinitialisation).
+
+**Limites connues** : aucune mission ne donne de Kin Gold pour l'instant (« récompenses rares ») ; libellés des écrans en français uniquement ; l'aperçu garage utilise des cubes.

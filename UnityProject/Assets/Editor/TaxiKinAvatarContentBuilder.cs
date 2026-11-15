@@ -43,7 +43,7 @@ namespace TaxiKin.EditorTools
             // ----- Cheveux -----
             Item("hair_short", "Courts", ClothingSlot.Hair, false, true, "", r => P(PrimitiveType.Cube, r, Vector3.zero, new Vector3(0.36f, 0.08f, 0.38f), hair));
             Item("hair_afro", "Afro", ClothingSlot.Hair, false, true, "", r => P(PrimitiveType.Sphere, r, new Vector3(0f, 0.05f, 0f), new Vector3(0.5f, 0.42f, 0.5f), hair));
-            Item("hair_braids", "Tresses", ClothingSlot.Hair, false, true, "", r =>
+            Item("hair_braids", "Tresses", ClothingSlot.Hair, false, false, "", r =>
             {
                 P(PrimitiveType.Cube, r, Vector3.zero, new Vector3(0.36f, 0.08f, 0.38f), hair);
                 P(PrimitiveType.Cube, r, new Vector3(-0.1f, -0.2f, -0.17f), new Vector3(0.05f, 0.4f, 0.05f), hair);
@@ -58,7 +58,7 @@ namespace TaxiKin.EditorTools
                 P(PrimitiveType.Cube, r, Vector3.zero, new Vector3(0.64f, 0.55f, 0.42f), white);
                 P(PrimitiveType.Cube, r, new Vector3(0f, 0.28f, 0.1f), new Vector3(0.2f, 0.05f, 0.2f), white);
             });
-            Item("top_jacket", "Veste", ClothingSlot.Top, true, true, "", r =>
+            Item("top_jacket", "Veste", ClothingSlot.Top, true, false, "", r =>
             {
                 P(PrimitiveType.Cube, r, Vector3.zero, new Vector3(0.7f, 0.55f, 0.46f), white);
                 P(PrimitiveType.Cube, r, new Vector3(-0.4f, -0.02f, 0f), new Vector3(0.14f, 0.5f, 0.14f), white);
@@ -83,16 +83,16 @@ namespace TaxiKin.EditorTools
             // ----- Chaussures -----
             Item("shoes_sneakers", "Baskets", ClothingSlot.Shoes, false, true, "", r => Feet(r, 0.12f, white));
             Item("shoes_sandals", "Sandales", ClothingSlot.Shoes, false, true, "", r => Feet(r, 0.05f, brown));
-            Item("shoes_boots", "Bottines", ClothingSlot.Shoes, false, true, "", r => Feet(r, 0.24f, shoe));
+            Item("shoes_boots", "Bottines", ClothingSlot.Shoes, false, false, "", r => Feet(r, 0.24f, shoe));
 
             // ----- Accessoires -----
             Item("acc_glasses", "Lunettes", ClothingSlot.Accessory, false, true, "", r => P(PrimitiveType.Cube, r, new Vector3(0f, 0.03f, 0.17f), new Vector3(0.3f, 0.06f, 0.04f), dark));
-            Item("acc_cap", "Casquette", ClothingSlot.Accessory, false, true, "", r =>
+            Item("acc_cap", "Casquette", ClothingSlot.Accessory, false, false, "", r =>
             {
                 P(PrimitiveType.Cube, r, new Vector3(0f, 0.2f, 0f), new Vector3(0.38f, 0.1f, 0.4f), red);
                 P(PrimitiveType.Cube, r, new Vector3(0f, 0.17f, 0.26f), new Vector3(0.3f, 0.02f, 0.16f), red);
             });
-            Item("acc_scarf", "Foulard", ClothingSlot.Accessory, false, true, "", r => P(PrimitiveType.Cube, r, new Vector3(0f, -0.28f, 0f), new Vector3(0.42f, 0.1f, 0.32f), yellow));
+            Item("acc_scarf", "Foulard", ClothingSlot.Accessory, false, false, "", r => P(PrimitiveType.Cube, r, new Vector3(0f, -0.28f, 0f), new Vector3(0.42f, 0.1f, 0.32f), yellow));
 
             AssetDatabase.SaveAssets();
             return BuildAvatarPrefab();
@@ -111,12 +111,15 @@ namespace TaxiKin.EditorTools
                 Object.DestroyImmediate(root);
             }
 
+            // Articles de base gratuits ; les autres s'achètent en Kin Coins dans la boutique (prix d'essai)
+            int price = id == "top_jacket" ? 800 : id == "shoes_boots" ? 600 : id == "hair_braids" ? 300 : id == "acc_cap" ? 300 : id == "acc_scarf" ? 400 : 0;
+
             string itemFile = $"{ItemsFolder}/{id}.asset";
             if (AssetDatabase.LoadAssetAtPath<ClothingItem>(itemFile) != null) return;   // ne jamais écraser
             var item = ScriptableObject.CreateInstance<ClothingItem>();
             item.id = id; item.displayName = display; item.slot = slot;
             item.prefabPath = "Clothing/Prefabs/" + id;      // chemin Resources : chargé seulement à l'équipement
-            item.tintable = tintable; item.unlockedByDefault = byDefault; item.unlockGroup = group;
+            item.tintable = tintable; item.unlockedByDefault = byDefault; item.unlockGroup = group; item.priceKinCoins = price;
             AssetDatabase.CreateAsset(item, itemFile);
         }
 

@@ -24,6 +24,9 @@ namespace TaxiKin.SaveSystem
         public List<VehicleCustomizationEntry> vehicleCustomizations = new List<VehicleCustomizationEntry>();
         public AvatarData avatar = new AvatarData();
         public string language = "fr";
+        public bool adsRemoved;
+        public int bonusDoubleCoins;     // missions restantes avec récompense en pièces doublée
+        public int fuelTokens;           // pleins gratuits
     }
 
     /// <summary>
