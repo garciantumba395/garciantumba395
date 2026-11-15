@@ -28,6 +28,9 @@ namespace TaxiKin.EditorTools
         {
             var scene = EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects, NewSceneMode.Single);
 
+            // --- Missions (assets ScriptableObject) : générées avant la scène pour être chargées au Play ---
+            TaxiKinMissionBuilder.Generate();
+
             // --- Matériaux de test (légers, partagés) ---
             Material yellow = GetMaterial("Mat_TaxiYellow", VehicleColorManager.DefaultTaxiColor);
             Material road = GetMaterial("Mat_Road", new Color(0.2f, 0.2f, 0.22f));
@@ -114,6 +117,10 @@ namespace TaxiKin.EditorTools
             Object.DestroyImmediate(dest.GetComponent<Collider>());
             dest.GetComponent<Renderer>().sharedMaterial = wewaMat;
 
+            // --- Point de départ de repli des missions (tant que la vraie carte n'est pas chargée) ---
+            var startPoint = new GameObject("DepartMission");
+            startPoint.transform.position = new Vector3(0f, 0.6f, 0f);
+
             // --- Caméra principale + 4 points de vue ---
             var cam = Camera.main;
             CameraRig rig = null;
@@ -140,6 +147,7 @@ namespace TaxiKin.EditorTools
 
             // --- Sauvegarde de la scène ---
             const string path = "Assets/Scenes/Main.unity";
+            Assign(managers.GetComponent<MissionManager>(), "fallbackStart", startPoint.transform);
             EditorSceneManager.SaveScene(scene, path);
             EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(path, true) };
             AssetDatabase.SaveAssets();

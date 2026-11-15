@@ -23,6 +23,14 @@ namespace TaxiKin.Missions
             return accepted;
         }
 
+        /// <summary>Vide le véhicule sans compter les passagers (début de mission).</summary>
+        public void Reset()
+        {
+            if (OnBoard == 0) return;
+            OnBoard = 0;
+            OnPassengersChanged?.Invoke(OnBoard);
+        }
+
         /// <summary>Dépose tous les passagers ; renvoie leur nombre.</summary>
         public int DropAll()
         {

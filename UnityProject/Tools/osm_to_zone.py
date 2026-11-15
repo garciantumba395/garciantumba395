@@ -25,6 +25,7 @@ POI_KINDS = [
     ("amenity", {"fuel"}, "station_service"),
     ("aeroway", {"terminal", "aerodrome"}, "aeroport"),
     ("tourism", {"hotel"}, "hotel"),
+    ("highway", {"bus_stop"}, "arret"),
 ]
 
 

@@ -41,10 +41,13 @@ namespace TaxiKin.Player
 
             if (vehicle != null)
             {
-                next.transform.SetPositionAndRotation(vehicle.transform.position + Vector3.up * 0.3f, vehicle.transform.rotation);
+                Vector3 pos = vehicle.transform.position + Vector3.up * 0.1f;
+                Quaternion rot = vehicle.transform.rotation;
                 vehicle.gameObject.SetActive(false);
+                next.gameObject.SetActive(true);
+                next.ResetMotion(pos, rot);
             }
-            next.gameObject.SetActive(true);
+            else next.gameObject.SetActive(true);
             SetVehicle(next);
         }
 

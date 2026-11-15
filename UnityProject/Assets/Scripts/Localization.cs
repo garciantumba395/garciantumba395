@@ -39,6 +39,10 @@ namespace TaxiKin.Core
             ["doors"] = "Portes", ["stop"] = "Arrêt",
             ["hud_money"] = "Kin Coins", ["hud_passengers"] = "Passagers", ["hud_fuel"] = "Carburant",
             ["hud_damage"] = "Dommages", ["hud_time"] = "Temps", ["hud_distance"] = "Distance",
+            ["mission_start"] = "Commencer", ["mission_retry"] = "Rejouer", ["mission_next"] = "Mission suivante",
+            ["mission_success"] = "Mission réussie !", ["mission_failed"] = "Mission échouée",
+            ["mission_vehicle"] = "Véhicule", ["mission_route"] = "Trajet", ["mission_reward"] = "Récompense",
+            ["mission_time"] = "Temps", ["mission_any"] = "Au choix", ["mission_menu"] = "Mission",
         };
 
         // Volontairement minimal : beaucoup de termes techniques sont des emprunts au français en lingala.

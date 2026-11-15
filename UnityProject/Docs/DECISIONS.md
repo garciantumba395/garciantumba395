@@ -25,3 +25,14 @@ Le cahier des charges complet est la référence produit. Points arbitrés par r
 - Centres des 5 zones géocodés (Nominatim), voir `Tools/zones.json` — à valider visuellement.
 - L'accès réseau à Overpass depuis l'environnement cloud échoue (connexion coupée) : les données OSM doivent être exportées à la main (Tools/README.md).
 - **Échelle** : Gare centrale → aéroport de N'djili ≈ 17 km à vol d'oiseau (≈ 12 min en Wewa à 90 km/h). Les missions chronométrées (ex. « avant 4 minutes ») sont impossibles à l'échelle réelle → décision requise : corridor compressé entre zones ou mission raccourcie.
+
+## Étape 3 — missions
+- **Carte (choix validé)** : zones à l'échelle réelle reliées par des corridors compressés (fonctionnalité `CorridorMap`, à construire).
+- **Destinations hors zones V1** (révise le tableau précédent, plus fidèle à la géographie) : Gombe → zone *Gare centrale* (la gare est à Gombe selon OSM) ; Ngaliema → *Kintambo* (limitrophe) ; Masina → *Limete* (la plus proche).
+- **14 missions en assets** (`Assets/Resources/Missions`, menu *Taxi Kin → Missions → Générer les 14 missions*). Un asset existant n'est jamais écrasé. 1 à 10 = V1 ; 11 à 14 (stationnement) = `availableInV1 = false`.
+- **Verrouillage par fonctionnalités** : chaque mission déclare les systèmes dont elle dépend (IA de course, pluie, trafic dense, évitement, corridor, stationnement). `MissionManager.availableFeatures` liste ce qui existe ; `ignoreFeatureGating = true` (par défaut) permet de tout tester avec les points de repli. **À passer à `false` avant la sortie.**
+- **Déblocages en jouant** : mission 5 débloque le Taxi, mission 7 débloque le Bus 207 (prêt du véhicule pendant la mission). Événement `OnUnlock` à brancher sur le garage (Étape 5) et la sauvegarde (Étape 6).
+- **Récompenses** : première réussite = 100 % ; rejouer = 25 %.
+- **Hors périmètre de cette étape** : IA des chauffeurs virtuels (missions 9, 10), détection des véhicules évités par le trafic, effets visuels de pluie, corridor entre zones, création des places de stationnement dans la carte.
+- Les textes des missions ont des champs lingala (`titleLn`, `descriptionLn`) vides : à faire traduire.
+- « Sans tomber » (mission 3) est approximé par un plafond de dommages (40 %), car les véhicules ne basculent pas.

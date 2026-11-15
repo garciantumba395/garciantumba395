@@ -48,7 +48,9 @@ namespace TaxiKin.Vehicles
         // --- Équipements ---
         public bool HeadlightsOn { get; private set; }
         public bool WipersOn { get; private set; }
-        public event Action OnHorn;                   // Le son sera branché à l'Audio
+        public event Action OnHorn;
+        /// <summary>Choc franchissant 2 m/s (compté comme collision par les missions).</summary>
+        public event Action<float> OnImpact;                   // Le son sera branché à l'Audio
         public void Honk() => OnHorn?.Invoke();
         public void ToggleHeadlights() => HeadlightsOn = !HeadlightsOn;
         public void ToggleWipers() => WipersOn = !WipersOn;
@@ -60,6 +62,7 @@ namespace TaxiKin.Vehicles
         public VehicleStats Stats => stats;
 
         private Rigidbody rb;
+        private float ignoreImpactsUntil;   // évite les « collisions » fantômes juste après une téléportation
 
         // Compatibilité Unity 2022 (velocity) / Unity 6 (linearVelocity)
         private Vector3 Velocity
@@ -162,9 +165,23 @@ namespace TaxiKin.Vehicles
 
         private void OnCollisionEnter(Collision collision)
         {
+            if (Time.time < ignoreImpactsUntil) return;
             float impact = collision.relativeVelocity.magnitude;
+            if (impact >= 2f) OnImpact?.Invoke(impact);
             if (impact < 3f) return;
             Damage = Mathf.Clamp(Damage + impact * stats.fragility, 0f, 100f);
+        }
+
+        /// <summary>Place le véhicule (départ de mission, changement de véhicule) sans vitesse résiduelle.</summary>
+        public void ResetMotion(Vector3 position, Quaternion rotation)
+        {
+            if (rb == null) rb = GetComponent<Rigidbody>();
+            transform.SetPositionAndRotation(position, rotation);
+            rb.position = position;
+            rb.rotation = rotation;
+            Velocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+            ignoreImpactsUntil = Time.time + 1f;
         }
 
         public void Refuel(float amount) => Fuel = Mathf.Min(stats.fuelCapacity, Fuel + amount);

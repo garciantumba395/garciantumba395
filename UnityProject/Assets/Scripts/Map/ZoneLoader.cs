@@ -59,6 +59,20 @@ namespace TaxiKin.Map
             return null;
         }
 
+        /// <summary>Point d'intérêt d'un type donné le plus proche d'une position (null si aucun dans la portée).</summary>
+        public Transform NearestPoi(string kind, Vector3 position, float maxDistance)
+        {
+            Transform best = null;
+            float bestSqr = maxDistance * maxDistance;
+            foreach (var p in pois)
+            {
+                if (p == null || !p.name.StartsWith("POI_" + kind)) continue;
+                float d = (p.position - position).sqrMagnitude;
+                if (d <= bestSqr) { bestSqr = d; best = p; }
+            }
+            return best;
+        }
+
         private void Build()
         {
             root = new GameObject("Zone_" + Data.id);

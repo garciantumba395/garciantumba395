@@ -1,4 +1,5 @@
 using UnityEngine;
+using TaxiKin.Map;
 using TaxiKin.Missions;
 using TaxiKin.Vehicles;
 
@@ -13,6 +14,8 @@ namespace TaxiKin.Player
         [SerializeField] private PlayerController player;
         [SerializeField] private PassengerManager passengers;
         [SerializeField] private CameraRig cameraRig;
+        [SerializeField] private MissionManager missions;
+        [SerializeField] private ZoneLoader zone;
 
         public bool StopRequested { get; private set; }
 
@@ -41,18 +44,40 @@ namespace TaxiKin.Player
         public void PickupPassengers()
         {
             if (V == null || passengers == null) return;
-            passengers.Pickup(V.Kind == VehicleType.Bus207 ? 5 : 1);
+            var bus = V as Bus207Controller;
+            if (bus != null && !bus.DoorsOpen) return;     // Bus : on ne monte que portes ouvertes
+            int n = passengers.Pickup(bus != null ? 5 : 1);
+            missions?.ReportBoarded(n, bus != null && bus.DoorsOpen);
         }
 
-        public void DropPassengers() => passengers?.DropAll();
+        /// <summary>En mission : dépose les clients seulement près de la destination. Hors mission : dépose librement.</summary>
+        public void DropPassengers()
+        {
+            if (missions != null && missions.IsRunning) missions.TryDeliver();
+            else passengers?.DropAll();
+        }
 
         /// <summary>Portes du bus : uniquement à l'arrêt complet.</summary>
         public void ToggleDoors()
         {
-            if (V is Bus207Controller bus && bus.SpeedKmh < 2f) bus.SetDoors(!bus.DoorsOpen);
+            if (V is Bus207Controller bus && bus.SpeedKmh < 2f)
+            {
+                bus.SetDoors(!bus.DoorsOpen);
+                if (bus.DoorsOpen) CountStop(bus.transform.position);
+                missions?.ReportDoors(bus.DoorsOpen);
+            }
         }
 
         public void RequestStop() => StopRequested = !StopRequested;
+
+        /// <summary>Un arrêt est respecté si le bus ouvre ses portes près d'un arrêt de la carte, ou après avoir demandé l'arrêt.</summary>
+        private void CountStop(Vector3 position)
+        {
+            bool atStop = zone != null && zone.IsLoaded && zone.NearestPoi("arret", position, 25f) != null;
+            if (!atStop && !StopRequested) return;
+            StopRequested = false;
+            missions?.ReportStop();
+        }
 
         /// <summary>Passe au mode de contrôle suivant (volant → flèches → inclinaison). Bouton de test avant le menu Paramètres.</summary>
         public void CycleControlMode() => ControlSettings.Mode = (ControlMode)(((int)ControlSettings.Mode + 1) % 3);

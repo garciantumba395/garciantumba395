@@ -188,6 +188,58 @@ namespace TaxiKin.EditorTools
             var modeBtn = Button(root, "TestMode", null, "Mode", TR, new Vector2(-20f, -150f), new Vector2(120f, 60f), Btn);
             On(modeBtn, actions.CycleControlMode);
 
+            // ---------- Écrans de mission (début / fin) ----------
+            var missionUi = canvasGo.AddComponent<MissionUIManager>();
+            var brief = MissionPanel(root, "EcranDebutMission");
+            var bTitle = PanelText(brief, "Titre", new Vector2(0f, -70f), new Vector2(1500f, 90f), 56, TextAnchor.MiddleCenter, new Color(1f, 0.83f, 0f));
+            var bDesc = PanelText(brief, "Description", new Vector2(0f, -190f), new Vector2(1400f, 150f), 34, TextAnchor.UpperCenter, Color.white);
+            var bVeh = PanelText(brief, "Vehicule", new Vector2(0f, -360f), new Vector2(1400f, 60f), 34, TextAnchor.MiddleCenter, Color.white);
+            var bRoute = PanelText(brief, "Trajet", new Vector2(0f, -430f), new Vector2(1400f, 60f), 34, TextAnchor.MiddleCenter, Color.white);
+            var bTime = PanelText(brief, "Chrono", new Vector2(0f, -500f), new Vector2(1400f, 60f), 34, TextAnchor.MiddleCenter, Color.white);
+            var bRew = PanelText(brief, "Recompense", new Vector2(0f, -570f), new Vector2(1500f, 60f), 34, TextAnchor.MiddleCenter, new Color(0.6f, 1f, 0.6f));
+            var startBtn = PanelButton(brief, "Commencer", "mission_start", new Vector2(0f, 120f), new Vector2(420f, 110f), Gas);
+
+            var end = MissionPanel(root, "EcranFinMission");
+            var eTitle = PanelText(end, "Titre", new Vector2(0f, -70f), new Vector2(1500f, 100f), 64, TextAnchor.MiddleCenter, new Color(1f, 0.83f, 0f));
+            var eObj = PanelText(end, "Objectifs", new Vector2(0f, -200f), new Vector2(1500f, 420f), 32, TextAnchor.UpperCenter, Color.white);
+            var eRew = PanelText(end, "Recompense", new Vector2(0f, -640f), new Vector2(1500f, 70f), 38, TextAnchor.MiddleCenter, new Color(0.6f, 1f, 0.6f));
+            var retryBtn = PanelButton(end, "Rejouer", "mission_retry", new Vector2(-250f, 120f), new Vector2(420f, 110f), Btn);
+            var nextBtn = PanelButton(end, "Suivante", "mission_next", new Vector2(250f, 120f), new Vector2(420f, 110f), Gas);
+
+            TaxiKinSceneBuilder.Assign(missionUi, "missions", missions);
+            TaxiKinSceneBuilder.Assign(missionUi, "briefingPanel", brief.gameObject);
+            TaxiKinSceneBuilder.Assign(missionUi, "briefTitle", bTitle);
+            TaxiKinSceneBuilder.Assign(missionUi, "briefDescription", bDesc);
+            TaxiKinSceneBuilder.Assign(missionUi, "briefVehicle", bVeh);
+            TaxiKinSceneBuilder.Assign(missionUi, "briefRoute", bRoute);
+            TaxiKinSceneBuilder.Assign(missionUi, "briefTime", bTime);
+            TaxiKinSceneBuilder.Assign(missionUi, "briefReward", bRew);
+            TaxiKinSceneBuilder.Assign(missionUi, "endPanel", end.gameObject);
+            TaxiKinSceneBuilder.Assign(missionUi, "endTitle", eTitle);
+            TaxiKinSceneBuilder.Assign(missionUi, "endObjectives", eObj);
+            TaxiKinSceneBuilder.Assign(missionUi, "endReward", eRew);
+            TaxiKinSceneBuilder.Assign(missionUi, "nextButton", nextBtn.gameObject);
+            On(startBtn, missionUi.OnStart);
+            On(retryBtn, missionUi.OnRetry);
+            On(nextBtn, missionUi.OnNext);
+            brief.gameObject.SetActive(false);
+            end.gameObject.SetActive(false);
+
+            // Bouton de TEST : ouvre la prochaine mission (sera remplacé par le menu principal)
+            var missionBtn = Button(root, "TestMission", "mission_menu", null, TR, new Vector2(-170f, -220f), new Vector2(120f, 60f), Btn);
+            On(missionBtn, missionUi.OnOpenMenu);
+
+            // MissionManager : références de la scène
+            TaxiKinSceneBuilder.Assign(missions, "player", player);
+            TaxiKinSceneBuilder.Assign(missions, "passengers", passengers);
+            TaxiKinSceneBuilder.Assign(missions, "weather", managers.GetComponent<TaxiKin.Weather.WeatherManager>());
+            TaxiKinSceneBuilder.Assign(missions, "traffic", managers.GetComponent<TaxiKin.Traffic.TrafficManager>());
+            if (rig != null) TaxiKinSceneBuilder.Assign(missions, "cameraRig", rig);
+            TaxiKinSceneBuilder.Assign(missions, "hud", hud);
+            TaxiKinSceneBuilder.Assign(missions, "directionArrow", arrowComp);
+            TaxiKinSceneBuilder.Assign(missions, "fallbackDestination", destination);
+            TaxiKinSceneBuilder.Assign(actions, "missions", missions);
+
             // ---------- Câblage ----------
             TaxiKinSceneBuilder.Assign(input, "player", player);
             TaxiKinSceneBuilder.Assign(input, "wheel", wheelGo.GetComponent<VirtualSteeringWheel>());
@@ -255,6 +307,33 @@ namespace TaxiKin.EditorTools
             else t.text = raw;
             return go.GetComponent<HoldButton>();
         }
+
+        /// <summary>Panneau plein écran semi-transparent (bloque les touches derrière lui).</summary>
+        private static RectTransform MissionPanel(Transform parent, string name)
+        {
+            var go = new GameObject(name, typeof(RectTransform), typeof(Image));
+            go.transform.SetParent(parent, false);
+            var rt = (RectTransform)go.transform;
+            rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.one; rt.offsetMin = rt.offsetMax = Vector2.zero;
+            go.GetComponent<Image>().color = new Color(0f, 0f, 0f, 0.82f);
+            return rt;
+        }
+
+        /// <summary>Texte ancré en haut au centre d'un panneau (pos.y négatif = vers le bas).</summary>
+        private static Text PanelText(Transform parent, string name, Vector2 pos, Vector2 size, int fontSize, TextAnchor align, Color color)
+        {
+            var go = new GameObject(name, typeof(RectTransform), typeof(Text));
+            go.transform.SetParent(parent, false);
+            Place((RectTransform)go.transform, new Vector2(0.5f, 1f), pos, size, new Vector2(0.5f, 1f));
+            var t = go.GetComponent<Text>();
+            t.font = font; t.fontSize = fontSize; t.alignment = align; t.color = color; t.raycastTarget = false;
+            t.horizontalOverflow = HorizontalWrapMode.Wrap;
+            return t;
+        }
+
+        /// <summary>Bouton ancré en bas au centre d'un panneau.</summary>
+        private static HoldButton PanelButton(Transform parent, string name, string locKey, Vector2 pos, Vector2 size, Color color) =>
+            Button(parent, name, locKey, null, new Vector2(0.5f, 0f), pos, size, color);
 
         private static Text Value(Transform parent, string name, Vector2 pos)
         {
