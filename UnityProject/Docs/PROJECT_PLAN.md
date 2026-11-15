@@ -1,6 +1,6 @@
 # Taxi Kin: Wewa, Taxi & 207 — Plan de projet
 
-*Mis à jour le 2026-11-15 (itération 2). Chef de projet : Claude. Propriétaire du produit : le client.*
+*Mis à jour le 2026-11-15 (itération 3). Chef de projet : Claude. Propriétaire du produit : le client.*
 
 ## 1. Statut en une phrase
 Les **fondations des 7 étapes sont écrites** (commandes, missions, personnage, économie, boutique, sauvegarde, optimisation) et
@@ -24,13 +24,13 @@ Effort : S (≤ 1 itération), M (2-3), L (4+). Risque : B/M/H.
 |---|---|---|---|---|---|
 | 1 | Ouvrir dans Unity 2022.3, corriger les erreurs de la console | Critique | S | M | **Client** : coller la console |
 | 2 | Menu principal et enchaînement des écrans (remplace les boutons de test) | Critique | M | B | ✅ Écrit et vérifié par compilation (itération 2) ; à tester en jeu |
-| 3 | Import OSM de la Gare centrale + vérification visuelle | Critique | M | M | **Client** : export `.osm` |
+| 3 | Import OSM de la Gare centrale + vérification visuelle | Critique | M | M | ✅ Données importées (itération 3), géométrie vérifiée hors Unity ; à voir dans Unity |
 | 4 | Test sur téléphone d'entrée de gamme (11 tests de `PERFORMANCE.md`) | Critique | S | H | **Client** : téléphone + build |
 | 5 | Corridors compressés entre zones + chargement de la zone suivante | Haute | L | M | Après 1 et 3 |
 | 6 | Trafic : IA de circulation et détection des véhicules évités | Haute | L | M | Après 3 (réseau routier réel) |
 | 7 | Chauffeurs virtuels (courses, missions 9 et 10) | Haute | L | H | Après 6 |
 | 8 | Pluie, route glissante, nuit | Moyenne | M | B | Après 1 |
-| 9 | Autres zones (Matonge, Kintambo, Limete, N'djili) | Haute | M | M | **Client** : exports `.osm` |
+| 9 | Autres zones (Matonge, Kintambo, Limete, N'djili) | Haute | M | M | ✅ Données importées (itération 3) ; reste à les voir dans Unity et à vérifier les repères |
 | 10 | Tutoriel de première partie | Haute | M | B | Après 2 |
 | 11 | Relecture du lingala par un locuteur natif + traduction des écrans | Haute | S | M | **Client** : relecteur |
 | 12 | Retours joueurs : bouton « Donner mon avis », mesure anonyme avec consentement | Haute | M | M | **Client** : adresse de contact, accord sur la mesure |
@@ -71,7 +71,7 @@ Effort : S (≤ 1 itération), M (2-3), L (4+). Risque : B/M/H.
 
 ## 6. Ce dont j'ai besoin du client (par ordre d'utilité)
 1. Ouvrir le projet dans Unity 2022.3 (URP) et **coller les erreurs de la console** (même « aucune »).
-2. Exporter les données OpenStreetMap de la **Gare centrale** (~2 km × 2 km) : https://www.openstreetmap.org/export
+2. ~~Exporter les données OpenStreetMap~~ **Fait par le chef de projet** : les 5 zones sont importées (`Tools/fetch_zone.py`).
 3. Un **téléphone Android d'entrée de gamme** pour les tests de `PERFORMANCE.md`.
 4. Un **relecteur lingala natif**.
 5. Une **adresse de contact** pour le bouton « Donner mon avis » et la politique de confidentialité.
@@ -83,7 +83,8 @@ Effort : S (≤ 1 itération), M (2-3), L (4+). Risque : B/M/H.
 - [ ] Achats : produits créés, descriptions claires, prix visibles, pas d'obligation d'achat (déjà respecté)
 - [ ] Classification de contenu (accidents, conduite : sans violence)
 - [ ] Mesure anonyme uniquement après consentement ; pas de donnée personnelle superflue
-- [ ] Aucune marque ni logo réel ; noms de véhicules génériques (« Wewa », « 207 » à vérifier côté marque)
+- [x] Noms d'entreprises retirés des données de carte (hôtels, stations-service, arrêts…) ; aucun logo
+- [ ] Noms de véhicules génériques (« Wewa », « 207 » à vérifier côté marque)
 - [ ] Si le public inclut des enfants : règles « familles » de Google Play
 
 ## 8. Boucle d'amélioration d'après les retours des joueurs

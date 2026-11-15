@@ -128,3 +128,10 @@ Voir `Docs/PERFORMANCE.md` (budgets, ce qui est en place, procédure de test sur
 - Les boutons de test (véhicule, mode de contrôle) sont rangés dans `OutilsDev`, **désactivé dans les versions de production** (`DevOnly`).
 - L'attribution OpenStreetMap figure en bas du menu.
 - Ordre d'affichage : le menu est sous les écrans qu'il ouvre (créateur, garage, boutique, réglages) ; le générateur de scène doit l'appeler en dernier.
+
+## Données de carte (itération 3)
+- Les 5 zones sont importées avec `Tools/fetch_zone.py` (API officielle OpenStreetMap). Fichiers dans `Assets/Resources/Zones` (~700 Ko au total).
+- Géométrie vérifiée hors Unity : tracé de la Gare centrale contrôlé visuellement (trame de rues, ronds-points, gare à l'origine, fleuve au nord) ; triangulation des toits testée sur les 6 262 immeubles (6 252 réussis).
+- **Conformité** : les noms d'entreprises (hôtels, stations-service, arrêts, gares routières) sont retirés à la conversion ; on garde seulement les noms de gares, aéroports et marchés.
+- **Hypothèse à vérifier** : l'aéroport de N'djili est un repère posé à la main (position de l'aérodrome donnée par Nominatim) car OpenStreetMap le décrit comme une zone et non un point. Même chose possible pour d'autres repères : tous les points « gare » dans OSM sont des points, mais la gare « Kinshasa Est » est celle retenue comme « Gare centrale ».
+- Les missions dont la destination est « le centre d'une zone » (sans type de repère) utilisent encore le point de repli : à corriger avec les corridors entre zones.

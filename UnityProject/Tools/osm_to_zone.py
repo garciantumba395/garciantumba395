@@ -29,6 +29,12 @@ POI_KINDS = [
 ]
 
 
+# Le cahier des charges interdit les noms et marques d'entreprises réelles : on ne conserve le nom d'un point d'intérêt
+# que pour les lieux publics (gares, aéroports, marchés) ; hôtels, stations-service, hôpitaux, arrêts et gares routières
+# (souvent nommés d'après une entreprise) sont rendus anonymes.
+PUBLIC_NAME_KINDS = {"station", "aeroport", "marche"}
+
+
 def load_osm(path):
     """Retourne (nodes{id:(lat,lon)}, ways[{id,nodes,tags}], poi_nodes[{lat,lon,tags}])."""
     nodes, ways, poi = {}, [], []
@@ -127,8 +133,15 @@ def convert(args):
         if abs(x) > radius or abs(zz) > radius: continue
         for key, values, kind in POI_KINDS:
             if p["tags"].get(key) in values:
-                pois.append({"name": p["tags"].get("name", ""), "kind": kind, "x": round(x, 1), "z": round(zz, 1)})
+                name = p["tags"].get("name", "") if kind in PUBLIC_NAME_KINDS else ""
+                pois.append({"name": name, "kind": kind, "x": round(x, 1), "z": round(zz, 1)})
                 break
+
+    # Repères posés à la main dans zones.json (approche hybride) : ex. un aéroport cartographié comme une zone dans OSM
+    for e in z.get("extra_pois", []):
+        x, zz = proj.xz(e["lat"], e["lon"])
+        if abs(x) <= radius and abs(zz) <= radius:
+            pois.append({"name": e.get("name", ""), "kind": e["kind"], "x": round(x, 1), "z": round(zz, 1)})
 
     return {"id": z["id"], "name": z["name"], "lat": z["lat"], "lon": z["lon"], "radius": radius,
             "originX": round(-origin[0], 1), "originZ": round(-origin[1], 1),   # position réelle de la zone par rapport à la Gare

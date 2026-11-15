@@ -29,6 +29,18 @@ Règles pour les futurs modèles 3D : textures ≤ 1024×1024 (≤ 512 pour les 
 un matériau partagé par groupe d'objets, atlas pour les éléments d'interface, pas de transparence sur de grandes surfaces
 (« overdraw »), LOD0 ≤ 3 000 triangles par véhicule, LOD1 ≤ 1 200, LOD2 ≤ 400 (le Wewa : 1 500 / 600 / 200).
 
+## Géométrie mesurée sur les vraies données (calcul hors Unity, pas une mesure sur appareil)
+| Zone | Immeubles | Triangles d'immeubles (zone entière) | Routes (triangles) | Pire cas : 9 blocs voisins |
+|---|---|---|---|---|
+| Gare centrale | 624 | 9 975 | 2 542 | 4 773 |
+| Matonge | 1 500 | 17 359 | 4 692 | 12 694 |
+| Kintambo | 1 500 | 17 244 | 5 464 | 9 936 |
+| Limete | 1 500 | 22 552 | 3 632 | 11 978 |
+| N'djili | 1 138 | 13 585 | 2 030 | 12 159 |
+Même zone entière affichée, on reste sous 25 000 triangles (budget Basse : 80 000). **Le plafond de 1 500 immeubles est donc très prudent**
+pour le nombre de triangles : on pourra le relever (à tester : temps de chargement et cuisson des collisions). Sur 6 262 immeubles,
+6 252 toits sont triangulés ; 10 tracés dégénérés n'ont pas de toit (les murs restent).
+
 ## Ce qui est en place dans le code
 - **Qualité Basse / Moyenne / Haute** (`QualityManager`) : cadence cible, échelle de rendu, MSAA, ombres, lumières par pixel,
   `lodBias`, mips de texture, distance de vue, plafond de trafic, fréquence de la physique (30 Hz en Basse). Détection
