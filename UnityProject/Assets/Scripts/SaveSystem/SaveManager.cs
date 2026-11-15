@@ -16,6 +16,13 @@ namespace TaxiKin.SaveSystem
         public float wheelSensitivity = 1f;
         public bool invertSteering;
         public int language;                    // 0 français, 1 lingala
+        public int quality = -1;                // -1 = à détecter au premier lancement, 0 basse, 1 moyenne, 2 haute
+        public bool qualityAuto = true;         // autorise la baisse automatique de qualité si le téléphone n'arrive pas à suivre
+        public int shadows = -1;                // -1 = selon la qualité, 0 aucune, 1 basses, 2 hautes
+        public float soundVolume = 1f;
+        public float musicVolume = 0.7f;
+        public bool vibration = true;
+        public float uiScale;                   // 0 = automatique selon la taille de l'écran
     }
 
     /// <summary>Contenu de la sauvegarde locale (JSON).</summary>

@@ -15,6 +15,8 @@ namespace TaxiKin.EditorTools
             TaxiKinSceneBuilder.Assign(loader, "roadMaterial", TaxiKinSceneBuilder.GetMaterial("Mat_Road", new Color(0.2f, 0.2f, 0.22f)));
             TaxiKinSceneBuilder.Assign(loader, "buildingMaterial", TaxiKinSceneBuilder.GetMaterial("Mat_Building", new Color(0.78f, 0.7f, 0.58f)));
             TaxiKinSceneBuilder.Assign(loader, "groundMaterial", TaxiKinSceneBuilder.GetMaterial("Mat_Ground", new Color(0.35f, 0.45f, 0.3f)));
+            var player = Object.FindObjectOfType<TaxiKin.Player.PlayerController>();
+            if (player != null) TaxiKinSceneBuilder.Assign(loader, "player", player);   // culling et collisions selon la distance au joueur
             Selection.activeGameObject = go;
             Debug.Log("[Taxi Kin] ZoneLoader ajouté. Lancez Play : la zone « gare_centrale » se génère depuis Resources/Zones.");
         }

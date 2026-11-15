@@ -1,0 +1,7 @@
+<linker>
+  <!-- QualityManager règle l'échelle de rendu, le MSAA et la distance des ombres de l'asset URP par réflexion :
+       sans cette protection, le « stripping » de IL2CPP retirerait ces propriétés des versions Android. -->
+  <assembly fullname="Unity.RenderPipelines.Universal.Runtime">
+    <type fullname="UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset" preserve="all"/>
+  </assembly>
+</linker>

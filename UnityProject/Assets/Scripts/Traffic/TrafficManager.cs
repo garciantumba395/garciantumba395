@@ -12,17 +12,22 @@ namespace TaxiKin.Traffic
         [SerializeField] private GameObject trafficPrefab;
         [SerializeField, Range(0, 40)] private int maxActiveVehicles = 12;
 
+        private int qualityCap = 12;
         private readonly Queue<GameObject> pool = new Queue<GameObject>();
         private readonly List<GameObject> active = new List<GameObject>();
 
         public int ActiveCount => active.Count;
+
+        /// <summary>Plafond imposé par la qualité graphique (6 / 12 / 20). Il l'emporte sur la densité demandée par une mission.</summary>
+        public void SetQualityCap(int cap) => qualityCap = Mathf.Max(0, cap);
+        private int EffectiveMax => Mathf.Min(maxActiveVehicles, qualityCap);
 
         /// <summary>Change la densité (ex. faible en qualité basse, dense pour « La grande course »).</summary>
         public void SetMaxVehicles(int max) => maxActiveVehicles = Mathf.Max(0, max);
 
         public GameObject Spawn(Vector3 position, Quaternion rotation)
         {
-            if (trafficPrefab == null || active.Count >= maxActiveVehicles) return null;
+            if (trafficPrefab == null || active.Count >= EffectiveMax) return null;
             GameObject go = pool.Count > 0 ? pool.Dequeue() : Instantiate(trafficPrefab, transform);
             go.transform.SetPositionAndRotation(position, rotation);
             go.SetActive(true);

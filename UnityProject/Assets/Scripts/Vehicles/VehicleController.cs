@@ -94,6 +94,7 @@ namespace TaxiKin.Vehicles
             if (!statsInitialized) { stats = CreateDefaultStats(); statsInitialized = true; }
             rb.centerOfMass = new Vector3(0f, -0.4f, 0f);
             rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
+            rb.interpolation = RigidbodyInterpolation.Interpolate;   // mouvement fluide même si la physique tourne à 30 Hz
             baseStats = stats.Clone();
             Fuel = stats.fuelCapacity;
             ApplyFrictionlessMaterial();

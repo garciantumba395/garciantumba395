@@ -12,40 +12,46 @@ namespace TaxiKin.Map
     {
         private const float RoadY = 0.03f;
 
-        public static Mesh BuildRoads(ZoneRoad[] roads)
+        /// <summary>Un tronçon de route (une route est découpée en tronçons pour pouvoir être répartie par blocs).</summary>
+        public struct RoadSegment { public Vector2 a, b; public float width; public int kind; }
+
+        /// <summary>Clé de bloc (grille carrée) pour un point en mètres.</summary>
+        public static long CellKey(float x, float z, float cellSize)
         {
-            var v = new List<Vector3>(); var t = new List<int>();
-            if (roads != null)
-                foreach (var r in roads)
-                {
-                    float y = RoadY + r.kind * 0.002f;   // les grandes routes passent au-dessus (évite le scintillement)
-                    float half = r.width * 0.5f;
-                    for (int i = 0; i + 3 < r.pts.Length; i += 2)
-                    {
-                        Vector2 p0 = new Vector2(r.pts[i], r.pts[i + 1]);
-                        Vector2 p1 = new Vector2(r.pts[i + 2], r.pts[i + 3]);
-                        Vector2 d = p1 - p0;
-                        float len = d.magnitude;
-                        if (len < 0.01f) continue;
-                        Vector2 n = new Vector2(-d.y, d.x) / len * half;   // côté gauche
-                        int b = v.Count;
-                        v.Add(new Vector3(p0.x + n.x, y, p0.y + n.y));   // a
-                        v.Add(new Vector3(p1.x + n.x, y, p1.y + n.y));   // d
-                        v.Add(new Vector3(p1.x - n.x, y, p1.y - n.y));   // c
-                        v.Add(new Vector3(p0.x - n.x, y, p0.y - n.y));   // b
-                        t.Add(b); t.Add(b + 1); t.Add(b + 2);
-                        t.Add(b); t.Add(b + 2); t.Add(b + 3);
-                    }
-                }
-            return Finish("Routes", v, t);
+            long cx = Mathf.FloorToInt(x / cellSize) + 32768;
+            long cz = Mathf.FloorToInt(z / cellSize) + 32768;
+            return (cx << 16) | cz;
         }
 
-        public static Mesh BuildBuildings(ZoneBuilding[] buildings)
+        public static Mesh BuildRoads(List<RoadSegment> segments)
+        {
+            var v = new List<Vector3>(); var t = new List<int>();
+            if (segments != null)
+                foreach (var seg in segments)
+                {
+                    float y = RoadY + seg.kind * 0.002f;   // les grandes routes passent au-dessus (évite le scintillement)
+                    float half = seg.width * 0.5f;
+                    Vector2 d = seg.b - seg.a;
+                    float len = d.magnitude;
+                    if (len < 0.01f) continue;
+                    Vector2 n = new Vector2(-d.y, d.x) / len * half;   // côté gauche
+                    int b = v.Count;
+                    v.Add(new Vector3(seg.a.x + n.x, y, seg.a.y + n.y));   // a
+                    v.Add(new Vector3(seg.b.x + n.x, y, seg.b.y + n.y));   // d
+                    v.Add(new Vector3(seg.b.x - n.x, y, seg.b.y - n.y));   // c
+                    v.Add(new Vector3(seg.a.x - n.x, y, seg.a.y - n.y));   // b
+                    t.Add(b); t.Add(b + 1); t.Add(b + 2);
+                    t.Add(b); t.Add(b + 2); t.Add(b + 3);
+                }
+            return v.Count == 0 ? null : Finish("Routes", v, t);
+        }
+
+        public static Mesh BuildBuildings(List<ZoneBuilding> buildings)
         {
             var v = new List<Vector3>(); var t = new List<int>();
             if (buildings != null)
                 foreach (var bd in buildings) AddBuilding(bd, v, t);
-            return Finish("Immeubles", v, t);
+            return v.Count == 0 ? null : Finish("Immeubles", v, t);
         }
 
         private static void AddBuilding(ZoneBuilding bd, List<Vector3> v, List<int> t)

@@ -20,6 +20,12 @@ namespace TaxiKin.UI
         [SerializeField] private Slider scaleSlider, sensitivitySlider;
         [SerializeField] private Text scaleValue, sensitivityValue, invertLabel;
 
+        [Header("Graphismes, son, interface")]
+        [SerializeField] private Image[] qualityButtons;         // Auto, Basse, Moyenne, Haute
+        [SerializeField] private Image[] shadowButtons;          // Selon la qualité, Aucune, Basses, Hautes
+        [SerializeField] private Slider soundSlider, musicSlider, uiScaleSlider;
+        [SerializeField] private Text soundValue, musicValue, uiScaleValue, vibrationLabel, deviceInfo;
+
         [Header("Confirmation de réinitialisation")]
         [SerializeField] private GameObject confirmPanel;
         [SerializeField] private Button confirmButton;
@@ -61,6 +67,33 @@ namespace TaxiKin.UI
         public void OnSensitivity(float value) { ControlSettings.WheelSensitivity = value; sensitivityValue.text = $"{ControlSettings.WheelSensitivity:0.00}x"; }
         public void OnInvert() { ControlSettings.InvertSteering = !ControlSettings.InvertSteering; RefreshAll(); }
 
+        // ---------- Graphismes ----------
+
+        /// <summary>0 = automatique (détection + baisse auto si besoin), 1 = basse, 2 = moyenne, 3 = haute.</summary>
+        public void OnQuality(int index)
+        {
+            if (index <= 0) { GameSettings.QualityAuto = true; GameSettings.Quality = -1; }
+            else { GameSettings.QualityAuto = false; GameSettings.Quality = index - 1; }
+            RefreshAll();
+        }
+
+        /// <summary>0 = selon la qualité, 1 = aucune, 2 = basses, 3 = hautes.</summary>
+        public void OnShadows(int index) { GameSettings.Shadows = index - 1; RefreshAll(); }
+
+        // ---------- Son, vibrations, interface ----------
+
+        public void OnSound(float v) { GameSettings.SoundVolume = v; soundValue.text = Percent(GameSettings.SoundVolume); }
+        public void OnMusic(float v) { GameSettings.MusicVolume = v; musicValue.text = Percent(GameSettings.MusicVolume); }
+        public void OnVibration() { GameSettings.Vibration = !GameSettings.Vibration; RefreshAll(); }
+
+        public void OnUiScale(float v)
+        {
+            GameSettings.UiScale = v;
+            uiScaleValue.text = $"{UiScaleController.EffectiveScale():0.00}x";
+        }
+
+        private static string Percent(float v) => $"{Mathf.RoundToInt(v * 100f)} %";
+
         // ---------- Langue ----------
 
         public void OnLanguage(int language) { Loc.Current = (Language)Mathf.Clamp(language, 0, 1); RefreshAll(); }
@@ -85,6 +118,7 @@ namespace TaxiKin.UI
         private void AfterReset()
         {
             ControlSettings.NotifyChanged();
+            GameSettings.NotifyChanged();     // son, qualité (re-détectée), taille de l'interface
             Loc.NotifyChanged();
             Close();
         }
@@ -111,6 +145,23 @@ namespace TaxiKin.UI
             scaleValue.text = $"{ControlSettings.ButtonScale:0.00}x";
             sensitivityValue.text = $"{ControlSettings.WheelSensitivity:0.00}x";
             invertLabel.text = "Inversion des commandes : " + (ControlSettings.InvertSteering ? "Oui" : "Non");
+
+            // Qualité : 0 = Auto (qualité non choisie à la main), sinon 1 à 3
+            int qualityIndex = GameSettings.QualityAuto ? 0 : GameSettings.Quality + 1;
+            for (int i = 0; i < qualityButtons.Length; i++) qualityButtons[i].color = qualityIndex == i ? Selected : Normal;
+            int shadowIndex = GameSettings.Shadows + 1;
+            for (int i = 0; i < shadowButtons.Length; i++) shadowButtons[i].color = shadowIndex == i ? Selected : Normal;
+
+            soundSlider.SetValueWithoutNotify(GameSettings.SoundVolume);
+            musicSlider.SetValueWithoutNotify(GameSettings.MusicVolume);
+            uiScaleSlider.SetValueWithoutNotify(UiScaleController.EffectiveScale());
+            soundValue.text = Percent(GameSettings.SoundVolume);
+            musicValue.text = Percent(GameSettings.MusicVolume);
+            uiScaleValue.text = $"{UiScaleController.EffectiveScale():0.00}x";
+            vibrationLabel.text = "Vibrations : " + (GameSettings.Vibration ? "Oui" : "Non");
+
+            var q = QualityManager.Instance;
+            deviceInfo.text = q == null ? "" : $"Qualité actuelle : {QualityManager.Name(q.Level)}  ·  {q.CurrentFps} images/s\n{q.Describe()}";
         }
     }
 }

@@ -103,3 +103,13 @@ Le Pack complet = tous les véhicules + sans publicités + autocollant exclusif 
 **Migration** : `PlayerPrefs` n'est plus utilisé (réglages et langue sont dans la sauvegarde). Aucune migration : le jeu n'a pas encore été publié.
 
 **Limites** : les réglages d'Étape 7 (qualité graphique, son, musique, vibrations, ombres) ne sont pas encore dans `SettingsData` ; pas de sauvegarde dans le cloud ; pas de chiffrement (le fichier est modifiable par un joueur sur appareil rooté : sans importance tant qu'il n'y a pas de classement en ligne).
+
+## Étape 7 — optimisation Android
+Voir `Docs/PERFORMANCE.md` (budgets, ce qui est en place, procédure de test sur téléphone d'entrée de gamme).
+- **Rien n'a été mesuré sur appareil** ; les objectifs 30/60 FPS, < 300 Mo, mémoire et batterie restent à vérifier.
+- Réglages ajoutés : qualité (Auto/Basse/Moyenne/Haute), ombres (selon qualité/aucune/basses/hautes), son, musique, vibrations,
+  taille de l'interface, en plus des commandes et de la langue.
+- La qualité par défaut est choisie selon la RAM et les cœurs. En mode « Auto », elle peut baisser toute seule (jamais monter)
+  si la cadence reste sous 80 % de la cible pendant 8 s ; le niveau atteint est mémorisé. Si le joueur choisit Basse, Moyenne
+  ou Haute à la main, la qualité reste fixe (aucune baisse automatique).
+- Aucun fichier audio fourni : les clips (klaxon, musique) restent à ajouter.

@@ -52,6 +52,10 @@ namespace TaxiKin.EditorTools
             managers.AddComponent<AdManager>();
             managers.AddComponent<PurchaseManager>();
             managers.AddComponent<ShopManager>();
+            managers.AddComponent<QualityManager>();
+            managers.AddComponent<PerformanceMonitor>();
+            managers.AddComponent<TaxiKin.Audio.AudioManager>();
+            managers.AddComponent<TaxiKin.Audio.HapticsManager>();
             managers.AddComponent<UIManager>();
             managers.AddComponent<VehicleColorManager>();
             managers.AddComponent<GarageManager>();
@@ -202,6 +206,27 @@ namespace TaxiKin.EditorTools
                 Assign(rig, "player", pc);
             }
 
+            // --- Qualité graphique, son, vibrations ---
+            var sunLight = Object.FindObjectOfType<Light>();
+            var quality = managers.GetComponent<QualityManager>();
+            Assign(quality, "sun", sunLight);
+            if (cam != null) Assign(quality, "mainCamera", cam);
+            Assign(quality, "traffic", managers.GetComponent<TrafficManager>());
+
+            var audio = managers.GetComponent<TaxiKin.Audio.AudioManager>();
+            var musicGo = new GameObject("Musique", typeof(AudioSource));
+            var sfxGo = new GameObject("Effets", typeof(AudioSource));
+            musicGo.transform.SetParent(managers.transform, false);
+            sfxGo.transform.SetParent(managers.transform, false);
+            musicGo.GetComponent<AudioSource>().playOnAwake = false;
+            sfxGo.GetComponent<AudioSource>().playOnAwake = false;
+            Assign(audio, "musicSource", musicGo.GetComponent<AudioSource>());
+            Assign(audio, "sfxSource", sfxGo.GetComponent<AudioSource>());
+            Assign(audio, "player", pc);
+            var haptics = managers.GetComponent<TaxiKin.Audio.HapticsManager>();
+            Assign(haptics, "player", pc);
+            Assign(haptics, "missions", managers.GetComponent<MissionManager>());
+
             // --- Minimap (caméra du dessus, texture 256x256) ---
             var miniGo = new GameObject("MinimapCamera");
             var miniCam = miniGo.AddComponent<Camera>();
@@ -215,9 +240,9 @@ namespace TaxiKin.EditorTools
             // --- Interface tactile (Canvas, volant, pédales, HUD) ---
             TaxiKinUIBuilder.Build(managers, pc, managers.GetComponent<PassengerManager>(),
                 managers.GetComponent<MissionManager>(), rig, miniCam, dest.transform);
-            TaxiKinCustomizationUIBuilder.Build(GameObject.Find("Canvas").transform, managers, pc, stage);
-            TaxiKinGarageShopUIBuilder.Build(GameObject.Find("Canvas").transform, managers, pc, vStage);
-            TaxiKinSettingsUIBuilder.Build(GameObject.Find("Canvas").transform);
+            TaxiKinCustomizationUIBuilder.Build(GameObject.Find("Canvas/ZoneSure").transform, managers, pc, stage);
+            TaxiKinGarageShopUIBuilder.Build(GameObject.Find("Canvas/ZoneSure").transform, managers, pc, vStage);
+            TaxiKinSettingsUIBuilder.Build(GameObject.Find("Canvas/ZoneSure").transform, managers);
 
             // --- Sauvegarde de la scène ---
             const string path = "Assets/Scenes/Main.unity";
@@ -235,10 +260,15 @@ namespace TaxiKin.EditorTools
             if (mat != null) return mat;
 
             // URP si le projet l'utilise, sinon Standard
-            Shader shader = GraphicsSettings.currentRenderPipeline != null
-                ? Shader.Find("Universal Render Pipeline/Lit")
-                : Shader.Find("Standard");
-            mat = new Material(shader) { color = color };
+            // Sur Android modeste : « Simple Lit » (URP) est nettement moins coûteux que « Lit » ; sinon Standard
+            Shader shader = null;
+            if (GraphicsSettings.currentRenderPipeline != null)
+            {
+                shader = Shader.Find("Universal Render Pipeline/Simple Lit");
+                if (shader == null) shader = Shader.Find("Universal Render Pipeline/Lit");
+            }
+            if (shader == null) shader = Shader.Find("Standard");
+            mat = new Material(shader) { color = color, enableInstancing = true };
             AssetDatabase.CreateAsset(mat, path);
             return mat;
         }

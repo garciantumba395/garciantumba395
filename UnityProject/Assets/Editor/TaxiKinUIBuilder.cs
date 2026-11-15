@@ -39,7 +39,14 @@ namespace TaxiKin.EditorTools
             scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
             scaler.matchWidthOrHeight = 0.5f;
 
-            var root = canvasGo.transform;
+            // Zone sûre (encoche, barre de navigation) : TOUT le contenu de l'interface est dedans
+            var safeGo = new GameObject("ZoneSure", typeof(RectTransform), typeof(SafeAreaFitter));
+            safeGo.transform.SetParent(canvasGo.transform, false);
+            var safeRt = (RectTransform)safeGo.transform;
+            safeRt.anchorMin = Vector2.zero; safeRt.anchorMax = Vector2.one; safeRt.offsetMin = safeRt.offsetMax = Vector2.zero;
+            canvasGo.AddComponent<UiScaleController>();   // interface lisible sur petits écrans
+
+            var root = safeGo.transform;
 
             // Composants logiques (sur le Canvas)
             var layout = canvasGo.AddComponent<ControlsLayout>();

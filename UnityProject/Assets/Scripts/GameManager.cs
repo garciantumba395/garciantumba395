@@ -16,10 +16,6 @@ namespace TaxiKin.Core
     {
         public static GameManager Instance { get; private set; }
 
-        [Header("Performance mobile")]
-        [Tooltip("30 pour économiser la batterie, 60 si l'appareil le permet.")]
-        [SerializeField] private int targetFrameRate = 60;
-
         public GameState State { get; private set; } = GameState.Boot;
 
         /// <summary>Déclenché à chaque changement d'état.</summary>
@@ -40,15 +36,19 @@ namespace TaxiKin.Core
         {
             if (State == newState) return;
             State = newState;
+            // L'écran ne reste allumé qu'en conduite (économie de batterie dans les menus)
+            // (MainMenu inclus tant que la conduite libre sert de menu : à retirer quand un vrai menu existera)
+            bool awake = newState == GameState.Playing || newState == GameState.MainMenu;
+            Screen.sleepTimeout = awake ? SleepTimeout.NeverSleep : SleepTimeout.SystemSetting;
             Time.timeScale = (newState == GameState.Paused || newState == GameState.MissionEnd || newState == GameState.CharacterCreation) ? 0f : 1f;
             OnStateChanged?.Invoke(newState);
         }
 
         private void ApplyMobileSettings()
         {
-            QualitySettings.vSyncCount = 0;              // On pilote le FPS nous-mêmes
-            Application.targetFrameRate = targetFrameRate;
-            Screen.sleepTimeout = SleepTimeout.NeverSleep; // L'écran reste allumé en conduite
+            // La cadence (30/60 FPS) est pilotée par QualityManager
+            QualitySettings.vSyncCount = 0;
+            Screen.sleepTimeout = SleepTimeout.SystemSetting;
         }
     }
 }
