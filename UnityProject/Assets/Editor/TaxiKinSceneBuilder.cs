@@ -13,6 +13,7 @@ using TaxiKin.Weather;
 using TaxiKin.SaveSystem;
 using TaxiKin.Ads;
 using TaxiKin.Purchases;
+using TaxiKin.Map;
 
 namespace TaxiKin.EditorTools
 {
@@ -84,10 +85,17 @@ namespace TaxiKin.EditorTools
             Assign(customizer, "bodyRenderer", taxi.GetComponent<Renderer>());
             Assign(customizer, "roofRenderer", roof.GetComponent<Renderer>());
 
-            // --- Joueur : contrôle le taxi par défaut ---
+            // --- Joueur : commence avec le Wewa, peut passer au taxi et au bus ---
             var player = new GameObject("Player");
             var pc = player.AddComponent<PlayerController>();
-            Assign(pc, "vehicle", taxi.GetComponent<TaxiController>());
+            Assign(pc, "vehicle", wewa.GetComponent<WewaController>());
+            var list = new VehicleController[]
+                { wewa.GetComponent<WewaController>(), taxi.GetComponent<TaxiController>(), bus.GetComponent<Bus207Controller>() };
+            var so = new SerializedObject(pc);
+            var arr = so.FindProperty("availableVehicles");
+            arr.arraySize = list.Length;
+            for (int i = 0; i < list.Length; i++) arr.GetArrayElementAtIndex(i).objectReferenceValue = list[i];
+            so.ApplyModifiedPropertiesWithoutUndo();
 
             // --- Avatar de test (capsule) ---
             var avatar = GameObject.CreatePrimitive(PrimitiveType.Capsule);
@@ -98,13 +106,37 @@ namespace TaxiKin.EditorTools
             Assign(ac, "skinRenderer", avatar.GetComponent<Renderer>());
             Assign(managers.GetComponent<CharacterCreatorManager>(), "previewAvatar", ac);
 
-            // --- Caméra ---
+            // --- Destination de test (cylindre) pour la flèche de direction et la distance ---
+            var dest = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            dest.name = "Destination";
+            dest.transform.position = new Vector3(0f, 1f, 80f);
+            dest.transform.localScale = new Vector3(3f, 1f, 3f);
+            Object.DestroyImmediate(dest.GetComponent<Collider>());
+            dest.GetComponent<Renderer>().sharedMaterial = wewaMat;
+
+            // --- Caméra principale + 4 points de vue ---
             var cam = Camera.main;
+            CameraRig rig = null;
             if (cam != null)
             {
-                cam.transform.position = new Vector3(0f, 6f, -14f);
-                cam.transform.LookAt(new Vector3(0f, 1f, 0f));
+                rig = cam.gameObject.AddComponent<CameraRig>();
+                Assign(rig, "cam", cam);
+                Assign(rig, "player", pc);
             }
+
+            // --- Minimap (caméra du dessus, texture 256x256) ---
+            var miniGo = new GameObject("MinimapCamera");
+            var miniCam = miniGo.AddComponent<Camera>();
+            miniCam.orthographic = true;
+            miniCam.orthographicSize = 40f;
+            miniCam.clearFlags = CameraClearFlags.SolidColor;
+            miniCam.backgroundColor = new Color(0.1f, 0.12f, 0.1f);
+            var mini = miniGo.AddComponent<MinimapCamera>();
+            Assign(mini, "player", pc);
+
+            // --- Interface tactile (Canvas, volant, pédales, HUD) ---
+            TaxiKinUIBuilder.Build(managers, pc, managers.GetComponent<PassengerManager>(),
+                managers.GetComponent<MissionManager>(), rig, miniCam, dest.transform);
 
             // --- Sauvegarde de la scène ---
             const string path = "Assets/Scenes/Main.unity";
@@ -141,7 +173,7 @@ namespace TaxiKin.EditorTools
         }
 
         /// <summary>Renseigne un champ [SerializeField] privé par son nom.</summary>
-        private static void Assign(Object target, string field, Object value)
+        internal static void Assign(Object target, string field, Object value)
         {
             var so = new SerializedObject(target);
             var prop = so.FindProperty(field);

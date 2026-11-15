@@ -6,6 +6,9 @@ namespace TaxiKin.Vehicles
     /// <summary>Les trois véhicules jouables.</summary>
     public enum VehicleType { Wewa, Taxi, Bus207 }
 
+    /// <summary>Boîte de vitesses : D = marche avant, N = neutre, R = marche arrière.</summary>
+    public enum GearPosition { D, N, R }
+
     /// <summary>Caractéristiques d'un véhicule (modifiables dans l'Inspector).</summary>
     [Serializable]
     public class VehicleStats
@@ -21,9 +24,9 @@ namespace TaxiKin.Vehicles
     }
 
     /// <summary>
-    /// Base commune des véhicules : conduite arcade simple basée sur un Rigidbody.
-    /// Les sous-classes ne définissent que leurs stats par défaut.
-    /// Les entrées (direction, gaz, frein…) viennent de PlayerController (Étape 2 : commandes tactiles).
+    /// Base commune des véhicules : conduite arcade pilotée par la vitesse (pas par la friction),
+    /// ce qui rend le comportement identique sur tous les téléphones.
+    /// Les entrées viennent d'InputManager via PlayerController.
     /// </summary>
     [RequireComponent(typeof(Rigidbody))]
     public abstract class VehicleController : MonoBehaviour
@@ -39,7 +42,16 @@ namespace TaxiKin.Vehicles
         public float Throttle { get; private set; }   // 0 .. 1
         public float Brake { get; private set; }      // 0 .. 1
         public bool HandBrake { get; private set; }
-        public bool Reverse { get; set; }             // Marche arrière (sera piloté par la boîte D/N/R)
+        public GearPosition Gear { get; set; } = GearPosition.D;
+        public bool Reverse => Gear == GearPosition.R;
+
+        // --- Équipements ---
+        public bool HeadlightsOn { get; private set; }
+        public bool WipersOn { get; private set; }
+        public event Action OnHorn;                   // Le son sera branché à l'Audio
+        public void Honk() => OnHorn?.Invoke();
+        public void ToggleHeadlights() => HeadlightsOn = !HeadlightsOn;
+        public void ToggleWipers() => WipersOn = !WipersOn;
 
         // --- État ---
         public float Fuel { get; private set; }
@@ -49,12 +61,48 @@ namespace TaxiKin.Vehicles
 
         private Rigidbody rb;
 
+        // Compatibilité Unity 2022 (velocity) / Unity 6 (linearVelocity)
+        private Vector3 Velocity
+        {
+            get
+            {
+#if UNITY_6000_0_OR_NEWER
+                return rb.linearVelocity;
+#else
+                return rb.velocity;
+#endif
+            }
+            set
+            {
+#if UNITY_6000_0_OR_NEWER
+                rb.linearVelocity = value;
+#else
+                rb.velocity = value;
+#endif
+            }
+        }
+
         protected virtual void Awake()
         {
             rb = GetComponent<Rigidbody>();
             if (!statsInitialized) { stats = CreateDefaultStats(); statsInitialized = true; }
-            rb.centerOfMass = new Vector3(0f, -0.4f, 0f); // Plus stable
+            rb.centerOfMass = new Vector3(0f, -0.4f, 0f);
+            rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
             Fuel = stats.fuelCapacity;
+            ApplyFrictionlessMaterial();
+        }
+
+        /// <summary>Sans friction sur le véhicule, c'est notre code qui décide de l'adhérence.</summary>
+        private void ApplyFrictionlessMaterial()
+        {
+#if UNITY_6000_0_OR_NEWER
+            var m = new PhysicsMaterial("VehicleNoFriction")
+            { dynamicFriction = 0f, staticFriction = 0f, frictionCombine = PhysicsMaterialCombine.Minimum };
+#else
+            var m = new PhysicMaterial("VehicleNoFriction")
+            { dynamicFriction = 0f, staticFriction = 0f, frictionCombine = PhysicMaterialCombine.Minimum };
+#endif
+            foreach (var c in GetComponentsInChildren<Collider>()) c.sharedMaterial = m;
         }
 
         /// <summary>Reçoit les entrées du joueur (appelé par PlayerController).</summary>
@@ -68,38 +116,52 @@ namespace TaxiKin.Vehicles
 
         private void FixedUpdate()
         {
-            Vector3 velocity = rb.GetPointVelocity(rb.worldCenterOfMass);
-            float forwardSpeed = Vector3.Dot(velocity, transform.forward);
-            SpeedKmh = Mathf.Abs(forwardSpeed) * 3.6f;
+            float dt = Time.fixedDeltaTime;
+            Vector3 vel = Velocity;
+            Vector3 fwd = transform.forward;
+            Vector3 right = transform.right;
+            float vertical = vel.y;
 
-            float dir = Reverse ? -1f : 1f;
+            float forward = Vector3.Dot(vel, fwd);
+            float lateral = Vector3.Dot(vel, right);
+            float maxMs = stats.maxSpeedKmh / 3.6f;
+            bool driving = Gear != GearPosition.N && Throttle > 0f && Fuel > 0f;
 
-            // Accélération (sans carburant : plus de poussée)
-            if (Throttle > 0f && Fuel > 0f && SpeedKmh < stats.maxSpeedKmh)
-                rb.AddForce(transform.forward * (dir * Throttle * stats.acceleration), ForceMode.Acceleration);
+            if (driving)
+            {
+                float dir = Reverse ? -1f : 1f;
+                forward += dir * Throttle * stats.acceleration * dt;
+            }
+            else
+            {
+                forward = Mathf.MoveTowards(forward, 0f, 1.5f * dt);   // Roue libre
+            }
 
-            // Freinage : force opposée à la vitesse
             float brakeAmount = HandBrake ? 1f : Brake;
-            if (brakeAmount > 0f && velocity.sqrMagnitude > 0.01f)
-                rb.AddForce(-velocity.normalized * (brakeAmount * stats.brakeForce), ForceMode.Acceleration);
+            if (brakeAmount > 0f)
+                forward = Mathf.MoveTowards(forward, 0f, brakeAmount * stats.brakeForce * dt);
 
-            // Direction : proportionnelle à la vitesse (pas de rotation à l'arrêt)
-            float speedFactor = Mathf.Clamp01(SpeedKmh / 15f);
-            float yaw = Steer * stats.turnRate * speedFactor * Mathf.Sign(forwardSpeed == 0f ? 1f : forwardSpeed) * Time.fixedDeltaTime;
+            forward = Mathf.Clamp(forward, -maxMs * 0.4f, maxMs);      // Marche arrière plus lente
+
+            // Adhérence latérale : le frein à main fait déraper
+            float grip = HandBrake ? 6f : 30f;
+            lateral = Mathf.MoveTowards(lateral, 0f, grip * dt);
+
+            Vector3 newVel = fwd * forward + right * lateral;
+            newVel.y = vertical;
+            Velocity = newVel;
+            SpeedKmh = Mathf.Abs(forward) * 3.6f;
+
+            // Direction : proportionnelle à la vitesse, inversée en marche arrière
+            float speedFactor = Mathf.Clamp01(Mathf.Abs(forward) / 4f);
+            float yaw = Steer * stats.turnRate * speedFactor * Mathf.Sign(forward == 0f ? 1f : forward) * dt;
             rb.MoveRotation(rb.rotation * Quaternion.Euler(0f, yaw, 0f));
 
-            ConsumeFuel(Mathf.Abs(forwardSpeed) * Time.fixedDeltaTime);
-        }
-
-        private void ConsumeFuel(float meters)
-        {
-            if (Throttle <= 0f) return;
-            Fuel = Mathf.Max(0f, Fuel - (meters / 1000f) * stats.fuelPerKm);
+            if (driving) Fuel = Mathf.Max(0f, Fuel - (Mathf.Abs(forward) * dt / 1000f) * stats.fuelPerKm);
         }
 
         private void OnCollisionEnter(Collision collision)
         {
-            // Les dégâts dépendent de la force de l'impact et de la fragilité du véhicule
             float impact = collision.relativeVelocity.magnitude;
             if (impact < 3f) return;
             Damage = Mathf.Clamp(Damage + impact * stats.fragility, 0f, 100f);
