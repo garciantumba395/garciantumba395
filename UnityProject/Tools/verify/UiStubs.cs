@@ -47,3 +47,11 @@ namespace UnityEngine.EventSystems
     public class EventSystem : MonoBehaviour { }
     public class StandaloneInputModule : MonoBehaviour { }
 }
+namespace UnityEngine.UI
+{
+    public class AspectRatioFitter : MonoBehaviour
+    {
+        public enum AspectMode { None, WidthControlsHeight, HeightControlsWidth, FitInParent, EnvelopeParent }
+        public AspectMode aspectMode; public float aspectRatio;
+    }
+}

@@ -54,6 +54,7 @@ namespace UnityEditor
         public static void SetUseDefaultGraphicsAPIs(BuildTarget t, bool b) { }
         public static void SetGraphicsAPIs(BuildTarget t, GraphicsDeviceType[] a) { }
         public static class WebGL { public static WebGLCompressionFormat compressionFormat; public static bool decompressionFallback; }
+        public static void SetIcons(UnityEditor.Build.NamedBuildTarget t, Texture2D[] icons, IconKind k) { }
         public static string productName, companyName; public static void SetApplicationIdentifier(BuildTargetGroup g, string id) { }
         public static ColorSpace colorSpace; public static UIOrientation defaultInterfaceOrientation;
         public static void SetStackTraceLogType(LogType l, StackTraceLogType s) { }
@@ -100,4 +101,13 @@ namespace UnityEditor
 {
     public enum WebGLCompressionFormat { Disabled, Gzip, Brotli }
     public static partial class PlayerSettingsWebGLHolder { }
+}
+namespace UnityEditor
+{
+    public enum IconKind { Any, Application, Settings, Notification, Spotlight, Store }
+    public static partial class PlayerSettingsIconHolder { }
+}
+namespace UnityEditor.Build
+{
+    public struct NamedBuildTarget { public static NamedBuildTarget Unknown; }
 }

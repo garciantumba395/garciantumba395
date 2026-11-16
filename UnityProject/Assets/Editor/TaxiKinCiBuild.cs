@@ -17,6 +17,7 @@ namespace TaxiKin.EditorTools
         public static void BuildWebGL()
         {
             TaxiKinSceneBuilder.BuildMainScene();
+            TaxiKinBranding.ApplyIcon();
             PlayerSettings.productName = "Taxi Kin";
             PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Gzip;
             PlayerSettings.WebGL.decompressionFallback = true;   // fonctionne même si l'hébergeur ne sert pas l'en-tête de compression
@@ -42,6 +43,7 @@ namespace TaxiKin.EditorTools
         public static void BuildAndroid()
         {
             TaxiKinSceneBuilder.BuildMainScene();
+            TaxiKinBranding.ApplyIcon();
             TaxiKinAndroidBuildSetup.Apply();
 
             // APK (et non AAB) pour l'essai : installable directement sur un téléphone
