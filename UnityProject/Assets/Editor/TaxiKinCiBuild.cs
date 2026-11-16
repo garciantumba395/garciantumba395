@@ -13,6 +13,7 @@ namespace TaxiKin.EditorTools
     public static class TaxiKinCiBuild
     {
         /// <summary>Version web (WebGL) : qualité réduite, compression Gzip, sans achats ni publicités.</summary>
+        [MenuItem("Taxi Kin/Construire la version web (WebGL)")]
         public static void BuildWebGL()
         {
             TaxiKinSceneBuilder.BuildMainScene();
@@ -37,6 +38,7 @@ namespace TaxiKin.EditorTools
             }
         }
 
+        [MenuItem("Taxi Kin/Construire l'APK de test (tout en un)")]
         public static void BuildAndroid()
         {
             TaxiKinSceneBuilder.BuildMainScene();
