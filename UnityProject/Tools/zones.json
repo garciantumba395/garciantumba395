@@ -1,0 +1,80 @@
+{
+  "_note": "Centres géocodés via Nominatim (© contributeurs OpenStreetMap, ODbL). À valider visuellement sur la carte avant de figer les zones.",
+  "origin": {
+    "name": "Gare centrale",
+    "lat": -4.301133,
+    "lon": 15.3179376
+  },
+  "zones": [
+    {
+      "id": "gare_centrale",
+      "name": "Gare centrale",
+      "lat": -4.301133,
+      "lon": 15.3179376,
+      "radius": 1000
+    },
+    {
+      "id": "matonge",
+      "name": "Matonge",
+      "lat": -4.3402188,
+      "lon": 15.3159944,
+      "radius": 1000
+    },
+    {
+      "id": "kintambo",
+      "name": "Kintambo",
+      "lat": -4.3393852,
+      "lon": 15.2661853,
+      "radius": 1000
+    },
+    {
+      "id": "limete",
+      "name": "Limete",
+      "lat": -4.3549072,
+      "lon": 15.334981,
+      "radius": 1000
+    },
+    {
+      "id": "ndjili",
+      "name": "Aéroport de N'djili",
+      "lat": -4.3840685,
+      "lon": 15.4508775,
+      "radius": 1200,
+      "extra_pois": [
+        {
+          "kind": "aeroport",
+          "name": "Aéroport de N'djili",
+          "snap_to": "station",
+          "_note": "Posé sur la gare « Ndjili Aéroport » (sur la grande artère). Le point de l'aérodrome donné par Nominatim tombe dans un quartier sans route ; à vérifier visuellement."
+        }
+      ]
+    }
+  ],
+  "_world": "Disposition compressée : les zones gardent leur direction réelle mais sont reliées par des corridors courts (longueur en mètres).",
+  "links": [
+    {
+      "a": "gare_centrale",
+      "b": "matonge",
+      "length": 900
+    },
+    {
+      "a": "gare_centrale",
+      "b": "kintambo",
+      "length": 900
+    },
+    {
+      "a": "matonge",
+      "b": "limete",
+      "length": 900
+    },
+    {
+      "a": "limete",
+      "b": "ndjili",
+      "length": 1200
+    }
+  ],
+  "corridor": {
+    "roadWidth": 16,
+    "stripHalfWidth": 35
+  }
+}

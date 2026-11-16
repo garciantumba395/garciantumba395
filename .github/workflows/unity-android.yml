@@ -1,0 +1,40 @@
+# Taxi Kin — construit l'APK de test Android dans le cloud (GameCI). Nécessite les secrets
+# UNITY_LICENSE, UNITY_EMAIL, UNITY_PASSWORD (voir UnityProject/Docs/GUIDE_VERSION_ESSAI.md).
+name: Taxi Kin - APK Android
+on:
+  workflow_dispatch:
+  push:
+    paths: ['UnityProject/CI_BUILD_TRIGGER']
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Libérer de l'espace disque
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android/sdk/ndk "$AGENT_TOOLSDIRECTORY" || true
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: UnityProject/Library
+          key: Library-TaxiKin-Android-${{ hashFiles('UnityProject/Assets/**', 'UnityProject/Packages/**') }}
+          restore-keys: Library-TaxiKin-Android-
+      - uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          projectPath: UnityProject
+          unityVersion: 2022.3.50f1
+          targetPlatform: Android
+          androidExportType: androidPackage
+          buildMethod: TaxiKin.EditorTools.TaxiKinCiBuild.BuildAndroid
+          buildName: TaxiKin
+          allowDirtyBuild: true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TaxiKin-APK
+          path: build/Android/*.apk

@@ -1,0 +1,14 @@
+# Taxi Kin — vérification de compilation sans licence Unity (Roslyn + API Unity de référence).
+name: Taxi Kin - vérification compilation
+on:
+  workflow_dispatch:
+  push:
+    paths: ['UnityProject/**', '.github/workflows/unity-compile-check.yml']
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: '8.0.x' }
+      - run: bash UnityProject/Tools/verify/check_compile.sh

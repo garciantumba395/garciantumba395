@@ -1,0 +1,35 @@
+# Taxi Kin — version web (WebGL) jouable dans un navigateur. Même licence que l'APK (secrets UNITY_*).
+name: Taxi Kin - Version web
+on:
+  workflow_dispatch:
+  push:
+    paths: ['UnityProject/CI_WEBGL_TRIGGER']
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: UnityProject/Library
+          key: Library-TaxiKin-WebGL-${{ hashFiles('UnityProject/Assets/**', 'UnityProject/Packages/**') }}
+          restore-keys: Library-TaxiKin-WebGL-
+      - uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          projectPath: UnityProject
+          unityVersion: 2022.3.50f1
+          targetPlatform: WebGL
+          buildMethod: TaxiKin.EditorTools.TaxiKinCiBuild.BuildWebGL
+          buildName: TaxiKinWeb
+          allowDirtyBuild: true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TaxiKin-Web
+          path: build/WebGL

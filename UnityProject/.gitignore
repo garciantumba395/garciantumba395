@@ -1,0 +1,12 @@
+# Dossiers générés par Unity : ne jamais les versionner ni les modifier
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+/[Mm]emoryCaptures/
+*.csproj
+*.sln
+*.apk
+*.aab

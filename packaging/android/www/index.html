@@ -1,1 +1,60 @@
-<!doctype html><html lang="fr"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Solisend</title><body>Chargement…</body></html>
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b1f4a">
+<title>Solisend</title>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: system-ui, sans-serif; background: #f8fafc; color: #1e293b; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 16px; }
+  main { width: 100%; max-width: 26rem; }
+  img { display: block; margin: 0 auto 1rem; width: 180px; max-width: 60%; height: auto; }
+  .card { background: #fff; border-radius: .9rem; padding: 1.25rem; box-shadow: 0 1px 4px #0002; }
+  h1 { font-size: 1.15rem; margin: 0 0 .5rem; }
+  p { margin: .4rem 0; font-size: .92rem; line-height: 1.4; }
+  label { display: block; font-weight: 600; margin: .9rem 0 .3rem; font-size: .92rem; }
+  input { width: 100%; padding: .75rem; border: 1px solid #94a3b8; border-radius: .5rem; font-size: 1rem; }
+  button { width: 100%; margin-top: .9rem; padding: .8rem; border: 0; border-radius: .5rem; background: #0b1f4a; color: #fff; font-size: 1rem; font-weight: 600; }
+  button.sec { background: #fff; color: #0b1f4a; border: 1px solid #0b1f4a; }
+  .warn { background: #fff7ed; border: 1px solid #fdba74; color: #7c2d12; border-radius: .5rem; padding: .6rem .75rem; font-size: .85rem; }
+  .err { color: #b91c1c; font-size: .9rem; min-height: 1.2em; }
+  small { color: #475569; }
+</style>
+</head>
+<body>
+<main>
+  <img src="logo.png" alt="Solisend — Vos messages, plus proches de vos clients.">
+  <div class="card">
+    <h1>Adresse du serveur</h1>
+    <p>Saisissez l'adresse de votre installation Solisend.</p>
+    <p><small>Test : l'adresse affichée par l'application Windows « Solisend Recette » (menu Recette &gt; Connecter un téléphone), par exemple <b>http://192.168.1.20:8787</b>. Production : votre adresse en <b>https://</b>.</small></p>
+    <label for="url">Adresse</label>
+    <input id="url" type="url" inputmode="url" autocapitalize="off" autocomplete="off" spellcheck="false" placeholder="https://…">
+    <div id="err" class="err" role="alert"></div>
+    <div id="warn" class="warn" hidden>Connexion non chiffrée (http) : réservée aux tests sur votre propre réseau Wi-Fi, avec des données fictives.</div>
+    <button id="go" type="button">Ouvrir Solisend</button>
+    <button id="forget" class="sec" type="button" hidden>Changer d'adresse</button>
+  </div>
+</main>
+<script>
+  var KEY = 'solisend_server', input = document.getElementById('url'), err = document.getElementById('err'), warn = document.getElementById('warn'), go = document.getElementById('go');
+  function saved() { try { return localStorage.getItem(KEY) || ''; } catch (e) { return ''; } }
+  function normalise(v) {
+    v = (v || '').trim(); if (!v) return null;
+    if (!/^https?:\/\//i.test(v)) v = 'http://' + v;
+    try { var u = new URL(v); if (!/^https?:$/.test(u.protocol) || !u.hostname) return null; return u.origin; } catch (e) { return null; }
+  }
+  function refresh() { var n = normalise(input.value); warn.hidden = !(n && n.indexOf('http://') === 0); }
+  input.value = saved(); refresh(); input.addEventListener('input', refresh);
+  go.addEventListener('click', function () {
+    var n = normalise(input.value);
+    if (!n) { err.textContent = 'Adresse invalide. Exemple : http://192.168.1.20:8787'; return; }
+    err.textContent = '';
+    try { localStorage.setItem(KEY, n); } catch (e) {}
+    window.location.href = n + '/connexion';
+  });
+</script>
+</body>
+</html>
