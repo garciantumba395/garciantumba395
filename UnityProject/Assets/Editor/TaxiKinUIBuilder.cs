@@ -71,7 +71,7 @@ namespace TaxiKin.EditorTools
             var wheelGo = new GameObject("Volant", typeof(RectTransform), typeof(Image), typeof(VirtualSteeringWheel));
             wheelGo.transform.SetParent(root, false);
             var wheelRt = (RectTransform)wheelGo.transform;
-            Place(wheelRt, BL, new Vector2(270f, 270f), new Vector2(420f, 420f), new Vector2(0.5f, 0.5f));
+            Place(wheelRt, BL, new Vector2(290f, 290f), new Vector2(460f, 460f), new Vector2(0.5f, 0.5f));   // grand volant en bas à gauche (style Dr. Driving)
             var wheelImg = wheelGo.GetComponent<Image>();
             wheelImg.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Knob.psd");
             wheelImg.color = new Color(0.15f, 0.15f, 0.18f, 0.7f);
@@ -100,15 +100,16 @@ namespace TaxiKin.EditorTools
             On(wipers, actions.ToggleWipers);
 
             // ---------- DROITE : accélérateur, frein, vitesses, caméra, actions ----------
-            var gas = Button(root, "Accelerateur", "gas", null, BR, new Vector2(-40f, 40f), new Vector2(220f, 360f), Gas);
-            var brake = Button(root, "Frein", "brake", null, BR, new Vector2(-290f, 40f), new Vector2(200f, 200f), Red);
+            // Pédales façon « Dr. Driving » : deux grandes pédales verticales côte à côte au coin du pouce droit (accélérateur tout à droite)
+            var gas = Button(root, "Accelerateur", "gas", null, BR, new Vector2(-40f, 40f), new Vector2(230f, 380f), Gas);
+            var brake = Button(root, "Frein", "brake", null, BR, new Vector2(-290f, 40f), new Vector2(230f, 300f), Red);
             layout.Register(ControlId.Gas, (RectTransform)gas.transform);
             layout.Register(ControlId.Brake, (RectTransform)brake.transform);
 
-            var hornR = Button(root, "KlaxonD", "horn", null, BR, new Vector2(-510f, 40f), new Vector2(130f, 110f), Btn);
+            var hornR = Button(root, "KlaxonD", "horn", null, BR, new Vector2(-570f, 40f), new Vector2(130f, 110f), Btn);
             On(hornR, actions.Horn);
 
-            var cam = Button(root, "Camera", "camera", null, BR, new Vector2(-290f, 260f), new Vector2(150f, 110f), Btn);
+            var cam = Button(root, "Camera", "camera", null, BR, new Vector2(-290f, 360f), new Vector2(150f, 110f), Btn);
             layout.Register(ControlId.Camera, (RectTransform)cam.transform);
             On(cam, actions.NextCamera);
 

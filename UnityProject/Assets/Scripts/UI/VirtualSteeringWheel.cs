@@ -10,7 +10,7 @@ namespace TaxiKin.UI
     /// </summary>
     public class VirtualSteeringWheel : MonoBehaviour, IPointerDownHandler, IDragHandler, IPointerUpHandler
     {
-        [SerializeField] private float maxAngle = 135f;
+        [SerializeField] private float maxAngle = 180f;
         [SerializeField] private float returnSpeed = 360f;   // degrés/seconde
 
         private RectTransform rect;
