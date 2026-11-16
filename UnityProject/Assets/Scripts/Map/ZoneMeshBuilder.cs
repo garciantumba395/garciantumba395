@@ -6,7 +6,7 @@ namespace TaxiKin.Map
 {
     /// <summary>
     /// Fabrique deux maillages combinés par zone (routes, immeubles) : 2 draw calls au lieu de milliers,
-    /// idéal pour un Android modeste. Pas de textures ; les couleurs viennent des matériaux.
+    /// idéal pour un Android modeste. Les routes et les murs portent des coordonnées de texture (asphalte avec marquages, façades à fenêtres) ; la couleur du matériau sert de teinte.
     /// </summary>
     public static class ZoneMeshBuilder
     {
@@ -25,7 +25,7 @@ namespace TaxiKin.Map
 
         public static Mesh BuildRoads(List<RoadSegment> segments)
         {
-            var v = new List<Vector3>(); var t = new List<int>();
+            var v = new List<Vector3>(); var t = new List<int>(); var uv = new List<Vector2>();
             if (segments != null)
                 foreach (var seg in segments)
                 {
@@ -42,19 +42,23 @@ namespace TaxiKin.Map
                     v.Add(new Vector3(seg.a.x - n.x, y, seg.a.y - n.y));   // b
                     t.Add(b); t.Add(b + 1); t.Add(b + 2);
                     t.Add(b); t.Add(b + 2); t.Add(b + 3);
+                    // Texture d'asphalte : u en travers (lignes de rive aux bords), v le long de la route (motif de 12 m).
+                    // Les petites rues (< 6 m) n'affichent que la partie centrale : pas de lignes de rive.
+                    float u0 = seg.width >= 6f ? 0f : 0.1f, u1 = seg.width >= 6f ? 1f : 0.9f, vEnd = len / 12f;
+                    uv.Add(new Vector2(u0, 0f)); uv.Add(new Vector2(u0, vEnd)); uv.Add(new Vector2(u1, vEnd)); uv.Add(new Vector2(u1, 0f));
                 }
-            return v.Count == 0 ? null : Finish("Routes", v, t);
+            return v.Count == 0 ? null : Finish("Routes", v, t, uv);
         }
 
         public static Mesh BuildBuildings(List<ZoneBuilding> buildings)
         {
-            var v = new List<Vector3>(); var t = new List<int>();
+            var v = new List<Vector3>(); var t = new List<int>(); var uv = new List<Vector2>();
             if (buildings != null)
-                foreach (var bd in buildings) AddBuilding(bd, v, t);
-            return v.Count == 0 ? null : Finish("Immeubles", v, t);
+                foreach (var bd in buildings) AddBuilding(bd, v, t, uv);
+            return v.Count == 0 ? null : Finish("Immeubles", v, t, uv);
         }
 
-        private static void AddBuilding(ZoneBuilding bd, List<Vector3> v, List<int> t)
+        private static void AddBuilding(ZoneBuilding bd, List<Vector3> v, List<int> t, List<Vector2> uv)
         {
             int n = bd.pts.Length / 2;
             if (n < 3) return;
@@ -70,11 +74,14 @@ namespace TaxiKin.Map
                 v.Add(new Vector3(b.x, bd.h, b.y)); v.Add(new Vector3(b.x, 0f, b.y));
                 t.Add(k); t.Add(k + 1); t.Add(k + 2);
                 t.Add(k); t.Add(k + 2); t.Add(k + 3);
+                // Façade : un motif = 6 m de large x 3,2 m de haut (un étage, deux fenêtres)
+                float uEnd = (b - a).magnitude / 6f, vTop = bd.h / 3.2f;
+                uv.Add(new Vector2(0f, 0f)); uv.Add(new Vector2(0f, vTop)); uv.Add(new Vector2(uEnd, vTop)); uv.Add(new Vector2(uEnd, 0f));
             }
 
             // Toit : triangulation par « ear clipping », sommets propres pour un éclairage plat
             int roofBase = v.Count;
-            for (int i = 0; i < n; i++) v.Add(new Vector3(p[i].x, bd.h, p[i].y));
+            for (int i = 0; i < n; i++) { v.Add(new Vector3(p[i].x, bd.h, p[i].y)); uv.Add(new Vector2(0.5f, 0.03f)); }   // toit : bande pleine de la texture
             var tris = new List<int>();
             Triangulate(p, tris);
             for (int i = 0; i + 2 < tris.Count; i += 3)
@@ -124,10 +131,11 @@ namespace TaxiKin.Map
         private static float Cross(Vector2 p, Vector2 a, Vector2 b) =>
             (b.x - a.x) * (p.y - a.y) - (b.y - a.y) * (p.x - a.x);
 
-        private static Mesh Finish(string name, List<Vector3> v, List<int> t)
+        private static Mesh Finish(string name, List<Vector3> v, List<int> t, List<Vector2> uv)
         {
             var m = new Mesh { name = name, indexFormat = IndexFormat.UInt32 };
             m.SetVertices(v);
+            m.SetUVs(0, uv);
             m.SetTriangles(t, 0);
             m.RecalculateNormals();
             m.RecalculateBounds();

@@ -39,7 +39,7 @@ namespace TaxiKin.EditorTools
 
             // --- Matériaux de test (légers, partagés) ---
             Material yellow = GetMaterial("Mat_TaxiYellow", VehicleColorManager.DefaultTaxiColor);
-            Material road = GetMaterial("Mat_Road", new Color(0.2f, 0.2f, 0.22f));
+            Material road = ApplyTexture(GetMaterial("Mat_Road", Color.white), "road_asphalt", Color.white);
             Material ground = GetMaterial("Mat_Ground", new Color(0.35f, 0.45f, 0.3f));
             Material wewaMat = GetMaterial("Mat_Wewa", new Color(0.85f, 0.2f, 0.15f));
             Material busMat = GetMaterial("Mat_Bus207", new Color(0.2f, 0.4f, 0.8f));
@@ -232,7 +232,7 @@ namespace TaxiKin.EditorTools
             var worldMgr = managers.GetComponent<WorldManager>();
             Assign(worldMgr, "player", pc);
             Assign(worldMgr, "roadMaterial", road);
-            Assign(worldMgr, "buildingMaterial", GetMaterial("Mat_Building", new Color(0.78f, 0.7f, 0.58f)));
+            Assign(worldMgr, "buildingMaterial", ApplyTexture(GetMaterial("Mat_Building", Color.white), "facade_01", new Color(0.95f, 0.86f, 0.72f)));   // teinte sable chaud
             Assign(worldMgr, "groundMaterial", ground);
             Assign(worldMgr, "corridorGroundMaterial", GetMaterial("Mat_CorridorGround", new Color(0.42f, 0.5f, 0.34f)));
             Assign(worldMgr, "decorMaterial", GetMaterial("Mat_Barrier", new Color(0.9f, 0.9f, 0.88f)));
@@ -247,6 +247,11 @@ namespace TaxiKin.EditorTools
 
             // --- Qualité graphique, son, vibrations ---
             var sunLight = Object.FindObjectOfType<Light>();
+            if (sunLight != null)
+            {   // lumière chaude de fin de journée (ambiance des planches de concept)
+                sunLight.color = new Color(1f, 0.93f, 0.82f);
+                sunLight.transform.rotation = Quaternion.Euler(42f, -35f, 0f);
+            }
             var quality = managers.GetComponent<QualityManager>();
             Assign(quality, "sun", sunLight);
             if (cam != null) Assign(quality, "mainCamera", cam);
@@ -309,6 +314,18 @@ namespace TaxiKin.EditorTools
             EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(path, true) };
             AssetDatabase.SaveAssets();
             Debug.Log("[Taxi Kin] Scène Main créée : " + path);
+        }
+
+        /// <summary>Applique une texture de Assets/Textures/ (répétée) et une teinte à un matériau.</summary>
+        internal static Material ApplyTexture(Material mat, string textureName, Color tint)
+        {
+            var tex = AssetDatabase.LoadAssetAtPath<Texture2D>($"Assets/Textures/{textureName}.png");
+            if (tex == null) { Debug.LogWarning("[Taxi Kin] Texture introuvable : " + textureName); return mat; }
+            tex.wrapMode = TextureWrapMode.Repeat;
+            mat.mainTexture = tex;
+            mat.color = tint;
+            EditorUtility.SetDirty(mat);
+            return mat;
         }
 
         internal static Material GetMaterial(string name, Color color)
