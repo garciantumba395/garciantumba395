@@ -24,12 +24,12 @@ namespace TaxiKin.Traffic
         [SerializeField, Range(0, 40)] private int maxActiveVehicles = 12;
         [SerializeField] private float spawnMinRadius = 100f, spawnMaxRadius = 250f, despawnRadius = 300f;
 
-        private enum VehicleKindIndex { Car = 0, Moto = 1, Truck = 2 }
-        private static readonly string[] PrefabNames = { "Traffic/TrafficCar", "Traffic/TrafficMoto", "Traffic/TrafficTruck" };
-        // Part de chaque type et vitesse relative : voitures 60 %, motos 25 %, camions 15 %
-        private static readonly float[] Weights = { 0.60f, 0.25f, 0.15f };
-        private static readonly float[] SpeedMin = { 0.85f, 1.00f, 0.65f };
-        private static readonly float[] SpeedMax = { 1.00f, 1.15f, 0.80f };
+        private enum VehicleKindIndex { Car = 0, Moto = 1, Truck = 2, Minibus = 3 }
+        private static readonly string[] PrefabNames = { "Traffic/TrafficCar", "Traffic/TrafficMoto", "Traffic/TrafficTruck", "Traffic/TrafficMinibus" };
+        // Part de chaque type et vitesse relative : voitures 45 %, motos 25 %, camions 12 %, minibus 18 %
+        private static readonly float[] Weights = { 0.45f, 0.25f, 0.12f, 0.18f };
+        private static readonly float[] SpeedMin = { 0.85f, 1.00f, 0.65f, 0.75f };
+        private static readonly float[] SpeedMax = { 1.00f, 1.15f, 0.80f, 0.90f };
         private static readonly Color[] CarColors =
         {
             new Color(1f, 0.831f, 0f), new Color(1f, 0.831f, 0f), new Color(1f, 0.765f, 0f),   // beaucoup de taxis jaunes
@@ -44,8 +44,8 @@ namespace TaxiKin.Traffic
             public bool near, hit, counted;
         }
 
-        private readonly Queue<Entry>[] pools = { new Queue<Entry>(), new Queue<Entry>(), new Queue<Entry>() };
-        private readonly GameObject[] prefabs = new GameObject[3];
+        private readonly Queue<Entry>[] pools = { new Queue<Entry>(), new Queue<Entry>(), new Queue<Entry>(), new Queue<Entry>() };
+        private readonly GameObject[] prefabs = new GameObject[4];
         private readonly List<Entry> active = new List<Entry>();
         private readonly List<int> ring = new List<int>();
         private readonly System.Random rnd = new System.Random();
