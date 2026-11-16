@@ -39,7 +39,7 @@ namespace TaxiKin.Player
         /// <summary>0 = D, 1 = N, 2 = R.</summary>
         public void SetGear(int gear)
         {
-            if (V != null) V.Gear = (GearPosition)Mathf.Clamp(gear, 0, 2);
+            if (V != null) V.Gear = (GearPosition)Mathf.Clamp(gear, 0, 3);
         }
 
         public void PickupPassengers()

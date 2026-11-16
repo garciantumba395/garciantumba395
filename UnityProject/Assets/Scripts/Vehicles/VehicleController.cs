@@ -8,7 +8,7 @@ namespace TaxiKin.Vehicles
     public enum VehicleType { Wewa, Taxi, Bus207 }
 
     /// <summary>Boîte de vitesses : D = marche avant, N = neutre, R = marche arrière.</summary>
-    public enum GearPosition { D, N, R }
+    public enum GearPosition { D, N, R, P }   // P = parking : pas d'accélération, freinage maximal
 
     /// <summary>Caractéristiques d'un véhicule (modifiables dans l'Inspector).</summary>
     [Serializable]
@@ -145,7 +145,7 @@ namespace TaxiKin.Vehicles
             float maxMs = stats.maxSpeedKmh / 3.6f;
             // Route mouillée : adhérence 1,0 (sec) → 0,6 (pluie forte)
             float road = WeatherManager.Instance != null ? WeatherManager.Instance.RoadGrip : 1f;
-            bool driving = Gear != GearPosition.N && Throttle > 0f && Fuel > 0f;
+            bool driving = Gear != GearPosition.N && Gear != GearPosition.P && Throttle > 0f && Fuel > 0f;
 
             if (driving)
             {
@@ -157,7 +157,7 @@ namespace TaxiKin.Vehicles
                 forward = Mathf.MoveTowards(forward, 0f, 1.5f * dt);   // Roue libre
             }
 
-            float brakeAmount = HandBrake ? 1f : Brake;
+            float brakeAmount = (HandBrake || Gear == GearPosition.P) ? 1f : Brake;
             if (brakeAmount > 0f)
                 forward = Mathf.MoveTowards(forward, 0f, brakeAmount * stats.brakeForce * road * dt);     // freinage plus long
 

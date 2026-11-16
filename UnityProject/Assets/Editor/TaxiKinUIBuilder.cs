@@ -118,16 +118,21 @@ namespace TaxiKin.EditorTools
             layout.Register(ControlId.Camera, (RectTransform)cam.transform);
             On(cam, actions.NextCamera);
 
-            // Boîte de vitesses D / N / R (trois boutons dans un conteneur)
-            var gearGo = new GameObject("Vitesses", typeof(RectTransform));
+            // Levier de vitesses vertical P / R / N / D (comme la maquette), à gauche du frein
+            var gearGo = new GameObject("Vitesses", typeof(RectTransform), typeof(GearIndicator));
             gearGo.transform.SetParent(root, false);
-            Place((RectTransform)gearGo.transform, BR, new Vector2(-40f, 420f), new Vector2(220f, 80f), BR);
-            string[] g = { "D", "N", "R" };
-            for (int i = 0; i < 3; i++)
+            Place((RectTransform)gearGo.transform, BR, new Vector2(-550f, 40f), new Vector2(100f, 300f), BR);
+            string[] g = { "D", "N", "R", "P" };                     // indice = valeur de GearPosition
+            float[] gy = { 0f, 75f, 150f, 225f };                    // D en bas, P en haut
+            var gearLabels = new Text[4];
+            for (int i = 0; i < 4; i++)
             {
-                var gb = Button(gearGo.transform, "Gear" + g[i], null, g[i], BL, new Vector2(i * 75f, 0f), new Vector2(70f, 80f), Btn);
+                var gb = Button(gearGo.transform, "Gear" + g[i], null, g[i], BL, new Vector2(0f, gy[i]), new Vector2(100f, 70f), new Color(0.1f, 0.12f, 0.2f, 0.85f));
                 UnityEventTools.AddIntPersistentListener(gb.onPressed, actions.SetGear, i);
+                gearLabels[i] = gb.GetComponentInChildren<Text>();
             }
+            TaxiKinSceneBuilder.Assign(gearGo.GetComponent<GearIndicator>(), "player", player);
+            TaxiKinSceneBuilder.AssignArray(gearGo.GetComponent<GearIndicator>(), "labels", gearLabels);
             layout.Register(ControlId.Gear, (RectTransform)gearGo.transform);
 
             // Passagers (Wewa : un bouton ; taxi : client ; bus : passagers, portes, arrêt)
