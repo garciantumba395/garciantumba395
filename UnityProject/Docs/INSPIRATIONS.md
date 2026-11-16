@@ -16,3 +16,11 @@ Règle : on s'inspire des IDÉES (fonctionnalités, ergonomie générale), jamai
 | Monnaie locale affichée (FC) | Option : afficher les prix en francs congolais en plus des Kin Coins | À valider |
 
 À éviter : reprendre le nom « Moto Wewa », ses slogans, ses logos, sa mise en page à l'identique, ses noms de PNJ.
+
+## Observations complémentaires (captures de jeu, 3e série)
+| Idée observée | Pour Taxi Kin |
+|---|---|
+| Conséquences des infractions (rouler sur le trottoir, pas de casque) avec amende | Humour et réalisme local ; idée à refaire à notre façon (amendes en Kin Coins) |
+| Chute du pilote après un choc, puis relevé | Rend les accidents lisibles ; à étudier (animation simple, perte de temps) |
+| Devantures détaillées : boutiques à volets, auvents, balcons, climatiseurs, enseignes, panneaux publicitaires | Cible pour l'habillage des façades (textures + éléments de décor) |
+| Lanterne « TAXI » sur le toit, couleurs de taxis nuancées | À reprendre pour nos taxis (version à nous) |
