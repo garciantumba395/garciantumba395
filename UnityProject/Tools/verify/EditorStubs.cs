@@ -20,7 +20,7 @@ namespace UnityEditor
         public static GameObject SaveAsPrefabAsset(GameObject g, string p) => null;
         public static UnityEngine.Object InstantiatePrefab(UnityEngine.Object o) => null;
     }
-    public static class EditorUtility { public static void SetDirty(UnityEngine.Object o) { } }
+    public static class EditorUtility { public static void SetDirty(UnityEngine.Object o) { } public static bool DisplayDialog(string t, string m, string ok) => true; }
     public static class Selection { public static GameObject activeGameObject; }
     public class SerializedObject
     {
@@ -89,7 +89,7 @@ namespace UnityEditor
     public struct BuildPlayerOptions { public string[] scenes; public string locationPathName; public BuildTarget target; public BuildOptions options; }
     public enum BuildOptions { None }
     public static class BuildPipeline { public static UnityEditor.Build.Reporting.BuildReport BuildPlayer(BuildPlayerOptions o) => null; }
-    public static class EditorApplication { public static void Exit(int code) { } }
+    public static class EditorApplication { public static void Exit(int code) { } public static bool isPlaying; }
 }
 namespace UnityEditor.Build.Reporting
 {

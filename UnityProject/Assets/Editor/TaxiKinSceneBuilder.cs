@@ -27,6 +27,11 @@ namespace TaxiKin.EditorTools
         [MenuItem("Taxi Kin/Créer la scène de test Main")]
         public static void BuildMainScene()
         {
+            if (EditorApplication.isPlaying)
+            {
+                EditorUtility.DisplayDialog("Taxi Kin", "Le jeu tourne encore (mode Play).\nCliquez sur le bouton ▶ pour l'arrêter, puis relancez ce menu.", "OK");
+                return;
+            }
             var scene = EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects, NewSceneMode.Single);
 
             // --- Missions (assets ScriptableObject) : générées avant la scène pour être chargées au Play ---
