@@ -69,10 +69,17 @@ namespace TaxiKin.EditorTools
                 foreach (float x in (xs > 0f ? new[] { -xs, xs } : new[] { 0f }))
                 {
                     var rim = Prim(PrimitiveType.Cylinder, "Jante", root.transform,
-                                   new Vector3(x, -size.y * 0.5f + r, z), new Vector3(r * 2f, 0.1f, r * 2f), rimMat);
+                                   new Vector3(x, -size.y * 0.5f + r, z), new Vector3(r * 1.5f, 0.12f, r * 1.5f), rimMat);
                     rim.transform.localRotation = Quaternion.Euler(0f, 0f, 90f);   // axe horizontal
                     rims.Add(rim.GetComponent<Renderer>());
                 }
+
+            // Habillage par type de véhicule (cabine, vitres, pneus, phares…) : la carrosserie, le toit et les jantes
+            // restent ceux que la personnalisation repeint
+            var dm = TaxiKinAiPrefabBuilder.CreateMats();
+            if (size.x < 1f) TaxiKinAiPrefabBuilder.DressMoto(root, size, dm, false, true);
+            else if (size.z >= 8f) TaxiKinAiPrefabBuilder.DressMinibus(root, size, dm, true);
+            else TaxiKinAiPrefabBuilder.DressCar(root, size, dm, true, true);
 
             // Autocollants (quads sur les deux flancs ; un seul est visible à la fois)
             var stickerSet = new (string id, Color color)[]
@@ -141,7 +148,7 @@ namespace TaxiKin.EditorTools
             return root;
         }
 
-        /// <summary>Crée les 5 prefabs d'aperçu du garage (Resources/Vehicles/Preview). Un prefab existant n'est jamais écrasé.</summary>
+        /// <summary>Crée les 5 prefabs d'aperçu du garage (Resources/Vehicles/Preview). Régénérés à chaque exécution.</summary>
         public static void BuildPreviewPrefabs(Material wewaMat, Material taxiMat, Material busMat)
         {
             foreach (var f in new[] { "Assets/Resources", "Assets/Resources/Vehicles", "Assets/Resources/Vehicles/Preview" })
@@ -157,7 +164,6 @@ namespace TaxiKin.EditorTools
         private static void SavePreview(string id, VehicleType kind, Vector3 size, Material mat, bool roof)
         {
             string path = $"Assets/Resources/Vehicles/Preview/{id}.prefab";
-            if (AssetDatabase.LoadAssetAtPath<GameObject>(path) != null) return;
             var go = MakePreview(id, kind, size, mat, roof);
             foreach (Transform c in go.transform) c.localPosition += Vector3.up * (size.y * 0.5f);   // posé sur le plateau (bas à y = 0)
             PrefabUtility.SaveAsPrefabAsset(go, path);
