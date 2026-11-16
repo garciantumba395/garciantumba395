@@ -113,7 +113,7 @@ namespace TaxiKin.Core
             QualitySettings.anisotropicFiltering = AnisotropicFiltering.Disable;
             QualitySettings.realtimeReflectionProbes = false;
             QualitySettings.softParticles = false;
-#if UNITY_6000_0_OR_NEWER
+#if UNITY_2022_2_OR_NEWER
             QualitySettings.globalTextureMipmapLimit = p.textureLimit;
 #else
             QualitySettings.masterTextureLimit = p.textureLimit;
