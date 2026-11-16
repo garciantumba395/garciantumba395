@@ -177,6 +177,13 @@ namespace TaxiKin.Vehicles
 
         // ---------- Application visuelle ----------
 
+        /// <summary>Change les rendus repeints par la personnalisation (bascule entre deux modèles visuels du même véhicule).</summary>
+        public void UseVisuals(Renderer body, Renderer roof, Renderer[] rims)
+        {
+            bodyRenderer = body; roofRenderer = roof; rimRenderers = rims;
+            if (Current != null) ApplyAll();
+        }
+
         private void ApplyAll()
         {
             Tint(bodyRenderer, Current.bodyColor);

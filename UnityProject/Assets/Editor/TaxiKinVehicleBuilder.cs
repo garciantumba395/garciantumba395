@@ -81,6 +81,13 @@ namespace TaxiKin.EditorTools
             else if (size.z >= 8f) TaxiKinAiPrefabBuilder.DressMinibus(root, size, dm, true);
             else TaxiKinAiPrefabBuilder.DressCar(root, size, dm, true, true);
 
+            // Tout ce qui existe jusqu'ici est le modèle PROVISOIRE : on le range dans un groupe pour pouvoir le masquer / le rétablir
+            var provisional = new GameObject("VisuelProvisoire").transform;
+            provisional.SetParent(root.transform, false);
+            var provisionalParts = new System.Collections.Generic.List<Transform>();
+            foreach (Transform child in root.transform) if (child != provisional) provisionalParts.Add(child);
+            foreach (var part in provisionalParts) part.SetParent(provisional, true);
+
             // Autocollants (quads sur les deux flancs ; un seul est visible à la fois)
             var stickerSet = new (string id, Color color)[]
             {
@@ -145,6 +152,58 @@ namespace TaxiKin.EditorTools
                 el.FindPropertyRelative("visual").objectReferenceValue = stickerVisuals[i];
             }
             so.ApplyModifiedPropertiesWithoutUndo();
+
+            // Nouveau modèle 3D (taxi-voiture seulement pour l'instant) : enfant visuel, la racine physique reste inchangée
+            TaxiKinKenneyTaxi.Result kenney = null;
+            bool isCar = physics && size.x >= 1f && size.z < 8f;
+            if (isCar) kenney = TaxiKinKenneyTaxi.TryAttach(root.transform, size);
+            if (isCar || physics)
+            {
+                var sw = root.AddComponent<TaxiKin.Vehicles.VehicleVisualSwitch>();
+                var sws = new SerializedObject(sw);
+                sws.FindProperty("provisional").objectReferenceValue = provisional.gameObject;
+                sws.FindProperty("provisionalBody").objectReferenceValue = body.GetComponent<Renderer>();
+                sws.FindProperty("provisionalRoof").objectReferenceValue = roofRenderer;
+                var pr = sws.FindProperty("provisionalRims");
+                pr.arraySize = rims.Count;
+                for (int i = 0; i < rims.Count; i++) pr.GetArrayElementAtIndex(i).objectReferenceValue = rims[i];
+                sws.FindProperty("provisionalSize").vector3Value = size;
+                sws.FindProperty("customizer").objectReferenceValue = cust;
+                sws.FindProperty("plate").objectReferenceValue = plate.transform;
+                var sh = sws.FindProperty("stickerHolders");
+                sh.arraySize = stickerVisuals.Length;
+                for (int i = 0; i < stickerVisuals.Length; i++) sh.GetArrayElementAtIndex(i).objectReferenceValue = stickerVisuals[i].transform;
+                if (kenney != null)
+                {
+                    sws.FindProperty("newModel").objectReferenceValue = kenney.visual;
+                    sws.FindProperty("newBody").objectReferenceValue = kenney.paint;
+                    var nr = sws.FindProperty("newRims");
+                    nr.arraySize = kenney.rims.Length;
+                    for (int i = 0; i < kenney.rims.Length; i++) nr.GetArrayElementAtIndex(i).objectReferenceValue = kenney.rims[i];
+                    sws.FindProperty("newSize").vector3Value = new Vector3(kenney.size.x, size.y, kenney.size.z);
+                    sws.FindProperty("useNewModel").boolValue = true;
+                }
+                sws.ApplyModifiedPropertiesWithoutUndo();
+
+                if (kenney != null)
+                {
+                    // Le nouveau modèle est actif : la personnalisation repeint la peinture et les jantes du nouveau modèle seulement
+                    provisional.gameObject.SetActive(false);
+                    var cso = new SerializedObject(cust);
+                    cso.FindProperty("bodyRenderer").objectReferenceValue = kenney.paint;
+                    cso.FindProperty("roofRenderer").objectReferenceValue = null;
+                    var rp = cso.FindProperty("rimRenderers");
+                    rp.arraySize = kenney.rims.Length;
+                    for (int i = 0; i < kenney.rims.Length; i++) rp.GetArrayElementAtIndex(i).objectReferenceValue = kenney.rims[i];
+                    cso.ApplyModifiedPropertiesWithoutUndo();
+                    // plaque et autocollants replacés sur le nouveau gabarit
+                    var nsize = new Vector3(kenney.size.x, size.y, kenney.size.z);
+                    var p = plate.transform.localPosition; plate.transform.localPosition = new Vector3(p.x, p.y, -(nsize.z * 0.5f + 0.012f));
+                    foreach (var h in stickerVisuals)
+                        foreach (Transform q in h.transform)
+                        { var qp = q.localPosition; q.localPosition = new Vector3(Mathf.Sign(qp.x) * (nsize.x * 0.5f + 0.012f), qp.y, qp.z); }
+                }
+            }
             return root;
         }
 

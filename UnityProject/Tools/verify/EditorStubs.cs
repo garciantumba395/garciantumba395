@@ -11,6 +11,7 @@ namespace UnityEditor
     {
         public static bool IsValidFolder(string p) => false; public static string CreateFolder(string parent, string name) => "";
         public static T LoadAssetAtPath<T>(string p) where T : UnityEngine.Object => null;
+        public static bool DeleteAsset(string p) => true;
         public static void CreateAsset(UnityEngine.Object o, string p) { }
         public static void SaveAssets() { } public static void Refresh() { }
         public static T GetBuiltinExtraResource<T>(string p) where T : UnityEngine.Object => null;
@@ -30,7 +31,7 @@ namespace UnityEditor
     public class SerializedProperty
     {
         public UnityEngine.Object objectReferenceValue; public int arraySize; public int enumValueIndex; public string stringValue;
-        public float floatValue; public int intValue; public bool boolValue;
+        public float floatValue; public int intValue; public bool boolValue; public Vector3 vector3Value;
         public SerializedProperty GetArrayElementAtIndex(int i) => null; public SerializedProperty FindPropertyRelative(string n) => null;
     }
     public enum UIOrientation { Portrait, PortraitUpsideDown, LandscapeRight, LandscapeLeft, AutoRotation }
@@ -115,4 +116,8 @@ namespace UnityEditor
 {
     public class AssetImporter { public static AssetImporter GetAtPath(string p) => null; public void SaveAndReimport() { } }
     public class TextureImporter : AssetImporter { public bool mipmapEnabled; public TextureWrapMode wrapMode; public FilterMode filterMode; }
+}
+namespace UnityEditor
+{
+    public static class EditorPrefs { public static bool GetBool(string k, bool d) => d; public static void SetBool(string k, bool v) { } }
 }
