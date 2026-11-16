@@ -5,9 +5,9 @@ using UnityEngine.UI;
 namespace TaxiKin.UI
 {
     /// <summary>
-    /// Écran de démarrage : logo des partenaires (s'il existe), puis logo Taxi Kin, avec fondu.
+    /// Écran de démarrage : logo de l'éditeur (TechVault Africa), logos des partenaires (HCE, GNS Business RDC), puis logo Taxi Kin, avec fondu.
     /// Se met en place tout seul au lancement (aucun câblage dans la scène) et se supprime à la fin.
-    /// Images attendues dans Assets/Resources/Branding/ : « logo_partenaires » (facultatif) et « logo_taxikin ».
+    /// Images attendues dans Assets/Resources/Branding/ : « logo_proprietaire » et « logo_partenaires » (facultatifs) et « logo_taxikin ».
     /// Touche / toucher : passe l'écran en cours.
     /// </summary>
     public class SplashSequence : MonoBehaviour
@@ -18,23 +18,25 @@ namespace TaxiKin.UI
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void AutoStart()
         {
+            var owner = Resources.Load<Texture2D>("Branding/logo_proprietaire");
             var partners = Resources.Load<Texture2D>("Branding/logo_partenaires");
             var game = Resources.Load<Texture2D>("Branding/logo_taxikin");
-            if (partners == null && game == null) return;
+            if (owner == null && partners == null && game == null) return;
             var go = new GameObject("SplashSequence");
             DontDestroyOnLoad(go);
-            go.AddComponent<SplashSequence>().Begin(partners, game);
+            go.AddComponent<SplashSequence>().Begin(owner, partners, game);
         }
 
         private CanvasGroup group;
         private RawImage image;
         private AspectRatioFitter fitter;
 
-        private void Begin(Texture2D partners, Texture2D game) => StartCoroutine(Run(partners, game));
+        private void Begin(Texture2D owner, Texture2D partners, Texture2D game) => StartCoroutine(Run(owner, partners, game));
 
-        private IEnumerator Run(Texture2D partners, Texture2D game)
+        private IEnumerator Run(Texture2D owner, Texture2D partners, Texture2D game)
         {
             BuildOverlay();
+            if (owner != null) yield return Show(owner, Color.white);        // l'entreprise éditrice (TechVault Africa)
             if (partners != null) yield return Show(partners, Color.white);
             if (game != null) yield return Show(game, new Color(0.02f, 0.1f, 0.19f));
             Destroy(gameObject);
