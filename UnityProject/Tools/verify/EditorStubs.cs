@@ -111,3 +111,8 @@ namespace UnityEditor.Build
 {
     public struct NamedBuildTarget { public static NamedBuildTarget Unknown; }
 }
+namespace UnityEditor
+{
+    public class AssetImporter { public static AssetImporter GetAtPath(string p) => null; public void SaveAndReimport() { } }
+    public class TextureImporter : AssetImporter { public bool mipmapEnabled; public TextureWrapMode wrapMode; public FilterMode filterMode; }
+}

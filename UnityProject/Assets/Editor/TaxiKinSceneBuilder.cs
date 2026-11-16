@@ -38,6 +38,7 @@ namespace TaxiKin.EditorTools
             TaxiKinMissionBuilder.Generate();
 
             // --- Matériaux de test (légers, partagés) ---
+            TaxiKinWorldMaterials.Build();     // devantures, toits, arbres : chargés à la demande par la carte
             Material yellow = GetMaterial("Mat_TaxiYellow", VehicleColorManager.DefaultTaxiColor);
             Material road = ApplyTexture(GetMaterial("Mat_Road", Color.white), "road_asphalt", Color.white);
             Material ground = GetMaterial("Mat_Ground", new Color(0.35f, 0.45f, 0.3f));

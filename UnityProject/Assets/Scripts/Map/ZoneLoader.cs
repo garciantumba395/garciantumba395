@@ -51,6 +51,25 @@ namespace TaxiKin.Map
 
         private Vector3 origin;
 
+        // Matériaux supplémentaires, chargés depuis Resources/WorldMats (créés par le menu de construction de la scène)
+        private Material[] buildingMats;          // étages, devantures A et B, toits
+        private Material postMat, leafMat;        // poteaux/troncs, feuillages
+        private bool extraMatsLoaded;
+
+        private void LoadExtraMaterials()
+        {
+            if (extraMatsLoaded) return;
+            extraMatsLoaded = true;
+            var shopA = Resources.Load<Material>("WorldMats/Mat_ShopA");
+            var shopB = Resources.Load<Material>("WorldMats/Mat_ShopB");
+            var roof = Resources.Load<Material>("WorldMats/Mat_Roof");
+            postMat = Resources.Load<Material>("WorldMats/Mat_Pole");
+            leafMat = Resources.Load<Material>("WorldMats/Mat_Leaf");
+            // Sans ces matériaux (ancienne scène), on retombe sur le matériau d'immeuble unique
+            buildingMats = new[] { buildingMaterial, shopA != null ? shopA : buildingMaterial,
+                                   shopB != null ? shopB : buildingMaterial, roof != null ? roof : buildingMaterial };
+        }
+
         /// <summary>Réglages donnés par WorldManager (une instance par zone) ; désactive le chargement automatique.</summary>
         public void Configure(Material road, Material building, Material ground, PlayerController playerRef, bool colliders)
         {
@@ -194,8 +213,10 @@ namespace TaxiKin.Map
 
         private void BuildChunk(long key, List<ZoneMeshBuilder.RoadSegment> roads, List<ZoneBuilding> buildings)
         {
+            LoadExtraMaterials();
             var roadMesh = ZoneMeshBuilder.BuildRoads(roads);
             var buildingMesh = ZoneMeshBuilder.BuildBuildings(buildings);
+            var decorMesh = postMat != null && leafMat != null ? ZoneMeshBuilder.BuildDecor(roads) : null;
             if (roadMesh == null && buildingMesh == null) return;
 
             var chunkGo = new GameObject("Bloc_" + key);
@@ -208,8 +229,18 @@ namespace TaxiKin.Map
             if (buildingMesh != null)
             {
                 meshes.Add(buildingMesh);
-                renderers.Add(AddMesh(chunkGo.transform, "Immeubles", buildingMesh, buildingMaterial, out buildingFilter));
+                var br = AddMesh(chunkGo.transform, "Immeubles", buildingMesh, buildingMaterial, out buildingFilter);
+                br.sharedMaterials = buildingMats;      // 4 sous-maillages : étages, devantures A et B, toits
+                renderers.Add(br);
                 Grow(ref bounds, ref first, buildingMesh.bounds);
+            }
+            if (decorMesh != null)
+            {
+                meshes.Add(decorMesh);
+                var dr = AddMesh(chunkGo.transform, "Decor", decorMesh, postMat, out _);
+                dr.sharedMaterials = new[] { postMat, leafMat };
+                renderers.Add(dr);
+                Grow(ref bounds, ref first, decorMesh.bounds);
             }
 
             var chunk = chunkGo.AddComponent<ZoneChunk>();
