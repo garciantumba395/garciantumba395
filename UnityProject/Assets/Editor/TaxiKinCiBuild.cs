@@ -12,6 +12,31 @@ namespace TaxiKin.EditorTools
     /// </summary>
     public static class TaxiKinCiBuild
     {
+        /// <summary>Version web (WebGL) : qualité réduite, compression Gzip, sans achats ni publicités.</summary>
+        public static void BuildWebGL()
+        {
+            TaxiKinSceneBuilder.BuildMainScene();
+            PlayerSettings.productName = "Taxi Kin";
+            PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Gzip;
+            PlayerSettings.WebGL.decompressionFallback = true;   // fonctionne même si l'hébergeur ne sert pas l'en-tête de compression
+            string output = "build/WebGL";
+            string[] args = Environment.GetCommandLineArgs();
+            for (int i = 0; i < args.Length - 1; i++)
+                if (args[i] == "-customBuildPath") output = args[i + 1];
+            var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
+            {
+                scenes = new[] { "Assets/Scenes/Main.unity" },
+                locationPathName = output,
+                target = BuildTarget.WebGL,
+                options = BuildOptions.None
+            });
+            if (report.summary.result != UnityEditor.Build.Reporting.BuildResult.Succeeded)
+            {
+                Debug.LogError("[Taxi Kin] Échec WebGL : " + report.summary.result);
+                EditorApplication.Exit(1);
+            }
+        }
+
         public static void BuildAndroid()
         {
             TaxiKinSceneBuilder.BuildMainScene();

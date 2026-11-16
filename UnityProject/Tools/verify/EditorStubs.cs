@@ -36,7 +36,7 @@ namespace UnityEditor
     public enum UIOrientation { Portrait, PortraitUpsideDown, LandscapeRight, LandscapeLeft, AutoRotation }
     public enum ScriptingImplementation { Mono2x, IL2CPP }
     public enum BuildTargetGroup { Unknown, Android }
-    public enum BuildTarget { Android }
+    public enum BuildTarget { Android, WebGL }
     public enum ManagedStrippingLevel { Disabled, Low, Medium, High }
     public enum AndroidSdkVersions { AndroidApiLevelAuto = 0, AndroidApiLevel24 = 24 }
     [Flags] public enum AndroidArchitecture { None = 0, ARMv7 = 1, ARM64 = 2 }
@@ -53,6 +53,7 @@ namespace UnityEditor
         public static bool stripEngineCode, gcIncremental, allowedAutorotateToPortrait, allowedAutorotateToPortraitUpsideDown, allowedAutorotateToLandscapeLeft, allowedAutorotateToLandscapeRight;
         public static void SetUseDefaultGraphicsAPIs(BuildTarget t, bool b) { }
         public static void SetGraphicsAPIs(BuildTarget t, GraphicsDeviceType[] a) { }
+        public static class WebGL { public static WebGLCompressionFormat compressionFormat; public static bool decompressionFallback; }
         public static string productName, companyName; public static void SetApplicationIdentifier(BuildTargetGroup g, string id) { }
         public static ColorSpace colorSpace; public static UIOrientation defaultInterfaceOrientation;
         public static void SetStackTraceLogType(LogType l, StackTraceLogType s) { }
@@ -94,4 +95,9 @@ namespace UnityEditor.Build.Reporting
     public enum BuildResult { Unknown, Succeeded, Failed, Cancelled }
     public class BuildSummary { public BuildResult result; public ulong totalSize; }
     public class BuildReport { public BuildSummary summary; }
+}
+namespace UnityEditor
+{
+    public enum WebGLCompressionFormat { Disabled, Gzip, Brotli }
+    public static partial class PlayerSettingsWebGLHolder { }
 }
