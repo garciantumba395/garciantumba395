@@ -10,6 +10,7 @@ namespace TaxiKin.UI
     public enum ControlId
     {
         Wheel, ArrowLeft, ArrowRight, Gas, Brake, HandBrake, Horn, Headlights, Wipers, Gear, Camera,
+        WheelHorn,              // klaxon au centre du volant (mode volant uniquement ; le bouton Horn sert aux autres modes)
         PassengerAction,        // Wewa : un seul bouton « passager »
         Pickup, Dropoff,        // Taxi : prendre / déposer le client
         PickupAll, DropAll,     // Bus : prendre / déposer les passagers
@@ -86,6 +87,8 @@ namespace TaxiKin.UI
                     case ControlId.Wheel: visible = mode == ControlMode.Wheel; break;
                     case ControlId.ArrowLeft:
                     case ControlId.ArrowRight: visible = mode == ControlMode.Arrows; break;
+                    case ControlId.WheelHorn: visible = mode == ControlMode.Wheel; break;
+                    case ControlId.Horn: visible = allowed.Contains(e.id) && mode != ControlMode.Wheel; break;
                     default: visible = allowed.Contains(e.id); break;
                 }
                 e.rect.gameObject.SetActive(visible);

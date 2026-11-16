@@ -251,6 +251,7 @@ namespace TaxiKin.UI
             }
             if (s.cond == Cond.Passenger)
                 return controls.Get(ControlId.PassengerAction) ?? controls.Get(ControlId.Pickup) ?? controls.Get(ControlId.PickupAll);
+            if (s.target == (int)ControlId.Horn) return controls.Get(ControlId.Horn) ?? controls.Get(ControlId.WheelHorn);   // le klaxon est au centre du volant en mode volant
             return controls.Get((ControlId)s.target);
         }
 

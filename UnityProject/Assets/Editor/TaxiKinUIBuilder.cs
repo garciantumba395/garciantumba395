@@ -82,6 +82,13 @@ namespace TaxiKin.EditorTools
             marker.GetComponent<Image>().raycastTarget = false;
             layout.Register(ControlId.Wheel, wheelRt);
 
+            // Klaxon au centre du volant (il ne tourne pas avec lui) : visible en mode volant seulement
+            var hornWheel = Button(root, "KlaxonVolant", "horn", null, BL, new Vector2(290f - 70f, 290f - 70f), new Vector2(140f, 140f), new Color(1f, 0.83f, 0f, 0.95f));
+            hornWheel.GetComponent<Image>().sprite = wheelImg.sprite;
+            hornWheel.GetComponentInChildren<Text>().color = new Color(0.1f, 0.1f, 0.12f);
+            layout.Register(ControlId.WheelHorn, (RectTransform)hornWheel.transform);
+            On(hornWheel, actions.Horn);
+
             var left = Button(root, "FlecheGauche", null, "<", BL, new Vector2(60f, 80f), new Vector2(200f, 200f), Btn);
             var right = Button(root, "FlecheDroite", null, ">", BL, new Vector2(290f, 80f), new Vector2(200f, 200f), Btn);
             layout.Register(ControlId.ArrowLeft, (RectTransform)left.transform);
@@ -101,13 +108,11 @@ namespace TaxiKin.EditorTools
 
             // ---------- DROITE : accélérateur, frein, vitesses, caméra, actions ----------
             // Pédales façon « Dr. Driving » : deux grandes pédales verticales côte à côte au coin du pouce droit (accélérateur tout à droite)
-            var gas = Button(root, "Accelerateur", "gas", null, BR, new Vector2(-40f, 40f), new Vector2(230f, 380f), Gas);
-            var brake = Button(root, "Frein", "brake", null, BR, new Vector2(-290f, 40f), new Vector2(230f, 300f), Red);
+            var gas = Button(root, "Accelerateur", "gas", null, BR, new Vector2(-40f, 40f), new Vector2(230f, 380f), new Color(1f, 0.83f, 0f, 0.95f));
+            gas.GetComponentInChildren<Text>().color = new Color(0.1f, 0.1f, 0.12f);
+            var brake = Button(root, "Frein", "brake", null, BR, new Vector2(-290f, 40f), new Vector2(230f, 300f), new Color(0.25f, 0.28f, 0.34f, 0.9f));
             layout.Register(ControlId.Gas, (RectTransform)gas.transform);
             layout.Register(ControlId.Brake, (RectTransform)brake.transform);
-
-            var hornR = Button(root, "KlaxonD", "horn", null, BR, new Vector2(-570f, 40f), new Vector2(130f, 110f), Btn);
-            On(hornR, actions.Horn);
 
             var cam = Button(root, "Camera", "camera", null, BR, new Vector2(-290f, 360f), new Vector2(150f, 110f), Btn);
             layout.Register(ControlId.Camera, (RectTransform)cam.transform);
