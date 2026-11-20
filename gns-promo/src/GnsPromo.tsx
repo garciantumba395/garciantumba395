@@ -2,7 +2,7 @@ import React from 'react';
 import { AbsoluteFill, Audio, Sequence, interpolate, staticFile } from 'remotion';
 import { Stage } from './Look';
 import { NUIT_MARINE } from './tokens';
-import { loadFonts } from './fonts';
+import { useFonts } from './fonts';
 import { Shot } from './util';
 import { Footer } from './Footer';
 import { S1Hero } from './shots/S1Hero';
@@ -14,7 +14,6 @@ import { S6Tecno } from './shots/S6Tecno';
 import { S7Deliver } from './shots/S7Deliver';
 import { S8Outro } from './shots/S8Outro';
 
-loadFonts();
 
 // Chronologie (30 i/s, 1350 i = 45 s). Source unique : SHOTS.
 export const SHOTS = {
@@ -31,6 +30,7 @@ export const SHOTS = {
 
 export const BGM_START_FRAMES = 13; // 0,433 s : premier temps du morceau → f0 du film
 export const GnsPromo: React.FC<{ bgm?: boolean }> = ({ bgm = true }) => {
+  useFonts();
   return (
     <AbsoluteFill style={{ background: '#030a1a' }}>
       {bgm && (

@@ -18,11 +18,14 @@ export const S2Slogan: React.FC = () => {
   const [m, setM] = useState<{ w: number; lead: number; base: number } | null>(null);
   const [handle] = useState(() => delayRender('mesure ligne'));
   useLayoutEffect(() => {
+    let done = false;
+    const finish = () => { if (!done) { done = true; continueRender(handle); } };
+    setTimeout(finish, 8000);
     (document as any).fonts.load(`800 ${FS}px Montserrat`, 'grandes 4').then(() => (document as any).fonts.ready).then(() => {
       const row = rowRef.current!, lead = leadRef.current!, rl = ruler.current!;
       setM({ w: row.offsetWidth, lead: (lead.offsetLeft + lead.offsetWidth / 2) / row.offsetWidth, base: rl.offsetTop });
-      continueRender(handle);
-    });
+      finish();
+    }).catch(finish);
   }, []);
   const S0 = 3.3, PUSHV = 1.06; // portrait : 3,3× pour que le « 4 » remplisse l'écran étroit
   const scale = mix(S0, S0 * PUSHV, PUSH(Math.min(1, f / 12))) + (1 - S0 * PUSHV) * ZOOM(Math.max(0, Math.min(1, (f - 12) / 12)));

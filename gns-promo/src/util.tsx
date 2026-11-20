@@ -10,13 +10,16 @@ export const useTextWidths = (font: string, texts: string[]) => {
   const [handle] = useState(() => delayRender('mesure texte'));
   useEffect(() => {
     let alive = true;
+    let done = false;
+    const finish = () => { if (!done) { done = true; continueRender(handle); } };
+    const safety = setTimeout(finish, 8000);
     (document as any).fonts.load(font, 'Mesure').then(() => (document as any).fonts.ready).then(() => {
       const c = document.createElement('canvas').getContext('2d')!;
       c.font = font;
       if (alive) setWidths(texts.map((t) => c.measureText(t).width));
-      continueRender(handle);
-    });
-    return () => { alive = false; };
+      finish();
+    }).catch(finish);
+    return () => { alive = false; clearTimeout(safety); };
   }, []);
   return widths;
 };
