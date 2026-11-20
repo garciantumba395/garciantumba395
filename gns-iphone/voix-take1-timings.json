@@ -1,0 +1,15 @@
+{
+  "source": "public/audio/voix-take1.mp3 (Tony, version féminine « elle pousse »), transcription Scribe, secondes de la prise",
+  "duree_parole_s": 36.16,
+  "phrases": [
+    { "texte": "Samedi, Gombe. Peacemaker cherche un iPhone depuis trois semaines.", "debut": 0.0, "fin": 4.40 },
+    { "texte": "Trois boutiques, trois prix, et toujours : « repassez demain ».", "debut": 4.48, "fin": 8.24 },
+    { "texte": "Samedi, elle pousse une dernière porte : G-N-S Business R-D-C. Et là, tout est disponible.", "debut": 8.28, "fin": 14.88 },
+    { "texte": "iPhone XR dès 183 dollars. iPhone 12 dès 252. Jusqu'à l'iPhone 18 Pro Max.", "debut": 15.04, "fin": 21.28 },
+    { "texte": "Son ancien iPhone ? Échangé : c'est le Troc iPhone.", "debut": 21.44, "fin": 24.56 },
+    { "texte": "Vous n'êtes pas à Kinshasa ? Nous expédions partout en R-D-C.", "debut": 24.60, "fin": 27.84 },
+    { "texte": "Appelez le plus deux quatre trois, neuf huit trois, quatre six huit, trois quatre un.", "debut": 27.92, "fin": 31.84 },
+    { "texte": "Ou visitez G-N-S Business R-D-C point store.", "debut": 31.92, "fin": 34.88 },
+    { "texte": "Votre iPhone vous attend.", "debut": 35.00, "fin": 36.16 }
+  ]
+}
