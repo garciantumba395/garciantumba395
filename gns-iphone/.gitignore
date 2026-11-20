@@ -1,1 +1,4 @@
 photos-privees/
+node_modules
+out
+public/img/
