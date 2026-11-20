@@ -29,7 +29,7 @@ export const SHOTS = {
 } as const;
 
 export const BGM_START_FRAMES = 13; // 0,433 s : premier temps du morceau → f0 du film
-export const GnsPromo: React.FC<{ bgm?: boolean }> = ({ bgm = true }) => {
+export const GnsPromo: React.FC<{ bgm?: boolean; voice?: boolean }> = ({ bgm = true, voice = true }) => {
   useFonts();
   return (
     <AbsoluteFill style={{ background: '#030a1a' }}>
@@ -37,9 +37,10 @@ export const GnsPromo: React.FC<{ bgm?: boolean }> = ({ bgm = true }) => {
         <Audio
           src={staticFile('audio/house-vibez.mp3')}
           startFrom={BGM_START_FRAMES}
-          volume={(f) => interpolate(f, [0, 8, 1290, 1349], [0.35, 0.72, 0.72, 0], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' })}
+          volume={(f) => interpolate(f, [0, 8, 1290, 1349], [0.2, 1, 1, 0], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }) * (voice ? 0.27 : 0.72)}
         />
       )}
+      {voice && <Audio src={staticFile('audio/voix-mix.mp3')} volume={1} />}
       <Stage look={NUIT_MARINE} keyLight={{ x: 0.5, y: 0.12 }} fill={{ x: 0.85, y: 0.92 }} breathe={1} />
       <Sequence from={SHOTS.hero.from} durationInFrames={SHOTS.hero.dur}><Shot><S1Hero /></Shot></Sequence>
       <Sequence from={SHOTS.slogan.from} durationInFrames={SHOTS.slogan.dur}><Shot><S2Slogan /></Shot></Sequence>

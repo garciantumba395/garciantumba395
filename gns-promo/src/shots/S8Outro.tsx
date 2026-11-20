@@ -22,16 +22,16 @@ const flyIn = bezier(0.2, 0.9, 0.25, 1.06);
 
 export const S8Outro: React.FC = () => {
   const f = useCurrentFrame();
-  const logoT = EASE.overshoot(clamp01((f - 29) / 20));
-  const logoO = clamp01((f - 29) / 6);
-  const flash = f >= 29 && f < 35 ? Math.sin(((f - 29) / 6) * Math.PI) * 0.7 : 0;
-  const call = ramp(f, 59, 20, EASE.out);
-  const callNum = ramp(f, 73, 20, EASE.out);
-  const visit = ramp(f, 118, 20, EASE.out);
-  const site = ramp(f, 132, 20, EASE.overshoot);
-  const sub = ramp(f, 147, 18, EASE.out);
-  const addr = ramp(f, 170, 18, EASE.out);
-  const ring = f >= 140 ? 0.5 + 0.5 * Math.sin(((f - 140) / 40) * Math.PI * 2) : 0;
+  const logoT = EASE.overshoot(clamp01((f - 10) / 20));
+  const logoO = clamp01((f - 10) / 6);
+  const flash = f >= 10 && f < 16 ? Math.sin(((f - 10) / 6) * Math.PI) * 0.7 : 0;
+  const call = ramp(f, 36, 20, EASE.out);
+  const callNum = ramp(f, 44, 20, EASE.out);
+  const visit = ramp(f, 93, 20, EASE.out);
+  const site = ramp(f, 101, 20, EASE.overshoot);
+  const sub = ramp(f, 160, 18, EASE.out);
+  const addr = ramp(f, 176, 18, EASE.out);
+  const ring = f >= 110 ? 0.5 + 0.5 * Math.sin(((f - 110) / 40) * Math.PI * 2) : 0;
   return (
     <div style={{ position: 'absolute', inset: 0, fontFamily: 'Montserrat' }}>
       {/* photo de groupe : 4 téléphones derrière le logo */}

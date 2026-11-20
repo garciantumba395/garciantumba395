@@ -9,7 +9,7 @@ import { GNS } from '../tokens';
 // et épouse la largeur du mot ; chaque mot 21f (valeur de la fiche) ; la dernière valeur « toute la RDC » se fige en orange.
 const FS = 74;
 const WORDS = [...CITIES.slice(0, 4), 'toute la RDC'];
-const START = 15, EACH = 22;
+const START = 12, EACH = 18; // « toute la RDC » à f84 = 35,1 s : au moment où la voix dit « partout en RDC »
 
 export const S7Deliver: React.FC = () => {
   const f = useCurrentFrame();
