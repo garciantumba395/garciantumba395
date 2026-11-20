@@ -10,7 +10,7 @@ import { GNS } from '../tokens';
 // Plan 4 — neon-frame-orbit-drop (adapté portrait) : le cadre néon se trace (~14f), puis la vue tourne en arc
 // (rotateY +38° → −26°) pendant que TOUS les éléments descendent EN MÊME TEMPS (zéro décalage = commande de la fiche),
 // ombres douces qui convergent ; ensuite la vue se redresse pour la lecture (ajout : 128→160f).
-const PW = 940, PH = 1500, PX = 70, PY = 230;
+const PW = 940, PH = 1420, PX = 70, PY = 230; // bas du cadre à y=1650 : dégage le bandeau de contact
 const dropE = bezier(0.3, 0, 0.25, 1.08);
 const LAND0 = 44, LAND1 = 88, ROT0 = 8, ROT1 = 128; // chute de 3 temps, fin sur le temps 6
 
@@ -43,12 +43,12 @@ export const S4Samsung: React.FC = () => {
           <div style={{ display: 'inline-block', padding: '12px 32px', borderRadius: 99, background: 'rgba(29,92,255,0.2)', border: '1.5px solid rgba(120,165,255,0.5)', color: '#eaf1ff', fontWeight: 800, fontSize: 44, letterSpacing: 6, textTransform: 'uppercase', fontFamily: 'Montserrat' }}>Samsung Galaxy</div>
         </div>
         {SAMSUNG.map((it, k) => {
-          const top = 160 + k * 440;
+          const top = 160 + k * 410;
           return (
-            <div key={it.name} style={{ position: 'absolute', left: 36, right: 36, top, height: 400, opacity: appear, transform: `translateZ(${height}px)` }}>
+            <div key={it.name} style={{ position: 'absolute', left: 36, right: 36, top, height: 380, opacity: appear, transform: `translateZ(${height}px)` }}>
               <div style={{ position: 'absolute', inset: 0, borderRadius: 44, background: 'linear-gradient(165deg, rgba(24,45,92,0.97), rgba(8,18,40,0.99))', border: '1.5px solid rgba(150,185,255,0.25)', boxShadow: `0 ${20 + 60 * shadow}px ${40 + 80 * shadow}px rgba(0,4,16,${0.45 + 0.25 * shadow}), inset 0 1.5px 0 rgba(255,255,255,0.12)` }} />
-              <div style={{ position: 'absolute', left: 60, top: 36 }}><Phone kind="galaxy" hue={it.hue} width={156} /></div>
-              <div style={{ position: 'absolute', left: 300, right: 30, top: 96, fontFamily: 'Montserrat' }}>
+              <div style={{ position: 'absolute', left: 60, top: 28 }}><Phone kind="galaxy" hue={it.hue} width={156} /></div>
+              <div style={{ position: 'absolute', left: 300, right: 30, top: 82, fontFamily: 'Montserrat' }}>
                 <div style={{ color: '#f2f6ff', fontWeight: 800, fontSize: 60, letterSpacing: -1, lineHeight: 1.05 }}>{it.name}</div>
                 <div style={{ marginTop: 26, display: 'flex', alignItems: 'baseline', gap: 14, opacity: Math.min(1, priceP * 1.6), transform: `scale(${0.85 + 0.15 * priceP})`, transformOrigin: 'left center' }}>
                   {it.from && <span style={{ color: '#a9b8d8', fontWeight: 600, fontSize: 34 }}>dès</span>}
