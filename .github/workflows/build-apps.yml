@@ -28,7 +28,7 @@ jobs:
         working-directory: packaging/android
         env: { APP_URL: "${{ inputs.app_url }}" }
         run: |
-          node -e "const fs=require('fs');const u=new URL(process.env.APP_URL);const c=JSON.parse(fs.readFileSync('capacitor.config.json'));c.server.url=u.origin;c.server.allowNavigation=[u.hostname];fs.writeFileSync('capacitor.config.json',JSON.stringify(c,null,2));"
+          node -e "const fs=require('fs');const u=new URL(process.env.APP_URL);const c=JSON.parse(fs.readFileSync('capacitor.config.json'));c.server.url=u.origin;c.server.allowNavigation=[u.hostname];c.server.cleartext=false;c.android={allowMixedContent:false};fs.writeFileSync('capacitor.config.json',JSON.stringify(c,null,2));"
           npm install --no-audit --no-fund
           npx cap add android
           npx cap sync android
