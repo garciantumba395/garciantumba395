@@ -6,15 +6,15 @@ import { LightBg, LogoCard, Photo, POP, clamp01 } from '../ui';
 
 // Plan 3 (383–620 i) — présentation : « HCE, Hightech Computing Evolution : partenaire technologique à Kinshasa depuis 2018. Supervision et support 24/7. »  Local = i − 383.
 const STATS = [
-  { v: '2018', l: 'lancement', at: T(18.3) }, { v: '24/7', l: 'supervision & support', at: T(20.82) },
-  { v: '30+', l: 'projets réalisés', at: T(21.3) }, { v: '1 500+', l: 'postes utilisateurs', at: T(21.6) },
+  { v: '2018', l: 'lancement', at: T(17.28) }, { v: '24/7', l: 'supervision & support', at: T(19.4) },
+  { v: '30+', l: 'projets réalisés', at: T(20.0) }, { v: '1 500+', l: 'postes utilisateurs', at: T(20.3) },
 ];
 export const S3Presentation: React.FC = () => {
   const f = useCurrentFrame();
-  const S = 383;
-  const logo = POP(clamp01((f - (T(13.55) - S)) / 16));
-  const photo = ramp(f, T(14.44) - S, 20, EASE.out);
-  const tag = ramp(f, T(16.5) - S, 14, EASE.snappy);
+  const S = 329;
+  const logo = POP(clamp01((f - (T(12.12) - S)) / 16));
+  const photo = ramp(f, T(13.0) - S, 20, EASE.out);
+  const tag = ramp(f, T(15.15) - S, 14, EASE.snappy);
   return (
     <div style={{ position: 'absolute', inset: 0, fontFamily: 'Montserrat' }}>
       <LightBg />

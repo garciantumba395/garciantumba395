@@ -12,7 +12,7 @@ const NODES = [
 const HUB = { x: 1365, y: 490 };
 export const L1Incident: React.FC = () => {
   const f = useCurrentFrame();
-  const down = T(3.0);
+  const down = T(3.44);
   const clock = ramp(f, T(0), 14, EASE.snappy);
   const flick = f >= down && f < down + 10 ? (f % 3 === 0 ? 0.4 : 1) : 1;
   const redAmt = ramp(f, down, 30, EASE.out);
@@ -28,7 +28,7 @@ export const L1Incident: React.FC = () => {
       </div>
     );
   };
-  const stamp = POP(clamp01((f - T(8.28)) / 10));
+  const stamp = POP(clamp01((f - T(7.28)) / 10));
   return (
     <div style={{ position: 'absolute', inset: 0, fontFamily: 'Montserrat', background: `radial-gradient(ellipse at 65% 45%, #13305f 0%, ${C.navy} 55%, #050d1f 100%)`, overflow: 'hidden' }}>
       <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(ellipse at 50% 50%, rgba(229,56,79,0) 40%, rgba(229,56,79,${0.35 * redAmt}) 100%)` }} />
@@ -59,10 +59,10 @@ export const L1Incident: React.FC = () => {
       <div style={{ position: 'absolute', left: 1000, width: 730, top: 940, textAlign: 'center', opacity: f >= down + 8 ? flick : 0 }}>
         <div style={{ display: 'inline-block', background: C.red, color: '#fff', fontWeight: 900, fontSize: 48, letterSpacing: 4, padding: '8px 32px', borderRadius: 12, boxShadow: `0 0 40px ${C.red}` }}>RÉSEAU HORS LIGNE</div>
       </div>
-      {card('Factures', 'erreur', T(3.5), 460)}
-      {card('Courriels', 'hors ligne', T(6.12), 590)}
-      {card('Sauvegarde', '?', T(7.17), 720, true)}
-      <div style={{ position: 'absolute', left: 100, top: 850, opacity: f >= T(8.28) ? 1 : 0, transform: `scale(${mix(2.2, 1, stamp)}) rotate(-4deg)`, transformOrigin: 'left center' }}>
+      {card('Factures', 'erreur', T(4.44), 460)}
+      {card('Courriels', 'hors ligne', T(5.36), 590)}
+      {card('Sauvegarde', '?', T(6.4), 720, true)}
+      <div style={{ position: 'absolute', left: 100, top: 850, opacity: f >= T(7.28) ? 1 : 0, transform: `scale(${mix(2.2, 1, stamp)}) rotate(-4deg)`, transformOrigin: 'left center' }}>
         <div style={{ display: 'inline-block', border: `8px solid ${C.orange}`, color: C.orange, fontWeight: 900, fontSize: 74, letterSpacing: 3, padding: '4px 36px', borderRadius: 16, background: 'rgba(10,30,63,0.9)' }}>JAMAIS TESTÉE</div>
       </div>
     </div>

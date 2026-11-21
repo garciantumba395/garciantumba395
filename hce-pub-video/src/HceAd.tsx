@@ -9,8 +9,8 @@ import { S4Services } from './shots/S4Services';
 import { S5Academy } from './shots/S5Academy';
 import { S6Final } from './shots/S6Final';
 
-// Publicité HCE — 45 s, 9:16, 1350 i. Voix (Gabriel, tempo ×1,10) à 0,6 s (f18). Frontières posées aux débuts de paragraphes de la voix.
-export const SHOTS = { incident: [0, 263], intro: [263, 383], presentation: [383, 620], services: [620, 860], academy: [860, 1105], final: [1105, 1350] } as const;
+// Publicité HCE — 45 s, 9:16, 1350 i. Voix (Gabriel, tempo ×1,16) à 0,6 s (f18). Frontières posées aux débuts de paragraphes de la voix.
+export const SHOTS = { incident: [0, 235], intro: [235, 329], presentation: [329, 556], services: [556, 911], academy: [911, 1153], final: [1153, 1350] } as const;
 export const TOTAL = 1350;
 export const VOICE_FROM = 18;
 const seq = (k: keyof typeof SHOTS, el: React.ReactNode) => <Sequence from={SHOTS[k][0]} durationInFrames={SHOTS[k][1] - SHOTS[k][0]}>{el}</Sequence>;
