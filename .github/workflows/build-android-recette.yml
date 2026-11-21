@@ -1,0 +1,53 @@
+# Construit « Solisend Recette » pour Android (APK de test, signature de débogage : installable hors Play Store).
+# L'application est une coquille : au démarrage elle demande l'adresse du serveur (test : l'ordinateur Windows ; plus tard : l'hébergement HTTPS).
+# Aucun déploiement, aucune clé, aucun service payant.
+name: Build Solisend Recette (Android)
+on:
+  workflow_dispatch:
+  push:
+    branches: ['claude/**', main]
+    paths: ['packaging/android/**', '.github/workflows/build-android-recette.yml']
+
+permissions:
+  contents: write   # uniquement pour publier la release « recette-android » de ce dépôt
+
+jobs:
+  android-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 17 }
+      - name: Générer le projet Android (Capacitor)
+        working-directory: packaging/android
+        run: |
+          npm install --no-audit --no-fund
+          npx cap add android
+          npx cap sync android
+          pip install --quiet pillow
+          python3 make-icons.py android/app/src/main/res
+      - name: Construire l'APK
+        working-directory: packaging/android/android
+        run: ./gradlew assembleDebug --no-daemon
+      - name: Préparer les fichiers
+        run: |
+          mkdir -p out
+          cp packaging/android/android/app/build/outputs/apk/debug/app-debug.apk out/Solisend-Recette-1.0.0-android.apk
+          (cd out && sha256sum *.apk > SHA256.txt && cat SHA256.txt && ls -la)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: solisend-recette-android
+          path: out/*
+      - name: Publier / mettre à jour la release « recette-android » (téléchargement depuis le dépôt)
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd out
+          gh release delete recette-android --yes --cleanup-tag --repo "$GITHUB_REPOSITORY" || true
+          gh release create recette-android --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease \
+            --title "Solisend Recette (Android)" \
+            --notes "APK de TEST (signature de débogage). Au premier lancement : saisir l'adresse du serveur (test : celle affichée par l'application Windows Solisend Recette, menu Recette > Connecter un téléphone ; plus tard : l'adresse HTTPS de l'hébergement). Pour installer : ouvrir le fichier sur le téléphone et autoriser l'installation depuis cette source si Android le demande. Commit ${GITHUB_SHA}." \
+            *.apk SHA256.txt
