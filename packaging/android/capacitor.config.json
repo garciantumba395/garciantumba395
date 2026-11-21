@@ -1,6 +1,7 @@
 {
-  "appId": "com.example.solisend",
+  "appId": "com.example.solisend.recette",
   "appName": "Solisend",
   "webDir": "www",
-  "server": { "url": "https://sms.example.invalid", "cleartext": false, "allowNavigation": ["sms.example.invalid"] }
+  "server": { "cleartext": true, "allowNavigation": ["*"] },
+  "android": { "allowMixedContent": true }
 }

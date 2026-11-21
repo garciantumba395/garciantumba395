@@ -26,3 +26,16 @@ Le workflow est **manuel**, sans secret, et ne déploie rien.
 - **Sécurité** : la coquille Windows désactive l'intégration Node, active le bac à sable et ne laisse naviguer que sur l'origine de l'application ; les liens externes s'ouvrent dans le navigateur (https uniquement).
 - **Mise à jour** : l'application web se met à jour côté serveur sans réinstaller ; seule la coquille nécessite une nouvelle version.
 - **PWA et données** : le service worker ne conserve jamais de page HTML ni de réponse Livewire (confidentialité des contacts et messages).
+
+## Versions de recette téléchargeables (sans hébergement)
+
+| Fichier | Où | Contenu |
+|---|---|---|
+| Solisend Recette (Windows) | Release `recette-windows` | Application autonome : PHP + SQLite embarqués, données fictives, SMS simulés |
+| Solisend Recette (Android, APK de test) | Release `recette-android` | Coquille : demande l'adresse du serveur au démarrage |
+
+**Tester le téléphone avec l'ordinateur Windows** : lancer Solisend Recette, menu *Recette > Connecter un téléphone (Wi-Fi)*, accepter le pare-feu (réseaux privés), puis saisir l'adresse affichée (ex. `http://192.168.1.20:8787`) dans l'application Android, téléphone et ordinateur sur le même Wi-Fi. Désactiver ce mode après les tests (la page de connexion est alors visible sur le réseau).
+
+**Plus tard (production)** : saisir l'adresse HTTPS de l'hébergement dans la même application, ou reconstruire l'APK avec l'adresse fixée via le workflow *Build installable apps*.
+
+Limites : APK de test signé en débogage (installation hors Play Store après autorisation de la source), connexion `http` autorisée pour les tests uniquement, jamais lancé sur un téléphone par le développeur (seule la compilation est vérifiée par la CI).
