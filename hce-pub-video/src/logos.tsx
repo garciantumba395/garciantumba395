@@ -3,12 +3,12 @@ import { Img, staticFile } from 'remotion';
 import { C } from './tokens';
 
 // Logos des technologies. Source : /images/technologies/*.svg du site hce.cd (fichiers de l'entreprise).
-// Logos vidéosurveillance (Axis, Hikvision, Dahua, Wisenet) : à fournir par HCE — tant qu'un fichier est absent, on affiche le nom en texte (jamais un logo redessiné).
+// Logos vidéosurveillance (Axis, Hikvision, Dahua, Wisenet) : fichiers fournis par HCE (rognés des marges blanches, non modifiés). Seuls ces logos sont affichés dans la vidéo.
 export const CCTV: { key: string; name: string; file: string | null }[] = [
-  { key: 'axis', name: 'Axis Communications', file: null },
-  { key: 'hikvision', name: 'Hikvision', file: null },
-  { key: 'dahua', name: 'Dahua', file: null },
-  { key: 'wisenet', name: 'Wisenet', file: null },
+  { key: 'axis', name: 'Axis Communications', file: 'axis.png' },
+  { key: 'hikvision', name: 'Hikvision', file: 'hikvision.png' },
+  { key: 'dahua', name: 'Dahua', file: 'dahua.png' },
+  { key: 'wisenet', name: 'Wisenet', file: 'wisenet.png' },
 ];
 
 export const TechLogo: React.FC<{ file: string; h?: number }> = ({ file, h = 34 }) => (

@@ -3,16 +3,16 @@ import { useCurrentFrame } from 'remotion';
 import { EASE, ramp } from '../Polish';
 import { C, T } from '../tokens';
 import { ICONS, LightBgL, POP, clamp01 } from '../ui';
-import { BrandTile, CCTV, TechLogo } from '../logos';
+import { BrandTile, CCTV } from '../logos';
 
 // Plan 4 (16:9) — services + sécurité électronique en vedette.  Local = i − 556.
 const S = 556;
 const SERV = [
-  { k: 'reseau', t: 'Réseaux', at: T(20.88), logos: ['cisco.svg', 'fortinet.svg', 'mikrotik.svg'] },
-  { k: 'cyber', t: 'Cybersécurité', at: T(21.52), logos: ['fortinet.svg', 'eset.svg'] },
-  { k: 'virtu', t: 'Virtualisation', at: T(22.8), logos: ['vmware.svg', 'proxmox.svg', 'veeam.svg'] },
-  { k: 'cloud', t: 'Cloud', at: T(23.96), logos: ['microsoft.svg', 'docker.svg'] },
-  { k: 'dev', t: 'Développement web', at: T(24.48), logos: ['laravel.svg', 'php.svg', 'wordpress.svg'] },
+  { k: 'reseau', t: 'Réseaux', at: T(20.88), d: 'LAN, WAN, Wi-Fi, VPN' },
+  { k: 'cyber', t: 'Cybersécurité', at: T(21.52), d: 'Audit et protection' },
+  { k: 'virtu', t: 'Virtualisation', at: T(22.8), d: 'Serveurs et stockage' },
+  { k: 'cloud', t: 'Cloud', at: T(23.96), d: 'Hébergement, VM, sauvegardes' },
+  { k: 'dev', t: 'Développement web', at: T(24.48), d: 'Sites et applications' },
 ];
 export const L4Services: React.FC = () => {
   const f = useCurrentFrame();
@@ -37,9 +37,7 @@ export const L4Services: React.FC = () => {
                 <div style={{ width: 58, height: 58, flex: '0 0 58px' }}>{ICONS[s.k]}</div>
                 <div style={{ fontWeight: 900, fontSize: 34, color: C.navy, lineHeight: 1.05, textTransform: 'uppercase' }}>{s.t}</div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginTop: 20, height: 48 }}>
-                {s.logos.map((l) => <TechLogo key={l} file={l} h={48} />)}
-              </div>
+              <div style={{ fontWeight: 500, fontSize: 30, color: C.ink2, marginTop: 16 }}>{s.d}</div>
             </div>
           );
         })}
@@ -58,7 +56,7 @@ export const L4Services: React.FC = () => {
           {CCTV.map((b, i) => {
             const at = [T(30.08), T(30.8), T(31.56), T(32.32)][i] - S;
             const p = POP(clamp01((f - at) / 12));
-            return <div key={b.key} style={{ opacity: f < at ? 0 : 1, transform: `scale(${0.8 + 0.2 * p})` }}><BrandTile name={b.name} file={b.file} w={330} h={130} fs={32} /></div>;
+            return <div key={b.key} style={{ opacity: f < at ? 0 : 1, transform: `scale(${0.8 + 0.2 * p})` }}><BrandTile name={b.name} file={b.file} w={335} h={185} fs={32} /></div>;
           })}
         </div>
       </div>

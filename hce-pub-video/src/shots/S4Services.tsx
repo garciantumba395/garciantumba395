@@ -3,18 +3,18 @@ import { useCurrentFrame } from 'remotion';
 import { EASE, ramp } from '../Polish';
 import { C, T } from '../tokens';
 import { ICONS, LightBg, POP, clamp01 } from '../ui';
-import { BrandTile, CCTV, TechLogo } from '../logos';
+import { BrandTile, CCTV } from '../logos';
 
 // Plan 4 (556–911 i) — services + sécurité électronique en vedette.  Local = i − 556.
 // Réseaux 20,88 · Cyber 21,52 · Virtu 22,8 · Cloud 23,96 · Dév web 24,48 · Sécurité électronique 25,48 · vidéosurveillance 27,07 · contrôle d'accès 28,2
 // Axis 30,08 · Hikvision 30,8 · Dahua 31,56 · Wisenet 32,32 · « Un seul partenaire » 33,24.
 const S = 556;
 const SERV = [
-  { k: 'reseau', t: 'Réseaux', at: T(20.88), logos: ['cisco.svg', 'fortinet.svg', 'mikrotik.svg'] },
-  { k: 'cyber', t: 'Cybersécurité', at: T(21.52), logos: ['fortinet.svg', 'eset.svg'] },
-  { k: 'virtu', t: 'Virtualisation', at: T(22.8), logos: ['vmware.svg', 'proxmox.svg', 'veeam.svg'] },
-  { k: 'cloud', t: 'Cloud', at: T(23.96), logos: ['microsoft.svg', 'docker.svg'] },
-  { k: 'dev', t: 'Développement web', at: T(24.48), logos: ['laravel.svg', 'php.svg', 'wordpress.svg'] },
+  { k: 'reseau', t: 'Réseaux', at: T(20.88), d: 'LAN, WAN, Wi-Fi, VPN' },
+  { k: 'cyber', t: 'Cybersécurité', at: T(21.52), d: 'Audit et protection' },
+  { k: 'virtu', t: 'Virtualisation', at: T(22.8), d: 'Serveurs et stockage' },
+  { k: 'cloud', t: 'Cloud', at: T(23.96), d: 'Hébergement, VM, sauvegardes' },
+  { k: 'dev', t: 'Développement web', at: T(24.48), d: 'Sites et applications' },
 ];
 export const S4Services: React.FC = () => {
   const f = useCurrentFrame();
@@ -39,9 +39,7 @@ export const S4Services: React.FC = () => {
                 <div style={{ width: 64, height: 64, flex: '0 0 64px' }}>{ICONS[s.k]}</div>
                 <div style={{ fontWeight: 900, fontSize: 38, color: C.navy, lineHeight: 1.05, textTransform: 'uppercase' }}>{s.t}</div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 22, marginTop: 22, height: 50 }}>
-                {s.logos.map((l) => <TechLogo key={l} file={l} h={52} />)}
-              </div>
+              <div style={{ fontWeight: 500, fontSize: 30, color: C.ink2, marginTop: 16 }}>{s.d}</div>
             </div>
           );
         })}
@@ -61,7 +59,7 @@ export const S4Services: React.FC = () => {
           {CCTV.map((b, i) => {
             const at = [T(30.08), T(30.8), T(31.56), T(32.32)][i] - S;
             const p = POP(clamp01((f - at) / 12));
-            return <div key={b.key} style={{ opacity: f < at ? 0 : 1, transform: `scale(${0.8 + 0.2 * p})` }}><BrandTile name={b.name} file={b.file} w={440} h={120} /></div>;
+            return <div key={b.key} style={{ opacity: f < at ? 0 : 1, transform: `scale(${0.8 + 0.2 * p})` }}><BrandTile name={b.name} file={b.file} w={440} h={160} /></div>;
           })}
         </div>
       </div>

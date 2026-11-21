@@ -2,13 +2,12 @@ import React from 'react';
 import { Img, staticFile, useCurrentFrame } from 'remotion';
 import { EASE, mix, ramp } from '../Polish';
 import { C, T } from '../tokens';
-import { TechLogo } from '../logos';
 import { LightBg, Photo, POP, clamp01 } from '../ui';
 
 // Plan 5 (860–1105 i) — formations : « Et avec HCE Academy, vos équipes se forment : réseaux, cybersécurité, Odoo et Sage, développement web, support IT. Cent pour cent pratique. »  Local = i − 860.
 const S = 911;
 const PROG: { t: string; at: number; logos?: string[] }[] = [
-  { t: 'Réseaux & systèmes', at: T(37.55) }, { t: 'Cybersécurité', at: T(38.16) }, { t: 'Odoo & Sage', at: T(39.4), logos: ['odoo.svg', 'sage.svg'] },
+  { t: 'Réseaux & systèmes', at: T(37.55) }, { t: 'Cybersécurité', at: T(38.16) }, { t: 'Odoo & Sage', at: T(39.4) },
   { t: 'Développement web', at: T(40.48) }, { t: 'Support IT', at: T(41.52) },
 ];
 export const S5Academy: React.FC = () => {
@@ -36,7 +35,6 @@ export const S5Academy: React.FC = () => {
             <div key={p.t} style={{ display: 'flex', alignItems: 'center', gap: 24, background: '#fff', borderRadius: 26, padding: '28px 32px', borderLeft: `9px solid ${i % 2 ? C.orange : C.blue}`, boxShadow: '0 14px 36px rgba(10,30,63,0.1)', opacity: f < p.at - S ? 0 : 1, transform: `translateX(${(1 - q) * 700}px)` }}>
               <div style={{ width: 54, height: 54, borderRadius: 99, background: C.blue, color: '#fff', fontWeight: 900, fontSize: 30, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{i + 1}</div>
               <div style={{ fontWeight: 800, fontSize: 52, color: C.navy }}>{p.t}</div>
-              {p.logos && <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 22 }}>{p.logos.map((l) => <TechLogo key={l} file={l} h={58} />)}</div>}
             </div>
           );
         })}
