@@ -70,3 +70,29 @@ export const Wipe: React.FC<{ at: number; color?: string }> = ({ at, color = C.b
   const x = t < 0.5 ? mix(-1200, 0, EASE.exit(t * 2)) : mix(0, 1200, EASE.out((t - 0.5) * 2));
   return <div style={{ position: 'absolute', top: 0, bottom: 0, left: -60, width: 1200, transform: `translateX(${x}px) skewX(-8deg)`, background: `linear-gradient(90deg, ${color}, ${C.orange})` }} />;
 };
+
+// ───────── Variantes 16:9 (1920×1080) ─────────
+export const LightBgL: React.FC = () => (
+  <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(160deg, #ffffff 0%, ${C.gray} 100%)`, overflow: 'hidden' }}>
+    <svg width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" stroke={C.blue} strokeWidth="1.6" opacity="0.14">
+      <path d="M0 200h200l50 50h300l40-40h260" /><path d="M0 760h160l60-60h260" /><path d="M1920 300h-240l-50 50h-260" /><path d="M1920 880h-200l-60-60h-300" />
+      {[[200, 200], [590, 210], [330, 700], [1630, 350], [1660, 820]].map(([x, y], i) => <circle key={i} cx={x} cy={y} r="6" />)}
+    </svg>
+    <div style={{ position: 'absolute', left: -200, top: 900, width: 2400, height: 110, background: 'rgba(0,87,216,0.05)', transform: 'rotate(-5deg)' }} />
+    <div style={{ position: 'absolute', left: -200, top: 1010, width: 2400, height: 34, background: 'rgba(255,122,0,0.10)', transform: 'rotate(-5deg)' }} />
+  </div>
+);
+export const FootL: React.FC<{ p: number }> = ({ p }) => (
+  <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 150, background: C.navy, fontFamily: 'Montserrat', color: '#fff', padding: '28px 80px 0', opacity: p, transform: `translateY(${(1 - p) * 60}px)` }}>
+    <div style={{ position: 'absolute', left: 0, right: 0, top: 0, height: 8, background: `linear-gradient(90deg, ${C.blue}, ${C.orange})` }} />
+    <div style={{ fontWeight: 900, fontSize: 34 }}>HCE — <span style={{ color: C.orange }}>Hightech Computing Evolution</span></div>
+    <div style={{ fontWeight: 600, fontSize: 24, lineHeight: 1.5, marginTop: 6 }}>Tél. : <b style={{ color: C.orange }}>+243 816 391 233</b> · <b style={{ color: C.orange }}>contact@hce.cd</b> · <b style={{ color: C.orange }}>support@hce.cd</b> · 107, rue de la Victoire · Kasa-Vubu · Imm. La CONCEM, 1er niveau — Réf. Rond-Point Kimpwanza, Kinshasa</div>
+  </div>
+);
+export const WipeL: React.FC<{ at: number }> = ({ at }) => {
+  const f = useCurrentFrame();
+  const t = (f - (at - 4)) / 9;
+  if (t < 0 || t > 1) return null;
+  const x = t < 0.5 ? mix(-2100, 0, EASE.exit(t * 2)) : mix(0, 2100, EASE.out((t - 0.5) * 2));
+  return <div style={{ position: 'absolute', top: 0, bottom: 0, left: -80, width: 2100, transform: `translateX(${x}px) skewX(-8deg)`, background: `linear-gradient(90deg, ${C.blue}, ${C.orange})` }} />;
+};
