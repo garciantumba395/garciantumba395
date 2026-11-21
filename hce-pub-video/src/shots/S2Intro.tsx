@@ -8,7 +8,7 @@ import { LightBg, LogoCard, POP, clamp01 } from '../ui';
 // Chez HCE 8,72 · notre métier 9,6 · que ça n'arrive jamais 10,6.
 export const S2Intro: React.FC = () => {
   const f = useCurrentFrame();
-  const S = 235;
+  const S = 228;
   const reveal = ramp(f, 0, 20, EASE.smooth);
   const logo = POP(clamp01((f - (T(8.72) - S)) / 16));
   const t1 = ramp(f, T(9.6) - S, 14, EASE.snappy);

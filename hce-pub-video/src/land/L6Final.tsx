@@ -7,7 +7,7 @@ import { FootL, LightBgL, LogoCard, POP, clamp01 } from '../ui';
 // Plan 6 (16:9) — appel. Local = i − 1105. Maintien final > 4 s.
 export const L6Final: React.FC = () => {
   const f = useCurrentFrame();
-  const S = 1153;
+  const S = 1157;
   const logo = POP(clamp01((f - (T(43.96) - S)) / 16));
   const t = ramp(f, T(44.76) - S, 16, EASE.snappy);
   const site = POP(clamp01((f - (T(45.96) - S)) / 16));

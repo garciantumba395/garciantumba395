@@ -11,7 +11,7 @@ const STATS = [
 ];
 export const S3Presentation: React.FC = () => {
   const f = useCurrentFrame();
-  const S = 329;
+  const S = 319;
   const logo = POP(clamp01((f - (T(12.12) - S)) / 16));
   const photo = ramp(f, T(13.0) - S, 20, EASE.out);
   const tag = ramp(f, T(15.15) - S, 14, EASE.snappy);

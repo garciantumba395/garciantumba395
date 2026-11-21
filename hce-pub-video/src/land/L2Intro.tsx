@@ -7,7 +7,7 @@ import { LightBgL, LogoCard, POP, clamp01 } from '../ui';
 // Plan 2 (16:9) — « Chez HCE, notre métier, c'est que ça n'arrive jamais. »  Local = i − 235.
 export const L2Intro: React.FC = () => {
   const f = useCurrentFrame();
-  const S = 235;
+  const S = 228;
   const reveal = ramp(f, 0, 20, EASE.smooth);
   const logo = POP(clamp01((f - (T(8.72) - S)) / 16));
   const t1 = ramp(f, T(9.6) - S, 14, EASE.snappy);

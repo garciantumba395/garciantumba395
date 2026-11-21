@@ -1,18 +1,19 @@
 import React from 'react';
 import { useCurrentFrame } from 'remotion';
 import { EASE, ramp } from '../Polish';
-import { C, T } from '../tokens';
+import { C, T, T_PV } from '../tokens';
 import { ICONS, LightBgL, POP, clamp01 } from '../ui';
 import { BrandTile, CCTV } from '../logos';
 
 // Plan 4 (16:9) — services + sécurité électronique en vedette.  Local = i − 556.
-const S = 556;
+const S = 538;
 const SERV = [
   { k: 'reseau', t: 'Réseaux', at: T(20.88), d: 'LAN, WAN, Wi-Fi, VPN' },
   { k: 'cyber', t: 'Cybersécurité', at: T(21.52), d: 'Audit et protection' },
   { k: 'virtu', t: 'Virtualisation', at: T(22.8), d: 'Serveurs et stockage' },
   { k: 'cloud', t: 'Cloud', at: T(23.96), d: 'Hébergement, VM, sauvegardes' },
   { k: 'dev', t: 'Développement web', at: T(24.48), d: 'Sites et applications' },
+  { k: 'pv', t: 'Photovoltaïque', at: T_PV, d: 'Énergie solaire' },
 ];
 export const L4Services: React.FC = () => {
   const f = useCurrentFrame();
@@ -32,7 +33,7 @@ export const L4Services: React.FC = () => {
         {SERV.map((s, i) => {
           const p = POP(clamp01((f - (s.at - S)) / 12));
           return (
-            <div key={s.k} style={{ gridColumn: i === 4 ? '1 / span 2' : undefined, height: 200, background: '#fff', borderRadius: 24, padding: '18px 22px', borderLeft: `8px solid ${i % 3 === 2 ? C.orange : C.blue}`, boxShadow: '0 14px 34px rgba(10,30,63,0.12)', opacity: f < s.at - S ? 0 : 1, transform: `translateY(${(1 - p) * 40}px) scale(${0.92 + 0.08 * p})` }}>
+            <div key={s.k} style={{ height: 200, background: '#fff', borderRadius: 24, padding: '18px 22px', borderLeft: `8px solid ${i % 3 === 2 ? C.orange : C.blue}`, boxShadow: '0 14px 34px rgba(10,30,63,0.12)', opacity: f < s.at - S ? 0 : 1, transform: `translateY(${(1 - p) * 40}px) scale(${0.92 + 0.08 * p})` }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                 <div style={{ width: 58, height: 58, flex: '0 0 58px' }}>{ICONS[s.k]}</div>
                 <div style={{ fontWeight: 900, fontSize: 34, color: C.navy, lineHeight: 1.05, textTransform: 'uppercase' }}>{s.t}</div>

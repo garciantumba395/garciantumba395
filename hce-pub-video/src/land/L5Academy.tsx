@@ -5,7 +5,7 @@ import { C, T } from '../tokens';
 import { LightBgL, Photo, POP, clamp01 } from '../ui';
 
 // Plan 5 (16:9) — formations, avec le logo HCE Academy. Local = i − 860.
-const S = 911;
+const S = 923;
 const PROG: { t: string; at: number; logos?: string[] }[] = [
   { t: 'Réseaux & systèmes', at: T(37.55) }, { t: 'Cybersécurité', at: T(38.16) }, { t: 'Odoo & Sage', at: T(39.4) },
   { t: 'Développement web', at: T(40.48) }, { t: 'Support IT', at: T(41.52) },
